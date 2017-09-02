@@ -1,0 +1,51 @@
+<ion-split-pane when="lg">
+  
+  <ion-menu side="left" [content]="nav" [class.ios-pwa]="info.iOSPWA">
+
+    <ion-header>
+      <ion-toolbar>
+        <ion-avatar *ngIf="info.title.avatar">
+          <img [src]="info.title.avatar"/>
+        </ion-avatar>
+        <ion-title>{{info.title.top}}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content>
+
+      <ion-list>
+        <ion-list-header>
+          {{info.title.main}}
+        </ion-list-header>
+        <button menuClose ion-item detail-none *ngFor="let p of pages; trackBy: trackPage" [class.active]="isPageActive(p)" (click)="openPage(p)">
+          <ion-icon item-left [name]="p.icon"></ion-icon>
+          {{p.title}}
+        </button>
+      </ion-list>
+
+      <ion-list *ngIf="info.book.id == '' || chapters.length < 2">
+        <ion-list-header>
+          {{info.title.sub}}
+        </ion-list-header>
+        <button menuClose ion-item detail-none *ngFor="let c of categories; trackBy: trackCategory" [class.active]="isCategoryActive(c)" (click)="openCategory(c)">
+          {{c.title}}
+          <ion-icon item-right name="arrow-dropright" *ngIf="c.gotChildren"></ion-icon>
+        </button>
+      </ion-list>
+
+      <ion-list class="chapters" *ngIf="info.book.id != '' && chapters.length > 0">
+        <ion-list-header>
+          {{info.book.title}}
+        </ion-list-header>
+        <button menuClose ion-item detail-none *ngFor="let c of chapters; trackBy: trackChapter" [class.active]="isChapterActive(c)" (click)="openChapter(c)">
+          {{c.title}}
+        </button>
+      </ion-list>
+
+    </ion-content>
+
+  </ion-menu>
+
+  <ion-nav #nav main swipeBackEnabled="false" [root]="info.nav.start" [class.ios-pwa]="info.iOSPWA"></ion-nav>
+
+</ion-split-pane>

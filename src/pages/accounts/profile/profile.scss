@@ -1,0 +1,17 @@
+page-profile {
+	figure > img {
+		border-radius: 50%;
+	}
+	.captcha {
+		padding-top: 5px;
+	}
+	.captcha img {
+		border: solid 1px #eee;
+	}
+	.ios .captcha img {
+		border-radius: 5px;
+	}
+	.captcha input {
+		text-transform: uppercase;
+	}
+}

@@ -1,0 +1,32 @@
+<ion-header>
+	<ion-navbar>
+		<button ion-button menuToggle>
+			<ion-icon name="menu"></ion-icon>
+		</button>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-content padding>
+
+	<div class="newest" *ngIf="info.books">
+		<h1 padding>
+			Mới cập nhật
+		</h1>
+		<div ion-grid no-padding>
+			<div ion-row>
+				<button ion-col col-6 col-md-4 col-xl-3 *ngFor="let b of info.books; trackBy: trackBy" (click)="openBook(b)">
+					<div [style.background-image]="'url(' + b.Cover + ')'"></div>
+					<section>
+						<h2>
+							{{b.Title}}
+						</h2>            
+					</section>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="intro" padding [innerHtml]="info.introduction"></div>
+
+</ion-content>

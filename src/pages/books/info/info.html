@@ -1,0 +1,133 @@
+<ion-header>
+	<ion-navbar>
+		<button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-content>
+
+	<h1 padding>
+		{{info.book.Title}}
+	</h1>
+	
+	<div padding class="info">
+		<rating [(ngModel)]="info.rating" [max]="5" [readonly]="true" [float]="true"></rating>
+	</div>
+
+	<div>
+		<figure [hidden]="info.book.Cover.indexOf('/no/cover/image.png') > 0">
+			<img [src]="info.book.Cover" />
+		</figure>
+		<ion-item>
+			<span>
+				Thể loại:
+			</span>
+			<label>
+				{{info.book.Category}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Original != ''">
+			<span>
+				Nguyên tác:
+			</span>
+			<label>
+				{{info.book.Original}}
+			</label>
+		</ion-item>
+		<ion-item>
+			<span>
+				Tác giả:
+			</span>
+			<label>
+				{{info.book.Author}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Translator != ''">
+			<span>
+				Dịch giả:
+			</span>
+			<label>
+				{{info.book.Translator}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Publisher != ''">
+			<span>
+				NXB:
+			</span>
+			<label>
+				{{info.book.Publisher}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Producer != ''">
+			<span>
+				Đơn vị SX:
+			</span>
+			<label>
+				{{info.book.Producer}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.TotalChapters > 1">
+			<span>
+				Số chương/phần:
+			</span>
+			<label>
+				{{info.book.TotalChapters | number}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Source != ''">
+			<span>
+				Nguồn:
+			</span>
+			<label *ngIf="info.book.SourceUri != ''">
+				<a href="{{info.book.SourceUri}}" target="_blank">
+					{{info.book.Source}}
+				</a>
+			</label>
+			<label *ngIf="info.book.SourceUri == ''">
+				{{info.book.Source}}
+			</label>
+		</ion-item>
+		<ion-item *ngIf="info.book.Files">
+			<span>
+				Files:
+			</span>
+			<ul>
+				<li>
+					<span>
+					EPUB: {{info.book.Files.Epub.Size}}
+					</span>
+					<ion-icon item-right name="download" title="Tải xuống" (click)="download('Epub')" *ngIf="info.book.Files.Epub.Size != 'generating...'"></ion-icon>
+				</li>
+				<li>
+					<span>
+					MOBI: {{info.book.Files.Mobi.Size}}
+					</span>
+					<ion-icon item-right name="download" title="Tải xuống" (click)="download('Mobi')" *ngIf="info.book.Files.Mobi.Size != 'generating...'"></ion-icon>
+				</li>
+			</ul>
+		</ion-item>
+	</div>
+
+	<ion-item class="qr">
+		<span>
+		QR Code:
+		</span>
+		<div>
+			<qr-code [value]="info.qrcode" [size]="280"></qr-code>
+		</div>
+		<div>
+			<span>
+				Dùng {{info.processByApp ? 'app' : 'smartphone'}} quét QR Code để mở nhanh
+			</span>
+		</div>
+	</ion-item>
+
+	<ion-item class="permanent-link">
+		<ion-label floating>Permanent link:</ion-label>
+		<ion-input readonly [(ngModel)]="info.uri"></ion-input>
+	</ion-item>
+
+</ion-content>

@@ -1,0 +1,12 @@
+page-search-profiles {
+	.list > .item .item-inner h2 {
+		margin-bottom: 5px;
+	}
+	span.status {
+		float: right;
+		color: #ddd;
+	}
+	span.status.online {
+		color: darkgreen;
+	}
+}

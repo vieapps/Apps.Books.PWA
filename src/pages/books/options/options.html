@@ -1,0 +1,72 @@
+<ion-header>
+	<ion-navbar>
+		<button ion-button menuToggle>
+			<ion-icon name="menu"></ion-icon>
+		</button>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-content padding>
+
+	<ion-list radio-group style="margin-top:5px" [(ngModel)]="info.options.color">
+		<ion-list-header>
+			Màu nền:
+		</ion-list-header>
+		<ion-item *ngFor="let i of options.colors">
+			<ion-label>{{i.label}}</ion-label>
+			<ion-radio [value]="i.value"></ion-radio>
+		</ion-item>
+	</ion-list>
+
+	<ion-list radio-group style="margin-top:5px" [(ngModel)]="info.options.font">
+		<ion-list-header>
+			Font chữ:
+		</ion-list-header>
+		<ion-item *ngFor="let i of options.fonts">
+			<ion-label>{{i.label}}</ion-label>
+			<ion-radio [value]="i.value"></ion-radio>
+		</ion-item>
+	</ion-list>
+
+	<ion-list radio-group style="margin-top:5px" [(ngModel)]="info.options.size">
+		<ion-list-header>
+			Cỡ chữ:
+		</ion-list-header>
+		<ion-item *ngFor="let i of options.sizes">
+			<ion-label>{{i.label}}</ion-label>
+			<ion-radio [value]="i.value"></ion-radio>
+		</ion-item>
+	</ion-list>
+
+	<ion-list radio-group style="margin-top:5px" [(ngModel)]="info.options.paragraph">
+		<ion-list-header>
+			Cách dòng:
+		</ion-list-header>
+		<ion-item *ngFor="let i of options.paragraphs">
+			<ion-label>{{i.label}}</ion-label>
+			<ion-radio [value]="i.value"></ion-radio>
+		</ion-item>
+	</ion-list>
+
+	<ion-list radio-group style="margin-top:5px" [(ngModel)]="info.options.align">
+		<ion-list-header>
+			Căn lề:
+		</ion-list-header>
+		<ion-item *ngFor="let i of options.aligns">
+			<ion-label>{{i.label}}</ion-label>
+			<ion-radio [value]="i.value"></ion-radio>
+		</ion-item>
+	</ion-list>
+
+	<div padding class="{{info.options.color}} {{info.options.font}} {{info.options.size}} {{info.options.paragraph}} {{info.options.align}}">
+		<p>
+			Tôi tiếp tục tăng tốc, ngày và đêm hòa vào nhau; bầu trời chuyển sang màu xanh thẳm, sáng rực như hoàng hôn sớm;
+		</p>
+		<p>
+			Mặt trời như vệt lửa rung rinh chói sáng; mặt trăng biến thành dải sáng mờ ảo dao động và tôi không thấy bóng dáng ngôi sao
+			nào.
+		</p>
+	</div>
+
+</ion-content>

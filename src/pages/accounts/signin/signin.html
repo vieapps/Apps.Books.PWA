@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-navbar hideBackButton="true">
+		<ion-buttons left>
+			<button ion-button icon-only (click)="exit()">
+				<ion-icon name="close"></ion-icon>
+			</button>
+		</ion-buttons>
+    <ion-title>{{info.state.title}}</ion-title>
+  </ion-navbar>  
+</ion-header>
+
+<ion-footer *ngIf="info.state.mode == 'SignIn'">
+	<ion-buttons right>
+		<button ion-button icon-left clear (click)="openRenewPassword()">
+			<ion-icon name="key"></ion-icon>
+			Quên mật khẩu
+		</button>
+	</ion-buttons>
+</ion-footer>
+
+<ion-content padding>
+	<form #form="ngForm">
+		<ion-item [class.invalid]="!info.state.valid && !isValidEmail(info.account.email)">
+	    <ion-label floating>Email</ion-label>
+	    <ion-input #email required name="email" type="email" maxlength="150" [(ngModel)]="info.account.email"></ion-input>
+	  </ion-item>
+	  <ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.account.password)" *ngIf="info.state.mode == 'SignIn'">
+	    <ion-label floating>Mật khẩu</ion-label>
+	    <ion-input #password required name="password" type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.account.password"></ion-input>
+	  </ion-item>
+	  <ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" [hidden]="info.state.processing" *ngIf="info.state.mode != 'SignIn'">
+	    <img item-left [src]="info.captcha.uri"/>
+	    <button ion-button clear icon-only item-left (click)="renewCaptcha()">
+	    	<ion-icon name="refresh"></ion-icon>
+	    </button>
+	    <ion-input #captcha name="captcha" type="text" placeholder="Mã xác thực" maxlength="4" [(ngModel)]="info.captcha.code"></ion-input>
+	  </ion-item>
+		<div text-right style="padding-top:16px">
+			<button ion-button icon-left [hidden]="info.state.processing || info.state.mode != 'SignIn'" (click)="doSignIn(form)">
+				<ion-icon name="log-in"></ion-icon>
+				Đăng nhập
+			</button>		
+			<button ion-button icon-left [hidden]="info.state.processing || info.state.mode == 'SignIn'" (click)="doRenewPassword(form)">
+				<ion-icon name="key"></ion-icon>
+				Lấy mật khẩu mới
+			</button>
+		</div>
+	</form>
+</ion-content>

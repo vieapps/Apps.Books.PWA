@@ -1,0 +1,229 @@
+// http://ionicframework.com/docs/v2/theming/
+
+// App Global Sass
+// --------------------------------------------------
+// Put style rules here that you want to apply globally. These
+// styles are for the entire app and not just one component.
+// Additionally, this file can be also used as an entry point
+// to import other Sass files to be included in the output CSS.
+//
+// Shared Sass variables, which can be used to adjust Ionic's
+// default Sass variables, belong in "theme/variables.scss".
+//
+// To declare rules for a specific mode, create a child rule
+// for the .md, .ios, or .wp mode classes. The mode class is
+// automatically applied to the <body> element in the app.
+
+/* headers of progressive web app on iOS */
+ion-menu.ios-pwa ion-header.header-ios ion-toolbar.toolbar-ios.statusbar-padding,
+ion-menu.ios-pwa ion-header.header-ios ion-toolbar.toolbar-ios div.toolbar-content-ios ion-title.title-ios,
+ion-nav.ios-pwa .ion-page ion-header.header-ios ion-navbar.toolbar-ios.statusbar-padding,
+ion-nav.ios-pwa .ion-page ion-header.header-ios ion-navbar.toolbar-ios div.toolbar-content-ios ion-title.title-ios {
+	padding-top: 0 !important;
+}
+
+/* side menu */
+.split-pane.split-pane-visible ion-menu.split-pane-side {
+	max-width: 320px;
+}
+
+/* avatar of side menu */
+ion-menu ion-header ion-avatar img {
+	float: left;
+	height: 24px;
+	margin: 0 16px;
+}
+
+/* active item of side menu */
+ion-menu ion-content ion-list button.active {
+	background-color: map-get($colors, light);
+}
+
+/* buttons at footer of side menu */
+ion-menu ion-footer ion-buttons > button  {
+	text-transform: none !important;
+	font-family: Arial, Roboto, sans-serif;
+	color: map-get($colors, dark) !important;
+}
+ion-menu ion-footer ion-buttons > button.active  {
+	color: map-get($colors, primary) !important;
+}
+
+/* special headers with hidden toolbars */
+ion-header.header-ios.has-hidden-toolbar ion-navbar.toolbar-ios div.toolbar-background-ios {
+	border-bottom: solid .55px rgba(0,0,0,.3);
+}
+
+/* content has header or no footer */
+ion-content.content-md.has-header > div.scroll-content {
+	margin-top: 56px;
+}
+ion-content.content-md.has-sub-header > div.scroll-content {
+	margin-top: 112px !important;
+}
+ion-content.content-md.has-footer > div.scroll-content {
+	margin-bottom: 56px;
+}
+ion-content.content-md.has-sub-footer > div.scroll-content {
+	margin-bottom: 112px !important;
+}
+ion-content.content-ios.has-header > div.scroll-content {
+	margin-top: 44px;
+}
+ion-content.content-ios.has-sub-header > div.scroll-content {
+	margin-top: 112px !important;
+}
+ion-content.content-ios.has-footer > div.scroll-content {
+	margin-bottom: 44px;
+}
+ion-content.content-ios.has-sub-footer > div.scroll-content {
+	margin-bottom: 88px !important;
+}
+ion-content.content-wp.has-header > div.scroll-content {
+	margin-top: 46px;
+}
+ion-content.content-wp.has-sub-header > div.scroll-content {
+	margin-top: 92px !important;
+}
+ion-content.content-wp.has-footer > div.scroll-content {
+	margin-bottom: 46px;
+}
+ion-content.content-wp.has-sub-footer > div.scroll-content {
+	margin-bottom: 92px !important;
+}
+ion-content.content.no-footer > div.scroll-content {
+	margin-bottom: 0 !important;
+}
+
+/* invalid controls */
+.ios, .md {
+	.item.invalid .item-inner,
+	.item.invalid.item-input.input-has-value:not(.input-has-focus) .item-inner {
+		border-bottom-color: #f53d3d;
+	}
+}
+.ios {
+	.list.invalid .item-radio .item-inner {
+		border-bottom-color: #f53d3d;
+	}
+}
+.md {
+	.item.invalid .item-inner,
+	.item.invalid.item-input.input-has-value:not(.input-has-focus) .item-inner {
+		box-shadow: inset 0 -1px 0 0 #f53d3d;
+	}
+	.item.invalid.item-input.input-has-focus .item-inner {
+		border-bottom-color: #488aff;
+		box-shadow: inset 0 -1px 0 0 #488aff;
+	}
+	.list.invalid .item-radio .radio .radio-icon {
+		border-color: #f53d3d;
+	}
+}
+.wp {
+	.item.invalid .text-input.ng-invalid,
+	.item.invalid .completer-input.text-input,
+	.list.invalid .item-radio .radio .radio-icon {
+		border-color: #f53d3d;
+	}
+}
+
+/* completer */
+.completer-dropdown {
+	position: static !important;
+	max-height: 160px !important;
+	width: 100% !important;
+	overflow-y: scroll !important;
+	overflow-x: hidden;
+}
+.completer-title {
+	clear: both;
+	display: block;
+	width: 100%;
+}
+.completer-image {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+}
+
+/* thumbnail image */
+.item-ios ion-thumbnail > img {
+	border-radius: 5px;
+}
+
+/* avatar image */
+ion-avatar > img {
+	border-radius: 50%;
+}
+
+/* listing */
+.list > .item .item-inner h2 {
+	font-size: 1.7rem;
+}
+
+/* ratings of one item on a listing */
+.list > .item > .item-inner span.info,
+.list > .item > .item-inner span.rating {
+	float: right;
+	display: inline-block;
+	vertical-align: middle;
+	margin-top: -1px;
+}
+.list > .item > .item-inner span.info > rating,
+.list > .item > .item-inner span.rating > rating {
+	display: inline-block;
+	vertical-align: middle;
+	margin-left: 8px;
+	margin-top: -1px;
+}
+.list > .item > .item-inner span.info > rating > span > span > i,
+.list > .item > .item-inner span.rating > rating > span > span > i {
+	display: inline-block;
+	vertical-align: middle;
+	margin-top: -1px;
+	font-size: 1.8rem;
+}
+
+/* listing of books */
+.books.list > .item ion-thumbnail {
+	min-width: initial;
+}
+.books.list > .item ion-thumbnail > img {
+	width: 65px !important;
+	height: auto !important;
+	max-height: 80px !important;
+}
+.books.list > .item ion-img {
+	width: 65px;
+	height: 80px;
+}
+.books.list > .item .item-inner h2 {
+	margin-top: 8px;
+}
+.books.list > .item > .item-inner span.info > span {
+	font-size: 1.2rem;
+	margin-left: 8px;
+}
+.books.list > .item > .item-inner span.info > span > span.available {
+	color: darkgreen;
+	font-weight: bold;
+}
+.books.list > .item > .item-inner span.info > span > span.not.available {
+	color: darkred;
+}
+.books.list > .item > .item-inner span.info > span > ion-icon {
+	vertical-align: middle;
+	margin-top: -1px;
+	font-size: 1.7rem;
+}
+
+/* permanent link */
+.permanent-link {
+	padding-top: 16px;
+	padding-bottom: 16px;
+}
+.permanent-link .item-inner {
+	border-bottom: none !important;
+	box-shadow: none !important;
+}

@@ -1,0 +1,70 @@
+<ion-header [class.has-hidden-toolbar]="!info.filtering">
+	<ion-navbar>
+		<button ion-button menuToggle>
+			<ion-icon name="menu"></ion-icon>
+		</button>
+		<ion-buttons right [hidden]="info.state.searching || info.state.filtering" (click)="showSearch()">
+			<button ion-button icon-only>
+				<ion-icon name="search"></ion-icon>
+			</button>
+		</ion-buttons>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+	<ion-toolbar [hidden]="!info.state.searching && !info.state.filtering">
+		<ion-searchbar debounce="345" showCancelButton="true" [cancelButtonText]="info.state.cancel" [placeholder]="info.state.holder"
+		 [(ngModel)]="info.filterBy.Query" (ionInput)="onSearch($event)" (ionCancel)="onCancel($event)"></ion-searchbar>
+	</ion-toolbar>
+</ion-header>
+
+<ion-footer *ngIf="!info.state.searching && !info.state.filtering">
+	<ion-toolbar>
+		<ion-buttons left *ngIf="this.info.pagination">
+			<button ion-button icon-left>
+				<ion-icon name="people"></ion-icon>
+				<span>
+					{{info.totalRecords | number}} / {{info.pagination.TotalRecords | number}}
+				</span>
+				<span [hidden]="info.pagination.TotalPages < 2" style="margin-left:16px">
+					({{info.pageNumber | number}}/{{info.pagination.TotalPages | number}})
+				</span>
+			</button>
+		</ion-buttons>
+		<ion-buttons right>
+			<button ion-button icon-only (click)="showActions()">
+				<ion-icon name="more"></ion-icon>
+			</button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-footer>
+
+<ion-content [class.has-sub-header]="info.state.searching || info.state.filtering" [class.no-footer]="info.state.searching || info.state.filtering">
+	<ion-list>
+		<button ion-item detail-none *ngFor="let a of accounts; trackBy: trackBy" (click)="openProfile(a)">
+      <ion-avatar item-left>
+        <img [src]="getAvatar(a)"/>
+      </ion-avatar>
+      <span class="rating">
+        <rating [(ngModel)]="ratings[a.ID]" [max]="5" [readonly]="true" [float]="true"></rating>
+      </span>
+      <span class="status" [class.online]="a.IsOnline">
+        <ion-icon name="eye"></ion-icon>
+      </span>
+      <h2>
+        {{a.Name}}
+      </h2>
+      <p>
+        <span>
+          <ion-icon name="mail"></ion-icon>
+          {{a.Email}}
+        </span>
+        <span *ngIf="a.Mobile != ''">
+          <ion-icon name="phone-portrait"></ion-icon>
+          {{a.Mobile}}
+        </span>
+      </p>
+    </button>
+	</ion-list>
+	<ion-infinite-scroll threshold="50px" (ionInfinite)="onInfiniteScroll($event)">
+		<ion-infinite-scroll-content></ion-infinite-scroll-content>
+	</ion-infinite-scroll>
+</ion-content>

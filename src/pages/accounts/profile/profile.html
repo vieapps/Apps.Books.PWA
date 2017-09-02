@@ -1,0 +1,219 @@
+<ion-header>
+	<ion-navbar>
+		<ion-buttons left *ngIf="info.state.mode != 'Profile'">
+			<button ion-button clear (click)="cancel()">
+				Huỷ
+			</button>
+		</ion-buttons>
+		<ion-buttons right *ngIf="info.state.mode != 'Profile'">
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'Register'" (click)="doRegister(form)">
+				Đăng ký
+			</button>
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'Update'" (click)="doUpdate(form)">
+				Lưu
+			</button>
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'ChangePassword'" (click)="doChangePassword()">
+				Đổi
+			</button>
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'ChangeEmail'" (click)="doChangeEmail()">
+				Đổi
+			</button>
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'SetPrivileges'" (click)="doSetPrivileges()">
+				Đặt quyền
+			</button>
+			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'Invite'" (click)="sendInvitation()">
+				Gửi
+			</button>
+		</ion-buttons>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-footer *ngIf="info.state.mode == 'Profile' && (isAdministrator() || info.id == '')">
+	<ion-toolbar>
+		<ion-buttons left *ngIf="info.id == ''">
+			<button ion-button icon-left (click)="openInvitation()">
+				<ion-icon name="people"></ion-icon>
+				Mời bạn bè
+			</button>
+		</ion-buttons>
+		<ion-buttons right>
+			<button ion-button icon-only (click)="showActions()">
+				<ion-icon name="more"></ion-icon>
+			</button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-footer>
+
+<ion-content padding>
+
+	<div padding *ngIf="info.state.mode == 'Profile'">
+		<figure text-center>
+			<img [src]="info.avatar.current" />
+		</figure>
+		<h1 text-center>
+			{{info.profile.Name}}
+		</h1>
+		<div text-center padding>
+			<rating [(ngModel)]="info.rating" [max]="5" [readonly]="true" [float]="true"></rating>
+		</div>
+		<ion-list *ngIf="info.canSeeOthers">
+			<ion-list-header>
+				Thông tin
+			</ion-list-header>
+			<ion-item>
+				<ion-icon item-left name="mail"></ion-icon>
+				{{info.profile.Email}}
+			</ion-item>
+			<ion-item *ngIf="info.profile.Mobile != ''">
+				<ion-icon item-left name="phone-portrait"></ion-icon>
+				{{info.profile.Mobile}}
+			</ion-item>
+			<ion-item *ngIf="info.profile.FullAddress != ''">
+				<ion-icon item-left name="pin"></ion-icon>
+				{{info.profile.FullAddress}}
+				<a (click)="openGoogleMaps()" *ngIf="info.appMode == 'WPA'">
+					xem trên Google Maps
+				</a>
+			</ion-item>
+			<ion-item>
+				<ion-icon item-left name="time"></ion-icon>
+				Truy cập: {{info.profile.LastAccess | date: 'h:mm a @ d/M/y'}}
+			</ion-item>
+		</ion-list>
+	</div>
+
+	<form #form="ngForm" [hidden]="info.state.mode != 'Register' && info.state.mode != 'Update'">
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.profile.Name)">
+			<ion-label floating>Tên (sử dụng để hiển thị)</ion-label>
+			<ion-input #name required name="name" type="text" maxlength="250" [(ngModel)]="info.profile.Name"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isValidEmail(info.profile.Email)" *ngIf="info.state.mode == 'Register'">
+			<ion-label floating>Email</ion-label>
+			<ion-input #email required name="email" type="email" maxlength="250" [(ngModel)]="info.profile.Email"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="(!info.state.valid || info.profile.Email) && info.profile.Email != info.profile.ConfirmEmail"
+			*ngIf="info.state.mode == 'Register'">
+			<ion-label floating>Nhập lại email</ion-label>
+			<ion-input #confirmEmail required name="confirmEmail" type="email" maxlength="250" [(ngModel)]="info.profile.ConfirmEmail"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.profile.Password)" *ngIf="info.state.mode == 'Register'">
+			<ion-label floating>Mật khẩu</ion-label>
+			<ion-input #password required name="password" type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.profile.Password"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="(!info.state.valid || info.profile.Password) && info.profile.Password != info.profile.ConfirmPassword"
+			*ngIf="info.state.mode == 'Register'">
+			<ion-label floating>Nhập lại mật khẩu</ion-label>
+			<ion-input #confirmPassword required name="confirmPassword" type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.profile.ConfirmPassword"></ion-input>
+		</ion-item>
+		<ion-list #gender required radio-group name="gender" [class.invalid]="!info.state.valid && !info.profile.Gender" [(ngModel)]="info.profile.Gender" *ngIf="info.state.mode == 'Update'">
+			<ion-list-header no-lines style="margin-top:5px">
+				Giới tính:
+			</ion-list-header>
+			<ion-item *ngIf="!info.state.othersRequired">
+				<ion-label>Không cung cấp</ion-label>
+				<ion-radio value="NotProvided"></ion-radio>
+			</ion-item>
+			<ion-item>
+				<ion-label>Nam</ion-label>
+				<ion-radio value="Male"></ion-radio>
+			</ion-item>
+			<ion-item>
+				<ion-label>Nữ</ion-label>
+				<ion-radio value="Female"></ion-radio>
+			</ion-item>
+		</ion-list>
+		<ion-item [class.invalid]="!info.state.valid && !isNotNull(info.profile.BirthDay)" *ngIf="info.state.mode == 'Update'">
+			<ion-label floating>Ngày sinh</ion-label>
+			<ion-datetime #birthDay required name="birthDay" displayFormat="DD/MM/YYYY" pickerFormat="DD MMM YYYY"
+				min="{{info.validBirthDay.min}}" max="{{info.validBirthDay.max}}" [(ngModel)]="info.profile.BirthDay"></ion-datetime>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.profile.Address)" *ngIf="info.state.mode == 'Update'">
+			<ion-label floating>Địa chỉ</ion-label>
+			<ion-input #address name="address" type="text" maxlength="250" placehoder="Số nhà đường/phố, Phường/Xã" [(ngModel)]="info.profile.Address"></ion-input>
+		</ion-item>
+		<ion-item class="item-label-floating completer-container" [class.invalid]="!info.state.valid && !info.address.current" *ngIf="info.state.mode == 'Update'">
+			<ng2-completer #addresses name="addresses" inputClass="{{info.state.css}}" inputId="addresses" placeholder="Quận/Huyện, Thành phố/Tỉnh"
+				textSearching="tìm kiếm..." [(ngModel)]="info.address.search" [datasource]="completerData" [initialValue]="info.address.current"
+				[minSearchLength]="2" (selected)="selectAddress($event)"></ng2-completer>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.profile.Mobile)" *ngIf="info.state.mode == 'Update'">
+			<ion-label floating>Mobile</ion-label>
+			<ion-input #mobile name="mobile" type="tel" maxlength="15" [(ngModel)]="info.profile.Mobile"></ion-input>
+		</ion-item>
+		<ion-item *ngIf="info.state.mode != 'Register'">
+			<ion-label floating>Email</ion-label>
+			<ion-input readonly name="displayemail" type="email" maxlength="250" [(ngModel)]="info.profile.Email"></ion-input>
+		</ion-item>
+		<ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" *ngIf="info.state.mode == 'Register'">
+			<img item-left [src]="info.captcha.uri" />
+			<button ion-button icon-only item-left clear (click)="renewCaptcha()">
+	    	<ion-icon name="refresh"></ion-icon>
+	    </button>
+			<ion-input #captcha required name="captcha" type="text" placeholder="Mã xác thực" maxlength="4" [(ngModel)]="info.captcha.code"></ion-input>
+		</ion-item>
+	</form>
+
+	<div [hidden]="info.state.mode != 'ChangePassword' && info.state.mode != 'ChangeEmail'">
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.change.OldPassword)">
+			<ion-label floating>Mật khẩu hiện tại</ion-label>
+			<ion-input #oldPassword required type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.change.OldPassword"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.change.Password)" *ngIf="info.state.mode == 'ChangePassword'">
+			<ion-label floating>Mật khẩu mới</ion-label>
+			<ion-input #newPassword required type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.change.Password"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="(!info.state.valid || info.change.Password) && info.change.Password != info.change.ConfirmPassword" *ngIf="info.state.mode == 'ChangePassword'">
+			<ion-label floating>Nhập lại mật khẩu mới</ion-label>
+			<ion-input #confirmNewPassword required type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.change.ConfirmPassword"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && !isValidEmail(info.change.Email)" *ngIf="info.state.mode == 'ChangeEmail'">
+			<ion-label floating>Email</ion-label>
+			<ion-input #newEmail required type="email" maxlength="250" [(ngModel)]="info.change.Email"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="(!info.state.valid || info.change.Email) && info.change.Email != info.change.ConfirmEmail" *ngIf="info.state.mode == 'ChangeEmail'">
+			<ion-label floating>Nhập lại email</ion-label>
+			<ion-input #confirmNewEmail required type="email" maxlength="250" [(ngModel)]="info.change.ConfirmEmail"></ion-input>
+		</ion-item>
+	</div>
+
+	<div *ngIf="info.state.mode == 'SetPrivileges'">
+		<ion-list radio-group name="role" [(ngModel)]="info.privileges.permissions.role">
+			<ion-list-header no-lines style="margin-top:5px">
+				<b>Vai trò trong hệ thống</b>
+			</ion-list-header>
+			<ion-item *ngFor="let r of info.privileges.roles">
+				<ion-label>{{r.label}}</ion-label>
+				<ion-radio value="{{r.value}}"></ion-radio>
+			</ion-item>
+		</ion-list>
+		<ion-list radio-group *ngFor="let s of info.privileges.sections" name="section-{{s.value}}" [(ngModel)]="info.privileges.permissions.sections[s.value]">
+			<ion-list-header style="margin-top:5px">
+				Vai trò đối với '<b>{{s.label}}</b>'
+			</ion-list-header>
+			<ion-item *ngFor="let r of info.privileges.roles">
+				<ion-label>{{r.label}}</ion-label>
+				<ion-radio value="{{r.value}}"></ion-radio>
+			</ion-item>
+		</ion-list>
+	</div>
+
+	<div [hidden]="info.state.mode != 'Invite'">
+		<ion-item icon-left>
+			<ion-icon name="person"></ion-icon>
+			<ion-label floating>Tên</ion-label>
+			<ion-input #guestname required type="text" maxlength="250" [(ngModel)]="info.invitation.name"></ion-input>
+		</ion-item>
+		<ion-item icon-left>
+			<ion-icon name="mail"></ion-icon>
+			<ion-label floating>Email</ion-label>
+			<ion-input #guestemail required type="email" maxlength="250" [(ngModel)]="info.invitation.email"></ion-input>
+		</ion-item>
+		<ion-item icon-left class="permanent-link">
+			<ion-icon name="link"></ion-icon>
+			<ion-label floating>Liên kết</ion-label>
+			<ion-input readonly type="text" [(ngModel)]="info.invitation.url"></ion-input>
+		</ion-item>
+	</div>
+
+</ion-content>

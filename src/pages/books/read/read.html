@@ -1,0 +1,117 @@
+<ion-header>
+	<ion-navbar>
+		<button ion-button menuToggle>
+			<ion-icon name="menu"></ion-icon>
+		</button>
+		<ion-buttons right>
+			<button ion-button icon-only (click)="showInfo()">
+				<ion-icon name="information-circle"></ion-icon>
+			</button>
+		</ion-buttons>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-footer [hidden]="!info.book">
+	<ion-toolbar>
+		<ion-buttons left [hidden]="info.book.TotalChapters < 2">
+			<button ion-button icon-left>
+			<ion-icon name="bookmark"></ion-icon>
+			<span>
+				{{info.chapter}} / {{info.book.TotalChapters}}
+			</span>
+		</button>
+		</ion-buttons>
+		<ion-buttons text-center>
+			<button ion-button icon-left style="padding:0 15px" (click)="goPrevious()">
+				<ion-icon name="rewind"></ion-icon>
+				Trước
+			</button>
+			<button ion-button icon-right style="padding:0 15px" (click)="goNext()">
+				Sau
+				<ion-icon name="fastforward"></ion-icon>
+			</button>
+		</ion-buttons>
+		<ion-buttons right>
+			<button ion-button icon-only (click)="showActions()">
+				<ion-icon name="more"></ion-icon>
+			</button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-footer>
+
+<ion-content class="{{options.color}}" (swipeleft)="goNext()" (ionScrollEnd)="onEndScroll()">
+
+	<div class="cover" *ngIf="info.book && info.chapter == 0">
+		<figure [hidden]="info.book.Cover.indexOf('/no/cover/image.png') > 0">
+			<img [src]="info.book.Cover" />
+		</figure>
+		<h1>
+			{{info.book.Title}}
+		</h1>
+		<div>
+			<rating [(ngModel)]="info.rating" [max]="5" [readonly]="true" [float]="true"></rating>
+		</div>
+		<div *ngIf="info.book.Original != ''">
+			<span>
+				Nguyên tác:
+			</span>
+			<label>
+				{{info.book.Original}}
+			</label>
+		</div>
+		<div>
+			<span>
+				Tác giả:
+			</span>
+			<label>
+				{{info.book.Author}}
+			</label>
+			<span *ngIf="info.book.Translator != ''">
+				Dịch giả:
+			</span>
+			<label *ngIf="info.book.Translator != ''">
+				{{info.book.Translator}}
+			</label>
+		</div>
+		<div *ngIf="info.book.Publisher != '' || info.book.Producer != ''">
+			<span [hidden]="info.book.Publisher == ''">
+				NXB:
+			</span>
+			<label [hidden]="info.book.Publisher == ''">
+				{{info.book.Publisher}}
+			</label>
+			<span [hidden]="info.book.Producer == ''">
+				SX:
+			</span>
+			<label [hidden]="info.book.Producer == ''">
+				{{info.book.Producer}}
+			</label>
+		</div>
+		<div>
+			<span>
+				Thể loại:
+			</span>
+			<label>
+				{{info.book.Category}}
+			</label>
+			<span *ngIf="info.book.TotalChapters > 1">
+				Số chương/phần:
+			</span>
+			<label *ngIf="info.book.TotalChapters > 1">
+				{{info.book.TotalChapters | number}}
+			</label>
+			<span *ngIf="info.book.Source != ''">
+				Nguồn:
+			</span>
+			<label *ngIf="info.book.Source != ''">
+				{{info.book.Source}}
+			</label>
+		</div>
+	</div>
+
+	<div class="body {{options.style}}" [innerHTML]="info.book.Body" *ngIf="info.book && info.chapter == 0 && info.book.Body != ''"></div>
+
+	<div class="body {{options.style}}" [innerHTML]="info.book.Chapters[info.chapter - 1]" *ngIf="info.book && info.chapter > 0"></div>
+
+</ion-content>

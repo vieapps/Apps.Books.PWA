@@ -1,0 +1,110 @@
+page-book-options {
+	/* color */
+	div.white,
+	div.white > p
+	{
+		color: #000;
+		background-color: #fff;
+	}
+	div.black,
+	div.black > p
+	{
+		color: #fff;
+		background-color: #000;
+	}
+	div.sepia,
+	div.sepia > p
+	{
+		color: #643b0f;
+		background-color: #efe0b9;
+	}
+
+	div.white > p,
+	div.black > p,
+	div.sepia > p
+	{
+		white-space: initial;
+	}
+
+	/* font style */
+	div.default,
+	div.pridi
+	{
+		font-family: Pridi, serif;
+	}
+	div.like-default
+	{
+		font-family: Rokkitt, serif;
+	}
+	div.plump
+	{
+		font-family: Maitree, serif;
+	}
+	div.fat
+	{
+		font-family: "Roboto Slab", serif;
+	}
+	div.fancy
+	{
+		font-family: Roboto, sans-serif;
+	}
+
+	/* font size */
+	div.smallest > p
+	{
+		font-size: 14px;
+	}
+	div.smaller > p
+	{
+		font-size: 16px;
+	}
+	div.small > p
+	{
+		font-size: 18px;
+	}
+	div.normal > p
+	{
+		font-size: 22px;
+	}
+	div.big > p
+	{
+		font-size: 26px;
+	}
+	div.bigger > p
+	{
+		font-size: 30px;
+	}
+	div.huge > p
+	{
+		font-size: 44px;
+	}
+
+	/* paragraph */
+	div.one > p
+	{
+		margin: 10px 0;
+		line-height: 1.6;
+	}
+	div.two > p
+	{
+		margin: 15px 0;
+		line-height: 1.8;
+	}
+	div.three > p
+	{
+		margin: 20px 0;
+		line-height: 2;
+	}
+	div.align-left > p
+	{
+		text-align: left;
+	}
+	div.align-justify > p
+	{
+		text-align: justify;
+	}
+	div.align-right > p
+	{
+		text-align: right;
+	}
+}

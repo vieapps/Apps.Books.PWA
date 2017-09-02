@@ -1,0 +1,14 @@
+page-signin {
+	.captcha img {
+		border: solid 1px #eee;
+	}
+	.captcha {
+		padding-top: 5px;
+	}
+	.captcha input {
+		text-transform: uppercase;
+	}
+	.ios .captcha img {
+		border-radius: 5px;
+	}
+}

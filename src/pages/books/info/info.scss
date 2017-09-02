@@ -1,0 +1,78 @@
+page-book-info {
+	ion-content > div.scroll-content > h1 {
+		margin: 0;
+		margin-top: 16px;
+	}
+	ion-content > div.scroll-content > div.info {
+		border-bottom: solid 1px #dedede;
+	}
+	ion-content > div.scroll-content > div.info > span {
+		margin-left: 16px;
+		font-size: 1.3em;
+	}
+	ion-content > div.scroll-content > div.info > button {
+		float: right;
+	}
+	ion-content > div.scroll-content > div.info > span > ion-icon {
+		color: #777;
+	}
+	ion-content > div.scroll-content > div.info > span > span.available {
+		color: darkgreen;
+	}
+	ion-content > div.scroll-content > div.info > span > span.not.available {
+		color: darkred;
+	}
+	ion-content > div.scroll-content  > div {
+		padding-top: 16px;
+	}
+	ion-content > div.scroll-content  > div > figure {
+		text-align: center;
+		margin: 0;
+		float: left;
+		width: 286px;
+		padding-left: 16px;
+	}
+	ion-content > div.scroll-content > div > figure > img {
+		border-radius: 5px;
+	}
+	ion-content > div.scroll-content > div > ion-item {
+		width: auto;
+		padding-right: 16px;
+	}
+	ion-content > div.scroll-content > div > ion-item ion-label label {
+		font-weight: bold;
+	}
+	ion-content > div.scroll-content > div > ion-item ul > li {
+		overflow: hidden;
+	}
+	ion-content > div.scroll-content > div > ion-item ul > li > span {
+		display: inline-block;
+		margin-top: 11px;
+	}
+	ion-content > div.scroll-content > div > ion-item ul > li > ion-icon {
+		float: right;
+		cursor: pointer;
+	}
+	ion-content > div.scroll-content > div > ion-item.summary {
+		width: 100%;
+		clear: both;
+	}
+	ion-content > div.scroll-content > div > ion-item.summary ion-label div {
+		white-space: initial;
+	}
+	ion-content > div.scroll-content > div > ion-item.summary ion-label div > p {
+		color: map-get($colors, dark);
+		font-size: 1.8rem;
+	}
+	ion-content > div.scroll-content > div > ion-item.summary ion-label div > hr {
+		background-color: transparent !important;
+	}
+	ion-content > div.scroll-content > ion-item.qr ion-label div {
+		text-align: left;
+	}
+	@media only screen and (min-width: 768px) {
+		ion-content > div.scroll-content  > div > figure > img {
+			
+		}
+	}
+}

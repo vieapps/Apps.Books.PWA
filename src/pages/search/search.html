@@ -1,0 +1,59 @@
+<ion-header>
+	<ion-navbar>
+		<button ion-button menuToggle>
+			<ion-icon name="menu"></ion-icon>
+		</button>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+	<ion-toolbar>
+		<ion-searchbar debounce="345" placeholder="Cho vào ngoặc kép để tìm chính xác, không dấu cũng OK - vd: &quot;nhoc nicolas&quot;"
+			showCancelButton="true" cancelButtonText="Đóng" [(ngModel)]="info.filterBy.Query" (ionInput)="onSearch($event)"></ion-searchbar>
+	</ion-toolbar>
+</ion-header>
+
+<ion-footer *ngIf="info.pagination && info.pagination.TotalRecords > 0">
+	<ion-toolbar text-center>
+		<button ion-button icon-left clear>
+			<ion-icon name="book"></ion-icon>
+			<span>
+				{{info.totalRecords | number}} / {{info.pagination.TotalRecords | number}}
+			</span>
+			<span [hidden]="info.pagination.TotalPages < 2" style="margin-left:16px">
+				({{info.pageNumber | number}}/{{info.pagination.TotalPages | number}})
+			</span>
+		</button>
+	</ion-toolbar>
+</ion-footer>
+
+<ion-content class="has-sub-header" [class.has-footer]="info.pagination && info.pagination.TotalRecords > 0">
+	<ion-list class="books">
+		<button ion-item detail-none *ngFor="let b of books; trackBy: trackBy" (click)="openBook(b)">
+			<ion-thumbnail item-left>
+				<img [src]="b.Cover"/>
+			</ion-thumbnail>
+			<p>
+				<span [hidden]="info.filterBy.And.Author.Equals != ''">
+					{{b.Author}}
+				</span>
+				<span [hidden]="info.filterBy.And.Category.Equals != '' || (info.filterBy.And.Category.Equals == '' && info.filterBy.And.Author.Equals == '')">
+					{{b.Category}}
+				</span>
+				<span class="info">
+					<span *ngIf="b.TotalChapters > 1">
+						<span class="chapters">
+							{{b.TotalChapters | number}}
+						</span>
+						<ion-icon name="copy"></ion-icon>
+					</span>
+					<rating [(ngModel)]="ratings[b.ID]" [max]="5" [readonly]="true" [float]="true"></rating>
+				</span>
+			</p>
+			<h2>
+				{{b.Title}}
+			</h2>
+		</button>
+	</ion-list>
+	<ion-infinite-scroll threshold="50px" (ionInfinite)="onInfiniteScroll($event)">
+		<ion-infinite-scroll-content></ion-infinite-scroll-content>
+	</ion-infinite-scroll>
+</ion-content>
