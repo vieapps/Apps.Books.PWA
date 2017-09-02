@@ -145,7 +145,7 @@ export namespace AppRTU {
 			receiver = null;
 		}
 
-		if (receiver != null) {
+		if (sender != null) {
 			sender.close();
 			sender = null;
 		}
