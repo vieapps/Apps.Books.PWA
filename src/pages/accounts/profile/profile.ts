@@ -581,6 +581,9 @@ export class ProfilePage {
 						"Đổi mật khẩu",
 						"Mật khẩu đăng nhập mới đã được cập nhật thành công!",
 						() => {
+							this.info.change.OldPassword = undefined;
+							this.info.change.Password = undefined;
+							this.info.change.ConfirmPassword = undefined;
 							this.cancelUpdate();
 						}
 					);
@@ -618,6 +621,9 @@ export class ProfilePage {
 						"Đổi email",
 						"Email đăng nhập mới đã được cập nhật thành công!",
 						() => {
+							this.info.change.OldPassword = undefined;
+							this.info.change.Email = undefined;
+							this.info.change.ConfirmEmail = undefined;
 							this.cancelUpdate();
 						}
 					);

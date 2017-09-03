@@ -43,11 +43,16 @@ export class ResourcesService {
 
 		if (!AppData.Configuration.meta.provinces[AppData.Configuration.meta.country]) {
 			await this.loadGeoProvincesAsync(AppData.Configuration.meta.country, () => {
-				this.loadGeoCountriesAsync();
+				AppData.Configuration.meta.countries.length < 1 && window.setTimeout(async () => {
+					await this.loadGeoCountriesAsync();
+				}, 123);
 			});
 		}
 		else {
 			AppEvents.broadcast("GeoMetaIsLoaded", AppData.Configuration.meta);
+			AppData.Configuration.meta.countries.length < 1 && window.setTimeout(async () => {
+				await this.loadGeoCountriesAsync();
+			}, 123);
 		}
 	}
 

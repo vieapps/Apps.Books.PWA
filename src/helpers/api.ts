@@ -151,13 +151,11 @@ export namespace AppAPI {
 	export function getAuthHeaders(addToken = true, addAppInfo = true, addDeviceUUID = true): any {
 		var headers = {};
 
-		if (addToken && AppUtility.isObject(AppData.Configuration.session.jwt, true)) {
-			headers["x-app-token"] = AppCrypto.jwtEncode(
-				AppData.Configuration.session.jwt, 
-				AppUtility.isObject(AppData.Configuration.session.keys, true) && AppUtility.isNotEmpty(AppData.Configuration.session.keys.jwt)
-					? AppData.Configuration.session.keys.jwt
-					: AppData.Configuration.app.name
-			);
+		if (addToken
+			&& AppUtility.isObject(AppData.Configuration.session.jwt, true)
+			&& AppUtility.isObject(AppData.Configuration.session.keys, true)
+			&& AppUtility.isNotEmpty(AppData.Configuration.session.keys.jwt)) {
+			headers["x-app-token"] = AppCrypto.jwtEncode(AppData.Configuration.session.jwt, AppData.Configuration.session.keys.jwt);
 		}
 
 		if (addAppInfo) {

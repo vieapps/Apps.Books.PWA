@@ -7,7 +7,7 @@ import { AppData } from "../models/data";
 export namespace AppUtility {
 	/** Checks to see the object is boolean and equals to true */
 	export function isTrue(obj?: any) {
-		return typeof obj == "boolean" && obj === true;
+		return obj != undefined && typeof obj == "boolean" && obj === true;
 	}
 
 	/** Checks to see the object is boolean (or not defined) and equals to false */
@@ -59,17 +59,13 @@ export namespace AppUtility {
 	/** Checks the error to see that is security exception or not */
 	export function isGotSecurityException(error?: any) {
 		return isObject(error, true) && isNotEmpty(error.Type)
-			? new List(securityExceptions)
-				.Where((e) => {
-					return e == error.Type
-				})
-				.FirstOrDefault() != undefined
+			? new List(securityExceptions).FirstOrDefault(e => e == error.Type) != undefined
 			: false;
 	}
 
 	const securityExceptions: Array<string> = [
 		"UnauthorizedException", "AccessDeniedException",
-		"SessionNotFoundException", "InvalidSessionException", "SessionExpiredException", "SessionInformationRequiredException",
+		"SessionNotFoundException", "SessionExpiredException", "SessionInformationRequiredException", "InvalidSessionException",
 		"TokenNotFoundException", "TokenExpiredException", "TokenRevokedException", "InvalidTokenException", "InvalidTokenSignatureException"
 	];
 

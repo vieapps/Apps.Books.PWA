@@ -375,7 +375,7 @@ export class App {
 		this.configSvc.initializeAsync(
 			(d: any) => {
 				// got valid sessions, then run next step
-				if (this.configSvc.isReady() && this.authSvc.isAuthenticated()) {
+				if (this.configSvc.isReady() && this.configSvc.isAuthenticated()) {
 					console.info("<Startup>: The session is initialized & registered (user)");
 					this.prepare(onCompleted);
 					delete this.info.attemps;
@@ -383,7 +383,7 @@ export class App {
 
 				// register new session (anonymous)
 				else {
-					console.info("<Startup>: Register the initialized session (anonymous)");
+					console.info("<Startup>: Register the initialized session (anonymous)", AppData.Configuration.session);
 					this.configSvc.registerSessionAsync(
 						() => {
 							console.info("<Startup>: The session is registered (anonymous)");
@@ -393,12 +393,12 @@ export class App {
 						(e: any) => {
 							this.info.attemps++;
 							if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
-								console.warn("<Startup>: The session is need to be re-initialized (anonymous)");
+								console.warn("<Startup>: Cannot register, the session is need to be re-initialized (anonymous)");
 								window.setTimeout(async () => {
 									await this.configSvc.deleteSessionAsync(() => {
 										window.setTimeout(() => {
 											this.initialize(onCompleted, noInitializeSession);
-										}, 13);
+										}, 234);
 									});
 								});
 							}
@@ -413,12 +413,12 @@ export class App {
 			(e: any) => {
 				this.info.attemps++;
 				if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
-					console.warn("<Startup>: The session is need to be re-initialized (anonymous)");
+					console.warn("<Startup>: Cannot initialize, the session is need to be re-initialized (anonymous)");
 					window.setTimeout(async () => {
 						await this.configSvc.deleteSessionAsync(() => {
 							window.setTimeout(() => {
 								this.initialize(onCompleted, noInitializeSession);
-							}, 13);
+							}, 234);
 						});
 					});
 				}

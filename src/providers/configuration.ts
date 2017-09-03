@@ -85,8 +85,10 @@ export class ConfigurationService {
 		}
 
 		// load saved session
-		await this.loadSessionAsync();
-
+		if (AppData.Configuration.session.jwt == null || AppData.Configuration.session.keys == null) {
+			await this.loadSessionAsync();
+		}
+		
 		// initialize session
 		if (AppUtility.isFalse(noInitializeSession)) {
 			await this.initializeSessionAsync(onNext, onError);
@@ -166,7 +168,7 @@ export class ConfigurationService {
 	}
 
 	/** Updates the session and stores into storage */
-	async updateSessionAsync(session: any, onCompleted?: (d: any) => void) {
+	async updateSessionAsync(session: any, onCompleted?: () => void) {
 		if (AppUtility.isNotEmpty(session.ID)) {
 			AppData.Configuration.session.id = session.ID;
 		}
@@ -198,7 +200,7 @@ export class ConfigurationService {
 	}
 
 	/** Loads the session from storage */
-	async loadSessionAsync(onCompleted?: (d: any) => void) {
+	async loadSessionAsync(onCompleted?: () => void) {
 		try {
 			let data = await this.storage.get("VIEApps-Session");
 			if (AppUtility.isNotEmpty(data) && data != "{}") {
@@ -213,13 +215,11 @@ export class ConfigurationService {
 			console.error("[Configuration]: Error occurred while loading the saved/offline session", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.session);
-		}
+		onCompleted != undefined && onCompleted();
 	}
 
 	/** Saves the session into storage */
-	async saveSessionAsync(onCompleted?: (d: any) => void) {
+	async saveSessionAsync(onCompleted?: () => void) {
 		try {
 			await this.storage.set("VIEApps-Session", JSON.stringify(AppUtility.clone(AppData.Configuration.session, ["captcha"])));
 		}
@@ -227,19 +227,17 @@ export class ConfigurationService {
 			console.error("[Configuration]: Error occurred while saving/storing the session", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.session);
-		}
+		onCompleted != undefined && onCompleted();
 	}
 
 	/** Deletes the session from storage */
-	async deleteSessionAsync(onCompleted?: (d: any) => void) {
+	async deleteSessionAsync(onCompleted?: () => void) {
 		AppData.Configuration.session.id = null;
 		AppData.Configuration.session.jwt = null;
 		AppData.Configuration.session.keys = null;
 		AppData.Configuration.session.account = this.getAccount(true);
-
-		await this.saveSessionAsync(onCompleted);
+		await this.storage.remove("VIEApps-Session");
+		onCompleted != undefined && onCompleted();
 	}
 
 	/** Gets the information of the current/default account */

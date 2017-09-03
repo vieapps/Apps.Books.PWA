@@ -153,7 +153,7 @@ export class AuthenticationService {
 				}
 				AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
 
-				console.info("[Authentication]: Sign-in successful", !AppUtility.isDebug() ? "" : AppData.Configuration.session);
+				console.info("[Authentication]: Sign-in successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
 				AppEvents.broadcast("SessionIsRegistered");
 
 				this.patchSession(() => {
@@ -320,7 +320,9 @@ export class AuthenticationService {
 	/** Perform save profile information (with REST API) */
 	async saveProfileAsync(info: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
 		try {
-			let path = "users/profile?related-service=books&language=vi-VN";
+			let path = "users/profile"
+				+ "?related-service=books"
+				+ "&language=vi-VN";
 			let response = await AppAPI.PutAsync(path, info);
 			let data = response.json();
 			if (data.Status == "OK") {
