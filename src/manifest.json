@@ -1,6 +1,6 @@
 {
-  "name": "VIEApps Books Client App",
-  "short_name": "VIEAppsBooks",
+  "name": "VIEApps Online Books",
+  "short_name": "VIEAppsOnlineBooks",
   "start_url": "index.html",
   "display": "standalone",
   "icons": [{
