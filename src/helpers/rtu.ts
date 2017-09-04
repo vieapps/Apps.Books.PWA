@@ -118,7 +118,14 @@ export namespace AppRTU {
 		};
 
 		receiver.onmessage = (event) => {
-			process(JSON.parse(event.data));
+			var message = JSON.parse(event.data);
+			if (message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
+				console.info("[RTU]: Stop when got a security issue");
+				stop();
+			}
+			else {
+				process(message);
+			}
 		};
 		
 		// callback when done

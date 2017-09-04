@@ -608,7 +608,7 @@ export class AuthenticationService {
 	// process RTU message
 	processRTU(message: any) {
 		// check status
-		if (message.Status != "OK") {
+		if (message.Type == "Error") {
 			console.warn("[Authentication]: got an error message from RTU", message);
 			return;
 		}

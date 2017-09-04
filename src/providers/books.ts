@@ -358,7 +358,7 @@ export class BooksService {
 
 	processRTU(message: any) {
 		// stop on error message
-		if (message.Status != "OK") {
+		if (message.Type == "Error") {
 			console.warn("[Books]: got an error message from RTU", message);
 			return;
 		}
