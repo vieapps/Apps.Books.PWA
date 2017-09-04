@@ -149,7 +149,7 @@ export class BooksService {
 			chapter += 1;
 
 		if (book.Chapters[chapter - 1] == "") {
-			if (AppRTU.isSenderReady()) {
+			if (AppRTU.isReady()) {
 				AppRTU.call("books", "book", "GET", {
 					"object-identity": "chapter",
 					"id": id,
@@ -168,7 +168,7 @@ export class BooksService {
 
 	updateCounters(id: string, action?: string, onCompleted?: () => void) {
 		AppData.Books.getValue(id) != undefined
-		&& AppRTU.isSenderReady()
+		&& AppRTU.isReady()
 		&& AppRTU.call("books", "book", "GET", {
 				"object-identity": "counters",
 				"id": id,

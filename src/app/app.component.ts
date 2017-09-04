@@ -475,14 +475,9 @@ export class App {
 		AppRTU.start(() => {
 			// get account profile
 			if (this.configSvc.isAuthenticated()) {
-				if (AppRTU.isSenderReady() && AppRTU.isReceiverReady()) {
-					this.authSvc.patchAccount(() => {
-						this.authSvc.getProfileAsync();
-					}, 234);
-				}
-				else {
+				this.authSvc.patchAccount(() => {
 					this.authSvc.getProfileAsync();
-				}
+				}, 234);
 			}
 
 			// load geo-meta

@@ -223,12 +223,13 @@ export class AuthenticationService {
 		);
 	}
 
-	patchAccount(onNext?: () => void, defer?: number): void {
+	patchAccount(onNext?: () => void, defer?: number) {
 		AppRTU.call(
 			"users",
 			"account",
 			"GET",
 			{
+				"x-status": ""
 			},
 			{},
 			"",
@@ -245,7 +246,7 @@ export class AuthenticationService {
 
 	/** Get profile information of an account */
 	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (d: any) => void) {
-		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isSenderReady() && AppRTU.isReceiverReady();
+		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isReady();
 		if (useRTU) {
 			AppRTU.call(
 				"users",
