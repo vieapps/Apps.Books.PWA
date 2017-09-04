@@ -74,7 +74,8 @@ export class AuthenticationService {
 	/** Registers a captcha with REST API */
 	async registerCaptchaAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
 		try {
-			let path = "users/captcha?register=" + AppData.Configuration.session.id;
+			let path = "users/captcha"
+				+ "?register=" + AppData.Configuration.session.id;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
 			if (data.Status == "OK") {
@@ -143,8 +144,7 @@ export class AuthenticationService {
 				Password: AppCrypto.rsaEncrypt(password),
 				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id)
 			};
-			let path = "users/session";
-			let response = await AppAPI.PostAsync(path, body);
+			let response = await AppAPI.PostAsync("users/session", body);
 			let data = response.json();
 			if (data.Status == "OK") {
 				await this.configSvc.updateSessionAsync(data.Data);
@@ -245,7 +245,7 @@ export class AuthenticationService {
 
 	/** Get profile information of an account */
 	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (d: any) => void) {
-		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isSenderReady();
+		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isSenderReady() && AppRTU.isReceiverReady();
 		if (useRTU) {
 			AppRTU.call(
 				"users",
@@ -271,7 +271,8 @@ export class AuthenticationService {
 		else {
 			try {
 				let path = "users/profile" + (AppUtility.isNotEmpty(id) ? "/" + id : "")
-					+ "?related-service=books&language=vi-VN";
+					+ "?related-service=books"
+					+ "&language=vi-VN";
 				let response = await AppAPI.GetAsync(path);
 				let data = response.json();
 				if (data.Status == "OK") {

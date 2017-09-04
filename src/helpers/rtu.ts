@@ -82,32 +82,44 @@ export namespace AppRTU {
 			+ "?x-request=" + AppUtility.getBase64UrlParam(AppAPI.getAuthHeaders())
 			+ (AppUtility.isTrue(isRestart) ? "&x-restart=" : "");
 
-		// create new instance of receiver & assign event handlers
+		// sender
+		sender = new WebSocket(uri + "&x-mode=" + AppData.Configuration.session.id);
+
+		sender.onopen = (event) => {
+			AppUtility.isDebug() && console.info("[RTU]: The sender is opened...");
+		};
+
+		sender.onclose = (event) => {
+			AppUtility.isDebug() && console.info("[RTU]: The sender is closed...");
+		};
+
+		sender.onmessage = (event) => {
+			pong(JSON.parse(event.data), true);
+			AppUtility.isDebug() && console.log("[RTU]: Pong (sender:" + JSON.parse(event.data).Data + ")");
+		};
+
+		// receiver
 		receiver = new WebSocket(uri);
 
 		receiver.onopen = (event) => {
 			status = "ready";
-			console.info("[RTU]: The updater is ready...");
+			AppUtility.isDebug() && console.info("[RTU]: The receiver is opened...");
 		};
 
 		receiver.onclose = (event) => {
 			status = "close";
-			if (AppUtility.isNotEmpty(uri)) {
-				restart();
-			}
+			AppUtility.isDebug() && console.info("[RTU]: The receiver is closed...");
+			AppUtility.isNotEmpty(uri) && restart();
 		};
 
 		receiver.onerror = (event) => {
 			status = "error";
-			console.warn("[RTU]: Got an error", event);
+			AppUtility.isDebug() && console.warn("[RTU]: The receiver got an error", event);
 		};
 
 		receiver.onmessage = (event) => {
 			process(JSON.parse(event.data));
 		};
-
-		// create new instance of sender
-		sender = new WebSocket(uri + "&x-mode=" + AppData.Configuration.session.id);
 		
 		// callback when done
 		onCompleted != undefined && window.setTimeout(() => {
@@ -206,7 +218,7 @@ export namespace AppRTU {
 			onNext != undefined && onNext();
 		}
 	}
-	
+		
 	/** Parses information from the message type */
 	export function parse(type: string): { ServiceName: string, ObjectName: string } {
 		var pos = AppUtility.indexOf(type, "#");
@@ -217,18 +229,27 @@ export namespace AppRTU {
 	}
 
 	/** Process the message */
-	export function process(message: any) {
+	function process(message: any) {
 		var info = parse(message.Type);
-		AppUtility.isDebug() && console.info("[RTU]: Got a message " + (info.ObjectName != "" ? "(" + info.ObjectName + ")" : ""), message);
-		if (info.ServiceName == "Ping") {
-			console.log("[RTU]: ping (" + (new Date()).toJSON() + ")", AppUtility.isDebug() ? message.Data : "");
+		if (info.ServiceName == "Knock") {
+			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock !!! => Yes, I'm right here (" + (new Date()).toJSON() + ")");
+		}
+		else if (info.ServiceName == "Ping") {
+			pong(message);
+			AppUtility.isDebug() && console.log("[RTU]: Pong (receiver:" + message.Data + ")");
 		}
 		else if (AppUtility.isNotEmpty(message.ExcludedDeviceID) && message.ExcludedDeviceID == AppData.Configuration.session.device) {
-			AppUtility.isDebug() && console.info("[RTU]: The device is excluded");
+			AppUtility.isDebug() && console.info("[RTU]: The device is excluded", message);
 		}
 		else {
+			AppUtility.isDebug() && console.info("[RTU]: Got a message " + (info.ObjectName != "" ? "(" + info.ObjectName + ")" : ""), message);
 			subject.next({ "type": info.ServiceName, "message": message });
 		}
+	}
+
+	/** Sends pong message */
+	function pong(message: any, isSender?: boolean): void {
+		(AppUtility.isTrue(isSender) ? sender : receiver).send("Pong:" + message.Data);
 	}
 
 }

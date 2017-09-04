@@ -7,7 +7,7 @@ export namespace AppData {
 
 	/** App configuration settings */
 	export var Configuration = {
-		api: "http://local-apis.vieapps.net/",
+		api: "https://apis.vieapps.net/",
 		app: {
 			debug: true,
 			offline: false,

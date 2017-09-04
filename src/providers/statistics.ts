@@ -63,7 +63,7 @@ export class StatisticsService {
 	}
 
 	async fetchStatusAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
-		if (AppRTU.isSenderReady()) {
+		if (AppRTU.isSenderReady() && AppRTU.isReceiverReady()) {
 			AppRTU.call("books", "statistic", "GET", { "object-identity": "status" });
 		}
 		else {
@@ -114,12 +114,12 @@ export class StatisticsService {
 	}
 
 	async fetchCategoriesAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
-		if (AppRTU.isSenderReady()) {
+		if (AppRTU.isSenderReady() && AppRTU.isReceiverReady()) {
 			AppRTU.call("books", "statistic", "GET", { "object-identity": "categories" });
 		}
 		else {
 			try {
-				let response = await AppAPI.GetAsync("books/statistics/categories");
+				let response = await AppAPI.GetAsync("books/statistic/categories");
 				let data = response.json();
 				if (data.Status == "OK") {
 					await this.updateCategoriesAsync(data.Data.Objects);
@@ -227,7 +227,13 @@ export class StatisticsService {
 	fetchStatistics() {
 		window.setTimeout(async () => {
 			// use RTU
-			if (AppRTU.isReceiverReady()) {
+			if (AppRTU.isSenderReady() && AppRTU.isReceiverReady()) {
+				AppRTU.call("books", "statistic", "GET", {
+					"object-identity": "all"
+				});
+			}
+
+			else if (AppRTU.isReceiverReady()) {
 				await AppAPI.GetAsync("books/statistic/all");
 			}
 
@@ -239,7 +245,7 @@ export class StatisticsService {
 					this.fetchStatusAsync()
 				]);
 			}
-		}, AppRTU.isReceiverReady() ? 567 : 123);
+		}, AppRTU.isReceiverReady() ? 456 : 123);
 	}
 
 	// process RTU message

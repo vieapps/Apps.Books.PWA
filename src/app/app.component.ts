@@ -114,13 +114,13 @@ export class App {
 
 			// make sure the storage is ready
 			this.storage.ready().then(() => {
-				console.info("<Startup>: The storage is ready for serving...");
+				AppUtility.isDebug() && console.info("<Startup>: The storage is ready for serving...");
 			});
 
 			// prepare environment
 			this.configSvc.prepare();
 			this.info.title.top = AppData.Configuration.app.name;
-			this.info.iOSPWA = this.platform.is("cordova") && this.device.platform == "browser" && AppData.Configuration.app.platform == "iOS";
+			this.info.iOSPWA = AppData.Configuration.app.platform == "iOS PWA";
 
 			// build the listing of pages
 			this.buildPages();
@@ -433,7 +433,7 @@ export class App {
 
 	// prepare the app
 	prepare(onCompleted?: () => void) {
-		// special for WPA (Web Progressive Apps) only
+		// special for PWA (Progressive Web Apps) only
 		if (AppUtility.isWebApp()) {
 			// facebook
 			if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
@@ -474,8 +474,8 @@ export class App {
 		// start the real-time updater
 		AppRTU.start(() => {
 			// get account profile
-			if (this.authSvc.isAuthenticated()) {
-				if (AppRTU.isSenderReady()) {
+			if (this.configSvc.isAuthenticated()) {
+				if (AppRTU.isSenderReady() && AppRTU.isReceiverReady()) {
 					this.authSvc.patchAccount(() => {
 						this.authSvc.getProfileAsync();
 					}, 234);
@@ -497,7 +497,7 @@ export class App {
 
 			// raise an event when done
 			AppEvents.broadcast("AppIsInitialized");
-			console.info("<Startup>: The app is initialized", !AppUtility.isDebug() ? "" : AppData.Configuration);
+			console.info("<Startup>: The app is initialized", AppUtility.isDebug() ? AppData.Configuration : "");
 
 			// hide loading
 			this.loading.dismiss();
@@ -508,9 +508,9 @@ export class App {
 			}
 
 			// navigate to the requested book
-			else if (AppUtility.isWebApp() && this.platform.getQueryParam("open-book") != undefined) {
+			else if (AppUtility.isWebApp() && this.platform.getQueryParam("book") != undefined) {
 				try {
-					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("open-book")));
+					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("book")));
 					console.info("<Startup>: Open the requested book", params);
 					this.navigate("ReadBookPage", ReadBookPage, params, true);
 				}

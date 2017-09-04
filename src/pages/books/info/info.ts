@@ -79,7 +79,6 @@ export class BookInfoPage {
 		this.info.qrcode = this.info.processByApp
 			? "vieapps-ebooks://" + this.info.book.ID
 			: this.info.uri;
-		console.info("INFO", this.info);
 	}
 
 	download(type: string) {
