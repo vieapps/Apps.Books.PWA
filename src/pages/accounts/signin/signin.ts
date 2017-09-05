@@ -55,6 +55,8 @@ export class SignInPage {
   }
 
 	ionViewDidEnter() {
+		this.info.account.email = this.navParams.get("email") || "";
+		this.navParams.get("mode") && this.openRenewPassword();
 		AppUtility.focus(this.emailCtrl, this.keyboard);
 	}
 
@@ -109,6 +111,10 @@ export class SignInPage {
 				AppUtility.focus(this.emailCtrl, this.keyboard);
 				return false;
 			}
+			else if (this.info.state.mode == "Password" && !AppUtility.isNotEmpty(this.info.captcha.code)) {
+				AppUtility.focus(this.captchaCtrl, this.keyboard);
+				return false;
+			}
 			else {
 				return form.valid;
 			}
@@ -155,6 +161,7 @@ export class SignInPage {
 		if (this.info.state.mode != "SignIn") {
 			this.renewCaptcha(true);
 		}
+		
 		this.alertCtrl.create({
 	    title: "Lỗi",
 	    message: message,

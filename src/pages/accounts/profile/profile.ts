@@ -13,6 +13,9 @@ import { AppModels } from "../../../models/objects";
 import { ConfigurationService } from "../../../providers/configuration";
 import { AuthenticationService } from "../../../providers/authentication";
 
+import { SignInPage } from "../signin/signin";
+import { HomePage } from "../../home/home";
+
 @Component({
 	selector: "page-profile",
 	templateUrl: "profile.html",
@@ -146,7 +149,7 @@ export class ProfilePage {
 				ConfirmEmail: "",
 				Password: "",
 				ConfirmPassword: "",
-				Gender: "",
+				Gender: "NotProvided",
 				BirthDay: "",
 				Address: "",
 				County: "",
@@ -370,13 +373,13 @@ export class ProfilePage {
 			else if (form.controls.email && !form.controls.email.valid) {
 				AppUtility.focus(this.emailCtrl, this.keyboard);
 			}
-			else if (form.controls.confirmEmail && !form.controls.confirmEmail.valid) {
+			else if (form.controls.confirmEmail && (!form.controls.confirmEmail.valid || !this.isValidEmail(this.info.profile.ConfirmEmail) || this.info.profile.ConfirmEmail != this.info.profile.Email)) {
 				AppUtility.focus(this.confirmEmailCtrl, this.keyboard);
 			}
 			else if (form.controls.password && !form.controls.password.valid) {
 				AppUtility.focus(this.passwordCtrl, this.keyboard);
 			}
-			else if (form.controls.confirmPassword && !form.controls.confirmPassword.valid) {
+			else if (form.controls.confirmPassword && (!form.controls.confirmPassword.valid || this.info.profile.ConfirmPassword != this.info.profile.Password)) {
 				AppUtility.focus(this.confirmPasswordCtrl, this.keyboard);
 			}
 			else if (this.genderCtrl && !form.controls.gender.valid) {
@@ -394,7 +397,7 @@ export class ProfilePage {
 			else if (this.mobileCtrl && !form.controls.mobile.valid) {
 				AppUtility.focus(this.mobileCtrl, this.keyboard);
 			}
-			else if (!form.controls.captcha.valid) {
+			else if (this.captchaCtrl && !form.controls.captcha.valid) {
 				AppUtility.focus(this.captchaCtrl, this.keyboard);
 			}
 			return false;
@@ -408,11 +411,15 @@ export class ProfilePage {
 				AppUtility.focus(this.confirmEmailCtrl, this.keyboard);
 				return false;
 			}
-			else if (!this.info.profile.Gender) {
+			else if (this.confirmPasswordCtrl && this.info.profile.ConfirmPassword != this.info.profile.Password) {
+				AppUtility.focus(this.confirmPasswordCtrl, this.keyboard);
+				return false;
+			}
+			else if (this.genderCtrl && !this.info.profile.Gender) {
 				AppUtility.focus(this.genderCtrl, this.keyboard);
 				return false;
 			}
-			else if (!this.info.profile.BirthDay) {
+			else if (this.birthDayCtrl && !this.info.profile.BirthDay) {
 				AppUtility.focus(this.birthDayCtrl, this.keyboard);
 				return false;
 			}
@@ -496,7 +503,40 @@ export class ProfilePage {
 					);
 				},
 				(error: any) => {
-					this.showError(error);
+					if (AppUtility.isObject(error.Error, true) && "InformationExistedException" == error.Error.Type) {
+						this.renewCaptcha();
+						this.hideLoading();
+						this.info.state.processing = false;
+						this.alertCtrl.create({
+							title: "Chú ý",
+							message: "Địa chỉ email (" + this.info.profile.Email + ") đã được sử dụng để đăng ký tài khoản.\nCó muốn lấy mật khẩu mới cho địa chỉ email này?",
+							enableBackdropDismiss: false,
+							buttons: [{
+								text: "Không",
+								role: "cancel"
+							},
+							{
+								text: "Lấy mật khẩu mới",
+								handler: () => {
+									AppEvents.broadcast("OpenPage", {
+										name: "SignInPage",
+										component: SignInPage,
+										params: {
+											mode: "Password",
+											email: this.info.profile.Email
+										},
+										doPush: true,
+										popIfContains: "ProfilePage,SignInPage",
+										noNestedStack: true
+									});
+								}
+							}]
+						}).present();
+								
+					}
+					else {
+						this.showError(error);
+					}
 				}
 			);
 		}
@@ -581,9 +621,9 @@ export class ProfilePage {
 						"Đổi mật khẩu",
 						"Mật khẩu đăng nhập mới đã được cập nhật thành công!",
 						() => {
-							this.info.change.OldPassword = undefined;
-							this.info.change.Password = undefined;
-							this.info.change.ConfirmPassword = undefined;
+							this.info.change.OldPassword = "";
+							this.info.change.Password = "";
+							this.info.change.ConfirmPassword = "";
 							this.cancelUpdate();
 						}
 					);
@@ -621,9 +661,9 @@ export class ProfilePage {
 						"Đổi email",
 						"Email đăng nhập mới đã được cập nhật thành công!",
 						() => {
-							this.info.change.OldPassword = undefined;
-							this.info.change.Email = undefined;
-							this.info.change.ConfirmEmail = undefined;
+							this.info.change.OldPassword = "";
+							this.info.change.Email = "";
+							this.info.change.ConfirmEmail = "";
 							this.cancelUpdate();
 						}
 					);
@@ -671,13 +711,23 @@ export class ProfilePage {
 			buttons: [
 				{
 					text: "Huỷ bỏ",
+					role: "cancel"
 				},
 				{
 					text: "Đăng xuất",
 					handler: () => {
-						this.authSvc.signOutAsync(() => {
-							this.exit();
-						});
+						this.authSvc.signOutAsync(
+							() => {
+								AppEvents.broadcast("OpenPage", {
+									name: "HomePage",
+									component: HomePage,
+									doPush: false
+								});
+							},
+							(error: any) => {
+								this.showError(error);
+							}
+						);
 					}
 				}
 			]

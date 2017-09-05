@@ -4,10 +4,11 @@ import { BrowserXhr, ConnectionBackend, XHRBackend, XSRFStrategy, CookieXSRFStra
 import { BaseRequestOptions, RequestOptions, BaseResponseOptions, ResponseOptions } from "@angular/http";
 import { CompleterData, CompleterItem } from "ng2-completer";
 import { List } from "linqts";
-import { Subject } from "rxjs/Subject";
-import { Subscription } from "rxjs/Subscription";
+
+import * as Rx from "rxjs/Rx";
 import "rxjs/add/operator/toPromise";
- 
+import "rxjs/add/operator/map";
+
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";
 import { AppData } from "../models/data";
@@ -39,7 +40,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'GET' http method
+		* Performs a request to APIs with 'GET' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param headers Additional headers to perform the request
 	*/
@@ -48,7 +49,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'GET' http method
+		* Performs a request to APIs with 'GET' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param headers Additional headers to perform the request
 	*/
@@ -57,7 +58,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'POST' http method
+		* Performs a request to APIs with 'POST' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param body The JSON object that contains the body to perform the request
 		* @param headers Additional headers to perform the request
@@ -67,7 +68,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'POST' http method
+		* Performs a request to APIs with 'POST' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param body The JSON object that contains the body to perform the request
 		* @param headers Additional headers to perform the request
@@ -77,7 +78,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'PUT' http method
+		* Performs a request to APIs with 'PUT' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param body The JSON object that contains the body to perform the request
 		* @param headers Additional headers to perform the request
@@ -87,7 +88,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'PUT' http method
+		* Performs a request to APIs with 'PUT' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param body The JSON object that contains the body to perform the request
 		* @param headers Additional headers to perform the request
@@ -97,7 +98,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'DELETE' http method
+		* Performs a request to APIs with 'DELETE' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param headers Additional headers to perform the request
 	*/
@@ -106,7 +107,7 @@ export namespace AppAPI {
 	}
 
 	/**
-		* Performs a request to REST API with 'DELETE' http method
+		* Performs a request to APIs with 'DELETE' method
 		* @param path Path of the end-point API's uri to perform the request
 		* @param headers Additional headers to perform the request
 	*/
@@ -114,7 +115,7 @@ export namespace AppAPI {
 		return Delete(path, headers).toPromise();
 	}
 
-	/** Gets the headers for making requests to REST API */
+	/** Gets the headers for making requests to APIs */
 	export function getHeaders(additional?: any) {
 		var headers = new Headers();
 
@@ -147,7 +148,7 @@ export namespace AppAPI {
 		return headers;
 	}
 
-	/** Gets the authenticated headers (JSON) for making requests to REST API */
+	/** Gets the authenticated headers (JSON) for making requests to APIs */
 	export function getAuthHeaders(addToken = true, addAppInfo = true, addDeviceUUID = true): any {
 		var headers = {};
 
@@ -171,7 +172,7 @@ export namespace AppAPI {
 	}
 
 	/** Completer custom searching services */
-	export class CompleterCustomSearch extends Subject<CompleterItem[]> implements CompleterData {
+	export class CompleterCustomSearch extends Rx.Subject<CompleterItem[]> implements CompleterData {
     constructor(
 			public buildRequest: (term: string) => string,
 			public doConvert: (data: any) => CompleterItem[],
@@ -180,7 +181,7 @@ export namespace AppAPI {
     	super();
     }
 
-		private subscription: Subscription = undefined;
+		private subscription: Rx.Subscription = undefined;
 
     public search(term: string) {
 			this.subscription = Get(this.buildRequest(term))

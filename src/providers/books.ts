@@ -20,10 +20,10 @@ export class BooksService {
 
 	constructor(public http: Http, public storage: Storage, public statisticsSvc: StatisticsService) {
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Books", (msg: any) => this.processRTU(msg));
+		AppRTU.register("Books", (message: any) => this.processRTU(message));
 	}
 
-	search(request: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	search(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		request.Pagination.PageNumber++;
 		let path = "books/book/search"
 			+ "?x-request=" + AppUtility.getBase64UrlParam(request);
@@ -53,7 +53,7 @@ export class BooksService {
 		);
 	}
 
-	async fetchAsync(request: any, onNext?: (d?: any) => void, onError?: (e: any) => void) {
+	async fetchAsync(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		var pagination = AppData.Paginations.get(request, "B");
 		if (AppUtility.isObject(pagination, true) && pagination.TotalPages && pagination.PageNumber && pagination.PageNumber >= pagination.TotalPages) {
 			onNext != undefined && onNext();
@@ -83,7 +83,7 @@ export class BooksService {
 		}
 	}
 
-	async getAsync(id: string, onNext?: (d?: any) => void, onError?: (e: any) => void) {
+	async getAsync(id: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		var book = AppData.Books.getValue(id);
 		if (book != undefined && (book.TOCs.length > 0 || book.Body != "")) {
 			this.updateCounters(id);
@@ -111,7 +111,7 @@ export class BooksService {
 		}
 	}
 
-	async getChapterAsync(id: string, chapter: number, onNext?: (d?: any) => void, onError?: (e?: any) => void) {
+	async getChapterAsync(id: string, chapter: number, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		var book = AppData.Books.getValue(id);
 		if (book == undefined || book.TOCs.length < 1) {
 			onError != undefined && onError();
@@ -128,7 +128,7 @@ export class BooksService {
 			let data = response.json();
 			if (data.Status == "OK") {
 				book.Chapters[chapter - 1] = data.Data.Content;
-				await this.updateCounters(id);
+				this.updateCounters(id);
 				onNext != undefined && onNext(data);
 			}
 			else {
@@ -143,7 +143,7 @@ export class BooksService {
 		}
 	}
 
-	async pregetChapterAsync(id: string, chapter: number, onNext?: (d?: any) => void, onError?: (e: any) => void) {
+	async pregetChapterAsync(id: string, chapter: number, onCompleted?: () => void) {
 		var book = AppData.Books.getValue(id);
 		while (chapter < book.TotalChapters && book.Chapters[chapter - 1] != "")
 			chapter += 1;
@@ -155,14 +155,14 @@ export class BooksService {
 					"id": id,
 					"chapter": chapter
 				});
-				this.updateCounters(id);
+				this.updateCounters(id, "View", onCompleted);
 			}
 			else {
-				await this.getChapterAsync(id, chapter);
+				await this.getChapterAsync(id, chapter, onCompleted);
 			}
 		}
 		else if (chapter <= book.TotalChapters) {
-			this.updateCounters(id);
+			this.updateCounters(id, "View", onCompleted);
 		}
 	}
 
@@ -170,11 +170,11 @@ export class BooksService {
 		AppData.Books.getValue(id) != undefined
 		&& AppRTU.isReady()
 		&& AppRTU.call("books", "book", "GET", {
-				"object-identity": "counters",
-				"id": id,
-				"action": action || "View"
-			});
-			onCompleted != undefined && onCompleted();
+			"object-identity": "counters",
+			"id": id,
+			"action": action || "View"
+		});
+		onCompleted != undefined && onCompleted();
 	}
 
 	setCounters(info: any, onCompleted?: () => void) {
@@ -189,89 +189,65 @@ export class BooksService {
 		onCompleted != undefined && onCompleted();
 	}
 
-	async requestUpdateAsync(info: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async requestUpdateAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.PostAsync("ebooks/" + AppCrypto.urlEncode(info.ID) + "/" + AppUtility.getBase64UrlParam({ ID: info.ID }), info);
+			let response = await AppAPI.PostAsync("books/book/" + AppCrypto.urlEncode(info.ID) + "/" + AppUtility.getBase64UrlParam({ ID: info.ID }), info);
 			let data = response.json();
 			if (data.Status == "OK") {
-				if (onNext != undefined) {
-					onNext(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
 				console.error("[Books]: Error occurred while sending request to update an e-book");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-				if (onError != undefined) {
-					onError(data);
-				}
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
 			console.error("[Books]: Error occurred while sending request to update an e-book", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			onError != undefined && onError(e);
 		}
 	}
 
-	async updateAsync(info: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async updateAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let response = await AppAPI.PutAsync("ebooks/" + AppCrypto.urlEncode(info.ID) + "/" + AppUtility.getBase64UrlParam({ ID: info.ID }), info);
 			let data = response.json();
 			if (data.Status == "OK") {
-				if (onNext != undefined) {
-					onNext(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
 				console.error("[Books]: Error occurred while updating an e-book");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-				if (onError != undefined) {
-					onError(data);
-				}
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
 			console.error("[Books]: Error occurred while updating an e-book", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			onError != undefined && onError(e);
 		}
 	}
 
-	async deleteAsync(info, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async deleteAsync(info, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let response = await AppAPI.DeleteAsync("ebooks/" + AppCrypto.urlEncode(info.BookID) + "/" + AppUtility.getBase64UrlParam({ ID: info.BookID }));
 			let data = response.json();
 			if (data.Status == "OK") {
 				AppData.Books.remove(info.BookID);
-				if (onNext != undefined) {
-					onNext(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
 				console.error("[Books]: Error occurred while deleting an e-book");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-				if (onError != undefined) {
-					onError(data);
-				}
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
 			console.error("[Books]: Error occurred while deleting an e-book", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			onError != undefined && onError(e);
 		}
 	}
 
-	async loadOptionsAsync(onCompleted?: (d: any) => void) {
+	async loadOptionsAsync(onCompleted?: (data?: any) => void) {
 		try {
 			let data = await this.storage.get("VIEApps-Reading-Options");
 			if (AppUtility.isNotEmpty(data) && data != "{}") {
@@ -282,12 +258,10 @@ export class BooksService {
 			console.error("[Books]: Error occurred while loading the reading options", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.reading.options);
-		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
 	}
 
-	async saveOptionsAsync(onCompleted?: (d: any) => void) {
+	async saveOptionsAsync(onCompleted?: (data?: any) => void) {
 		try {
 			await this.storage.set("VIEApps-Reading-Options", JSON.stringify(AppData.Configuration.reading.options));
 		}
@@ -295,12 +269,10 @@ export class BooksService {
 			console.error("[Books]: Error occurred while saving the reading options into storage", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.reading.options);
-		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
 	}
 
-	async loadBookmarksAsync(onCompleted?: (d: any) => void) {
+	async loadBookmarksAsync(onCompleted?: (data?: any) => void) {
 		AppData.Configuration.reading.bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
 
 		try {
@@ -322,7 +294,7 @@ export class BooksService {
 		}
 	}
 
-	async saveBookmarksAsync(onCompleted?: (d: any) => void) {
+	async saveBookmarksAsync(onCompleted?: (data?: any) => void) {
 		try {
 			await this.storage.set("VIEApps-Bookmarks", JSON.stringify(AppData.Configuration.reading.bookmarks));
 		}
@@ -335,7 +307,7 @@ export class BooksService {
 		}
 	}
 
-	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: (d: any) => void) {
+	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: (data?: any) => void) {
 		var bookmark = new AppModels.Bookmark();
 		bookmark.ID = id;
 		bookmark.Chapter = chapter;
@@ -345,7 +317,7 @@ export class BooksService {
 		if (AppData.Configuration.reading.bookmarks.size() > 30) {
 			let bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
 			let min = AppData.Configuration.reading.bookmarks.size() - 30;
-			new List<AppModels.Bookmark>(AppData.Configuration.reading.bookmarks.values()).ForEach((b, i) => {
+			new List(AppData.Configuration.reading.bookmarks.values()).ForEach((b, i) => {
 				if (i >= min) {
 					bookmarks.setValue(b.ID, b);
 				}

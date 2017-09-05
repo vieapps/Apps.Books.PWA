@@ -1,5 +1,4 @@
-import { Subject } from "rxjs/Subject";
-import { Observable } from "rxjs/Observable";
+import * as Rx from "rxjs/Rx";
 
 import { AppUtility } from "./utility";
 
@@ -7,8 +6,8 @@ export namespace AppEvents {
 
 	var handlers: any = {};
 
-	var subject = new Subject<{ event: string, args: any }>();
-	var observable = Observable.from(subject);
+	var subject = new Rx.Subject<{ event: string, args: any }>();
+	var observable = Rx.Observable.from(subject);
 	observable.subscribe(
 		({ event, args }) => {
 			if (handlers[event]) {

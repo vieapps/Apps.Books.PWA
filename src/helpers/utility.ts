@@ -169,12 +169,10 @@ export namespace AppUtility {
 	*/
 	export function focus(control: any, keyboard?: Keyboard, defer?: number) {
 		if (isObject(control, true) && typeof control.setFocus == "function") {
-			window.setTimeout(() => {
+			setTimeout(() => {
 				control.setFocus();
-				if (isNotNull(keyboard) && isNativeApp()) {
-					keyboard.show();
-				}
-			}, defer != undefined ? defer : isNativeApp() ? 567 : 234);
+				isNotNull(keyboard) && isNativeApp() && keyboard.show();
+			}, defer || (isNativeApp() ? 567 : 234));
 		}
 	}
 

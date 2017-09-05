@@ -230,7 +230,6 @@ export class ReadBookPage {
 			.Where(b => b.ID == this.info.book.ID)
 			.Select((b, index) => index)
 			.FirstOrDefault();
-
 		return index != undefined && index > 0 && index < books.Count() - 1
 			? books.FirstOrDefault((b, index) => index == (isPrevious ? index - 1 : index + 1))
 			: undefined;
@@ -245,11 +244,9 @@ export class ReadBookPage {
 	}
 
 	onEndScroll() {
-		if (this.info.chapter > 0 || this.info.book.Body != "") {
-			window.setTimeout(async () => {
-				await this.booksSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
-			});
-		}
+		(this.info.chapter > 0 || this.info.book.Body != "")  && AppUtility.setTimeout(async () => {
+			await this.booksSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
+		});
 	}
 
 	showActions() {
@@ -280,7 +277,7 @@ export class ReadBookPage {
 			]
 		});
 
-		if (this.authSvc.isAdministrator() || this.authSvc.isAuthorized("EBooks", "", "Full")) {
+		if (this.authSvc.isAdministrator() || this.authSvc.isAuthorized("Books", "", "Full")) {
 			actionSheet.addButton({
 				text: "Cập nhật",
 				icon: this.info.isAppleOS ? undefined : "create",

@@ -1,5 +1,4 @@
-import { Subject } from "rxjs/Subject";
-import { Observable } from "rxjs/Observable";
+import * as Rx from "rxjs/Rx";
 import { Response } from "@angular/http";
 
 import { AppUtility } from "./utility";
@@ -14,8 +13,8 @@ export namespace AppRTU {
 	var instance: any = null;
 	var handlers: any = {};
 
-	var subject = new Subject<{ type: string, message: any }>();
-	var observable = Observable.from(subject);
+	var subject = new Rx.Subject<{ type: string, message: any }>();
+	var observable = Rx.Observable.from(subject);
 	observable.subscribe(
 		({ type, message }) => {
 			if (handlers[type]) {
@@ -166,7 +165,7 @@ export namespace AppRTU {
 	}
 
 	/** Sends the request to a service */
-	export function send(request?: any, rtuNext?: () => void, ajaxNext?: (observable?: Observable<Response>) => void): void {
+	export function send(request: any, rtuNext?: () => void, ajaxNext?: (observable?: Rx.Observable<Response>) => void): void {
 		if (!AppUtility.isObject(request, true)) {
 			return;
 		}
@@ -183,7 +182,7 @@ export namespace AppRTU {
 				}
 			}
 			
-			let observable: Observable<Response> = null;
+			let observable: Rx.Observable<Response> = null;
 			if (request.Verb == "POST") {
 				observable = AppAPI.Post(path, request.Body, request.Header);
 			}
@@ -202,7 +201,7 @@ export namespace AppRTU {
 	}
 		
 	/** Calls a service */
-	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, rtuNext?: () => void, ajaxNext?: (observable?: Observable<Response>) => void): void {
+	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, rtuNext?: () => void, ajaxNext?: (observable?: Rx.Observable<Response>) => void): void {
 		verb = verb || "GET"
 		var request = {
 			ServiceName: serviceName,

@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { List } from "linqts";
 import "rxjs/add/operator/toPromise";
+import "rxjs/add/operator/map";
 
 declare var FB: any;
 
@@ -20,7 +21,7 @@ export class AuthenticationService {
 
 	constructor(public http: Http, public configSvc: ConfigurationService) {
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Users", (msg: any) => this.processRTU(msg));
+		AppRTU.register("Users", (message: any) => this.processRTU(message));
 	}
 
 	/** Checks to see the current account is authenticated or not */
@@ -176,14 +177,13 @@ export class AuthenticationService {
 	/** Signs an account out with REST API */
 	async signOutAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "users/session";
-			let response = await AppAPI.DeleteAsync(path);
+			let response = await AppAPI.DeleteAsync("users/session");
 			let data = response.json();
 			if (data.Status == "OK") {
 				await this.configSvc.updateSessionAsync(data.Data);
 				AppEvents.broadcast("AccountIsUpdated");
 
-				await this.configSvc.registerSessionAsync((d: any) => {
+				await this.configSvc.registerSessionAsync(() => {
 					console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
 					this.patchSession(onNext);
 				}, onError);
@@ -209,9 +209,11 @@ export class AuthenticationService {
 				"x-rtu-session": AppData.Configuration.session.id
 			}
 		};
-		AppRTU.send(request, () => {
+		AppRTU.send(request,
+			() => {
 				this.configSvc.patchAccount(onNext, 234);
-			}, () => {
+			},
+			() => {
 				this.configSvc.patchAccount(onNext, 234);
 			}
 		);

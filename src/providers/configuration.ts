@@ -5,6 +5,7 @@ import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
 import { List } from "linqts";
 import "rxjs/add/operator/toPromise";
+import "rxjs/add/operator/map";
 
 import { AppUtility } from "../helpers/utility";
 import { AppCrypto } from "../helpers/crypto";
@@ -126,7 +127,9 @@ export class ConfigurationService {
 	/** Registers the initialized session (anonymous) with REST API */
 	async registerSessionAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.GetAsync("users/session?register=" + AppData.Configuration.session.id);
+			let path = "users/session"
+				+ "?register=" + AppData.Configuration.session.id
+			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
 			if (data.Status == "OK") {
 				AppData.Configuration.session.account = this.getAccount(true);

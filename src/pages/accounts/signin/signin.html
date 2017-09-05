@@ -28,7 +28,7 @@
 	    <ion-label floating>Mật khẩu</ion-label>
 	    <ion-input #password required name="password" type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.account.password"></ion-input>
 	  </ion-item>
-	  <ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" [hidden]="info.state.processing" *ngIf="info.state.mode != 'SignIn'">
+	  <ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" *ngIf="info.state.mode != 'SignIn'">
 	    <img item-left [src]="info.captcha.uri"/>
 	    <button ion-button clear icon-only item-left (click)="renewCaptcha()">
 	    	<ion-icon name="refresh"></ion-icon>
