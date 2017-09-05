@@ -72,7 +72,7 @@ export class AuthenticationService {
 	}
 
 	/** Registers a captcha with REST API */
-	async registerCaptchaAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async registerCaptchaAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/captcha"
 				+ "?register=" + AppData.Configuration.session.id;
@@ -97,8 +97,8 @@ export class AuthenticationService {
 		}
 	}
 
-	/** Registers an account with REST API */
-	async registerAccountAsync(info: any, captcha: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	/** Registers an account with APIs */
+	async registerAccountAsync(info: any, captcha: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			var body = AppUtility.clone(info);
 			delete body.ConfirmEmail;
@@ -135,8 +135,8 @@ export class AuthenticationService {
 		}
 	}
 
-	/** Signs an account in with REST API */
-	async signInAsync(email: string, password: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	/** Signs an account in with APIs */
+	async signInAsync(email: string, password: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let body = {
 				Timestamp: Math.round(+new Date() / 1000),
@@ -157,8 +157,8 @@ export class AuthenticationService {
 				AppEvents.broadcast("SessionIsRegistered");
 
 				this.patchSession(() => {
-					this.getProfileAsync();
-				});
+					this.getProfile();
+				}, 123);
 				onNext != undefined && onNext(data);
 			}
 			else {
@@ -174,7 +174,7 @@ export class AuthenticationService {
 	}
 
 	/** Signs an account out with REST API */
-	async signOutAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async signOutAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/session";
 			let response = await AppAPI.DeleteAsync(path);
@@ -185,8 +185,7 @@ export class AuthenticationService {
 
 				await this.configSvc.registerSessionAsync((d: any) => {
 					console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-					this.patchSession();
-					onNext != undefined && onNext(d);
+					this.patchSession(onNext);
 				}, onError);
 			}
 			else {
@@ -202,72 +201,71 @@ export class AuthenticationService {
 	}
 
 	patchSession(onNext?: () => void, defer?: number): void {
-		AppRTU.call(
-			"users",
-			"session",
-			"PATCH",
-			{},
-			{},
-			"",
-			{
+		var request = {
+			ServiceName: "users",
+			ObjectName: "session",
+			Verb: "PATCH",
+			Extra: {
 				"x-rtu-session": AppData.Configuration.session.id
-			},
-			() => {
-				onNext != undefined && window.setTimeout(() => {
-					onNext();
-				}, defer || 456);
-				AppData.Configuration.session.account.id != null && window.setTimeout(() => {
-					this.patchAccount();
-				}, defer != undefined ? defer + 123 : 345);
+			}
+		};
+		AppRTU.send(request, () => {
+				this.configSvc.patchAccount(onNext, 234);
+			}, () => {
+				this.configSvc.patchAccount(onNext, 234);
 			}
 		);
 	}
+	
+	/** Get profile information */
+	getProfile(id?: string, onCompleted?: (data?: any) => void) {
+		var request = {
+			ServiceName: "users",
+			ObjectName: "profile",
+			Verb: "GET",
+			Query: {
+				"related-service": "books",
+				"language": "vi-VN",
+				"host": (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
+			}
+		};
+		if (AppUtility.isNotEmpty(id)) {
+			request.Query["object-identity"] = id;
+		}
 
-	patchAccount(onNext?: () => void, defer?: number) {
-		AppRTU.call(
-			"users",
-			"account",
-			"GET",
-			{
-				"x-status": ""
-			},
-			{},
-			"",
-			{
-				"x-status": ""
-			},
+		AppRTU.send(request,
 			() => {
-				onNext != undefined && window.setTimeout(() => {
-					onNext();
-				}, defer || 123);
+				onCompleted != undefined && onCompleted();
+			},
+			(observable) => {
+				observable.map(response => response.json()).subscribe(
+					(data: any) => {
+						if (data.Status == "OK") {
+							this.updateProfileAsync(data.Data, onCompleted);
+						}
+						else {
+							console.error("[Authentication]: Error occurred while fetching account profile");
+							AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+						}
+					},
+					(error: any) => {
+						console.error("[Authentication]: Error occurred while fetching a profile", error);
+					}
+				);
 			}
 		);
 	}
 
 	/** Get profile information of an account */
-	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (d: any) => void) {
+	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (data?: any) => void) {
 		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isReady();
 		if (useRTU) {
-			AppRTU.call(
-				"users",
-				"profile",
-				"GET",
-				{
-					"related-service": "books",
-					"language": "vi-VN",
-					"host": (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
-				},
-				{},
-				"",
-				{},
-				() => {
-					window.setTimeout(() => {
-						AppData.Configuration.session.account != null
-						&& (AppData.Configuration.session.account.profile == null || !(AppData.Configuration.session.account.profile instanceof AppModels.Account))
-						&& this.getProfileAsync(true, id, onCompleted);
-					}, 1234);
-				}
-			);
+			this.getProfile(id, onCompleted);
+			AppUtility.setTimeout(() => {
+				AppData.Configuration.session.account != null
+				&& (AppData.Configuration.session.account.profile == null || !(AppData.Configuration.session.account.profile instanceof AppModels.Account))
+				&& this.getProfileAsync(true, id, onCompleted);
+			}, 1234);
 		}
 		else {
 			try {
@@ -291,7 +289,7 @@ export class AuthenticationService {
 	}
 
 	/** Update the information of an account profile */
-	async updateProfileAsync(profile: any, onCompleted?: (d: any) => void) {
+	async updateProfileAsync(profile: any, onCompleted?: (data?: any) => void) {
 		// update profile into collection of accounts
 		AppModels.Account.update(profile);
 
@@ -313,14 +311,14 @@ export class AuthenticationService {
 	}
 
 	/** Store the information of current account profile into storage */
-	async storeProfileAsync(onCompleted?: (d: any) => void) {
+	async storeProfileAsync(onCompleted?: (data?: any) => void) {
 		await this.configSvc.saveSessionAsync();
 		AppEvents.broadcast("AccountIsUpdated");
 		onCompleted != undefined && onCompleted(AppData.Configuration.session);
 	}
 
 	/** Perform save profile information (with REST API) */
-	async saveProfileAsync(info: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async saveProfileAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/profile"
 				+ "?related-service=books"
@@ -448,7 +446,7 @@ export class AuthenticationService {
 	}
 
 	// invitation
-	async sendInvitationAsync(name: string, email: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async sendInvitationAsync(name: string, email: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/account/invite"
 				+ "?related-service=books"
@@ -480,7 +478,7 @@ export class AuthenticationService {
 	}
 
 	/** Send the request to reset password */
-	async resetPasswordAsync(email: string, captcha: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async resetPasswordAsync(email: string, captcha: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/account/reset"
 				+ "?related-service=books"
@@ -512,7 +510,7 @@ export class AuthenticationService {
 	}
 
 	// update password
-	async updatePasswordAsync(oldPassword: string, password: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async updatePasswordAsync(oldPassword: string, password: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/account/password"
 				+ "?related-service=books"
@@ -542,7 +540,7 @@ export class AuthenticationService {
 	}
 
 	// update email
-	async updateEmailAsync(oldPassword: string, email: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async updateEmailAsync(oldPassword: string, email: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/account/email"
 				+ "?related-service=books"
@@ -572,7 +570,7 @@ export class AuthenticationService {
 	}
 
 	// activate (account, password, email)
-	async activateAsync(mode: string, code: string, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async activateAsync(mode: string, code: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			if (AppData.Configuration.app.mode == "") {
 				this.configSvc.prepare();
@@ -619,17 +617,7 @@ export class AuthenticationService {
 
 		// update account
 		if (info.ObjectName == "Account") {
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
-				AppData.Configuration.session.account.status = message.Data.Status as string;
-				AppData.Configuration.session.account.roles = new List<string>(message.Data.Roles)
-					.Select(r => r.trim())
-					.Distinct()
-					.ToArray();
-				AppData.Configuration.session.account.privileges = new List<any>(message.Data.Privileges)
-					.Select(p => AppModels.Privilege.deserialize(p))
-					.ToArray();
-				AppData.Configuration.session.account.role = this.getRole(AppData.Configuration.session.account);
-			}
+			this.configSvc.updateAccount(message.Data);
 		}
 
 		// update profile

@@ -3,12 +3,14 @@ import { Http } from "@angular/http";
 import { Platform } from "ionic-angular";
 import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
+import { List } from "linqts";
 import "rxjs/add/operator/toPromise";
 
 import { AppUtility } from "../helpers/utility";
 import { AppCrypto } from "../helpers/crypto";
 import { AppAPI } from "../helpers/api";
 import { AppEvents } from "../helpers/events";
+import { AppRTU } from "../helpers/rtu";
 
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
@@ -21,8 +23,8 @@ export class ConfigurationService {
 	}
 
 	/** Prepare the working environments of the app */
-	prepare(onCompleted?: (d: any) => void) {
-		// working mode
+	prepare(onCompleted?: (data?: any) => void) {
+		// app mode
 		AppData.Configuration.app.mode = this.platform.is("cordova") && this.device.platform != "browser" ? "NTA" : "PWA";
 
 		// native app
@@ -72,17 +74,13 @@ export class ConfigurationService {
 			}
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration);
-		}
+		onCompleted != undefined && onCompleted(AppData.Configuration);
 	}
 
 	/** Initializes the configuration settings of the app */
-	async initializeAsync(onNext?: (d?: any) => void, onError?: (e: any) => void, noInitializeSession?: boolean) {
+	async initializeAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void, noInitializeSession?: boolean) {
 		// prepare environment
-		if (AppData.Configuration.app.mode == "") {
-			this.prepare();
-		}
+		AppData.Configuration.app.mode == "" && this.prepare();
 
 		// load saved session
 		if (AppData.Configuration.session.jwt == null || AppData.Configuration.session.keys == null) {
@@ -93,13 +91,13 @@ export class ConfigurationService {
 		if (AppUtility.isFalse(noInitializeSession)) {
 			await this.initializeSessionAsync(onNext, onError);
 		}
-		else if (onNext != undefined) {
-			onNext();
+		else {
+			onNext != undefined && onNext();
 		}
 	}
 
 	/** Initializes the session with REST API */
-	async initializeSessionAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async initializeSessionAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let response = await AppAPI.GetAsync("users/session");
 			let data = response.json();
@@ -110,32 +108,23 @@ export class ConfigurationService {
 						? AppData.Configuration.session.account
 						: this.getAccount(true);
 					AppEvents.broadcast(isAuthenticated ? "SessionIsRegistered" : "SessionIsInitialized", AppData.Configuration.session);
-
-					if (onNext != undefined) {
-						onNext(data);
-					}
+					onNext != undefined && onNext(data);
 				});
 			}
 			else {
 				console.error("[Configuration]: Error occurred while initializing the session");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-				if (onError != undefined) {
-					onError(data);
-				}
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
 			console.error("[Configuration]: Error occurred while initializing the session", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			onError != undefined && onError(e);
 		}
 	}
 
 	/** Registers the initialized session (anonymous) with REST API */
-	async registerSessionAsync(onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async registerSessionAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let response = await AppAPI.GetAsync("users/session?register=" + AppData.Configuration.session.id);
 			let data = response.json();
@@ -144,26 +133,17 @@ export class ConfigurationService {
 				await this.saveSessionAsync(() => {
 					AppEvents.broadcast("SessionIsRegistered", AppData.Configuration.session);
 				});
-
-				if (onNext != undefined) {
-					onNext(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
 				console.error("[Configuration]: Error occurred while registering the session");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-				if (onError != undefined) {
-					onError(data);
-				}
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
 			console.error("[Configuration]: Error occurred while registering the session", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			onError != undefined && onError(e);
 		}
 	}
 
@@ -244,20 +224,80 @@ export class ConfigurationService {
 	getAccount(getDefault?: boolean) {
 		return AppUtility.isTrue(getDefault) || AppData.Configuration.session.account == null
 			? {
-				id: null,
-				status: null,
-				roles: null,
-				privileges: null,
-				role: "Anonymous",
-				profile: null,
-				facebook: {
 					id: null,
-					name: null,
-					pictureUrl: null,
-					profileUrl: null
+					status: null,
+					roles: null,
+					privileges: null,
+					profile: null,
+					role: "Anonymous",
+					facebook: {
+						id: null,
+						name: null,
+						pictureUrl: null,
+						profileUrl: null
+					}
 				}
-			}
 			: AppData.Configuration.session.account;
+	}
+
+	/**
+	 * Updates information of the account
+	 * @param data 
+	 * @param onCompleted 
+	 */
+	updateAccount(data: any, onCompleted?: () => void) {
+		if (AppData.Configuration.session.account == null || AppData.Configuration.session.account.id != data.ID) {
+			return;
+		}
+		AppData.Configuration.session.account.status = data.Status as string;
+		AppData.Configuration.session.account.roles = new List<string>(data.Roles)
+			.Select(r => r.trim())
+			.Distinct()
+			.ToArray();
+		AppData.Configuration.session.account.privileges = new List<any>(data.Privileges)
+			.Select(p => AppModels.Privilege.deserialize(p))
+			.ToArray();
+		AppData.Configuration.session.account.role = new List<string>(data.Roles).FirstOrDefault(r => r == "SystemAdministrator") != null
+			? "Administrator"
+			: new List<string>(data.Roles).FirstOrDefault(r => r == "Authenticated") != null
+				? "User"
+				: "Anonymous";
+		onCompleted != undefined && onCompleted();
+	}
+
+	/**
+	 * Call the service to patch information of the account
+	 * @param onNext 
+	 * @param defer 
+	 */
+	patchAccount(onNext?: () => void, defer?: number) {
+		var request = {
+			ServiceName: "users",
+			ObjectName: "account",
+			Verb: "GET",
+			Query: {
+				"x-status": ""
+			},
+			Extra: {
+				"x-status": ""
+			}
+		};
+		AppRTU.send(request,
+			() => {
+				AppUtility.setTimeout(onNext, defer);
+			},
+			(observable) => {
+				observable.map(response => response.json()).subscribe(
+					(data: any) => {
+						this.updateAccount(data.Data);
+						AppUtility.setTimeout(onNext, defer);
+					},
+					(error: any) => {
+						console.error("[Configuration]: Error occurred while patching an account", error);
+					}
+				);
+			}
+		);
 	}
 
 	/** Gets the state that determines the app is ready to go */

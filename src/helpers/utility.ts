@@ -93,12 +93,12 @@ export namespace AppUtility {
 
 	/** Gets the state that determines the app is running on Apple iOS */
 	export function isAppleOS() {
-		return AppData.Configuration.app.platform == "iOS";
+		return AppData.Configuration.app.platform.indexOf("iOS") > -1;
 	}
 
 	/** Gets the state that determines the app is running on Windows Phone */
 	export function isWindowsPhoneOS() {
-		return AppData.Configuration.app.platform == "Windows Phone";
+		return AppData.Configuration.app.platform.indexOf("Windows Phone") > -1;
 	}
 
 	/** Gets the state that determines the app is running in debug mode */
@@ -195,6 +195,17 @@ export namespace AppUtility {
 		return -1;
 	}
 
+	/**
+	 * Sets time-out to run a function
+	 * @param func The function to run
+	 * @param defer The defer times (in miliseconds)
+	 */
+	export function setTimeout(func: () => void, defer?: number) {
+		func != undefined && window.setTimeout(() => {
+			func();
+		}, defer || 0);
+	}
+
 	/** Gets the time-stamp */
 	export function getTimestamp() {
 		return Math.round(+new Date() / 1000);
@@ -234,14 +245,14 @@ export namespace AppUtility {
 			? cover
 			: isNotEmpty(noCover)
 				? noCover
-				: AppData.Configuration.api + "media-files/no/cover/image.png";
+				: AppData.Configuration.app.uris.files + "books/media-files/no/cover/image.png";
 	}
 
 	/** Gets the avatar image (using services of Gravatar.com) */
 	export function getGravatarImage(email?: string, noAvatar?: string) {
 		noAvatar = isNotEmpty(noAvatar)
 			? noAvatar
-			: AppData.Configuration.api + "avatar/" + AppData.Configuration.app.host + "-no-avatar.png";
+			: AppData.Configuration.app.uris.files + "avatars/" + AppData.Configuration.app.host + "-no-avatar.png";
 		return isNotEmpty(email)
 			? "https://secure.gravatar.com/avatar/" + AppCrypto.md5(email.toLowerCase().trim()) + "?s=300&d=" + encodeURIComponent(noAvatar)
 			: noAvatar;

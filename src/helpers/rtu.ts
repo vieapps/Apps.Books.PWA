@@ -1,4 +1,6 @@
-import * as Rx from "rxjs/Rx";
+import { Subject } from "rxjs/Subject";
+import { Observable } from "rxjs/Observable";
+import { Response } from "@angular/http";
 
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";
@@ -10,11 +12,10 @@ export namespace AppRTU {
 	var status: string = null;
 	var uri: string = null;
 	var instance: any = null;
-	var sender: any = null;
 	var handlers: any = {};
 
-	var subject = new Rx.Subject<{ type: string, message: any }>();
-	var observable = Rx.Observable.from(subject);
+	var subject = new Subject<{ type: string, message: any }>();
+	var observable = Observable.from(subject);
 	observable.subscribe(
 		({ type, message }) => {
 			if (handlers[type]) {
@@ -63,28 +64,28 @@ export namespace AppRTU {
 		// check
 		if (typeof WebSocket === undefined) {
 			console.warn("[RTU]: Your browser is outdated, its requires a modern browser that supports WebSocket (like Chrome, Safari, Firefox, Microsoft Edge/IE 10/11, ...)");
-			onCompleted != undefined && window.setTimeout(() => {
+			onCompleted != undefined && AppUtility.setTimeout(() => {
 				onCompleted(instance);
 			}, status == null || status == "ready" ? 13 : 567);
 			return;
 		}
 		else if (instance != null) {
-			onCompleted != undefined && window.setTimeout(() => {
+			onCompleted != undefined && AppUtility.setTimeout(() => {
 				onCompleted(instance);
 			}, status == null || status == "ready" ? 13 : 567);
 			return;
 		}
 
 		// initialize
-		status = "initializing";
-		uri = AppData.Configuration.api.replace("http://", "ws://").replace("https://", "wss://")
+		uri = AppData.Configuration.app.uris.apis.replace("http://", "ws://").replace("https://", "wss://")
 			+ "rtu/" + AppCrypto.urlEncode(Math.random() + "").toLowerCase()
 			+ "?x-request=" + AppUtility.getBase64UrlParam(AppAPI.getAuthHeaders())
 			+ (AppUtility.isTrue(isRestart) ? "&x-restart=" : "");
 
-		// receiver
+		status = "initializing";
 		instance = new WebSocket(uri);
 
+		// events
 		instance.onopen = (event) => {
 			status = "ready";
 			AppUtility.isDebug() && console.info("[RTU]: Opened...");
@@ -113,7 +114,7 @@ export namespace AppRTU {
 		};
 		
 		// callback when done
-		onCompleted != undefined && window.setTimeout(() => {
+		onCompleted != undefined && AppUtility.setTimeout(() => {
 			onCompleted(instance);
 		}, status == "ready" ? 13 : 567);
 	}
@@ -122,13 +123,13 @@ export namespace AppRTU {
 	export function restart(reason?: string, defer?: number) {
 		console.warn("[RTU]: " + (reason || "Re-start because the WebSocket connection is broken"));
 		window.setTimeout(() => {
+			status = "restarting";
+			console.info("[RTU]: Re-starting...");
+
 			if (instance != null) {
 				instance.close();
 				instance = null;
 			}
-
-			status = "restarting";
-			console.info("[RTU]: Re-starting...");
 
 			start(() => {
 				console.info("[RTU]: The updater is re-started successful...", AppUtility.isDebug() ? instance : "");
@@ -137,7 +138,7 @@ export namespace AppRTU {
 	}
 
 	/** Stops */
-	export function stop(onCompleted?: (data: any) => void) {
+	export function stop(onCompleted?: (data?: any) => void) {
 		status = "closed";
 		uri = null;
 
@@ -154,47 +155,68 @@ export namespace AppRTU {
 		return instance != null && status == "ready";
 	}
 
-	/** Calls a service to receive update message */
-	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, onNext?: () => void): void {
-		verb = verb || "GET"
-		if (isReady()) {
-			instance.send(JSON.stringify({
-				ServiceName: serviceName,
-				ObjectName: objectName,
-				Verb: verb,
-				Query: query,
-				Header: header,
-				Body: body,
-				Extra: extra
-			}));
-		}
-		else {
-			let path = "";
-			if (AppUtility.isObject(query, true)) {
-				for (let name in query) {
-					path += name + "=" + encodeURIComponent(query[name]);
-				}
-			}
-			path = serviceName + "/" + objectName + (path != "" ? "?" + path : "");
-
-			if (verb == "POST") {
-				AppAPI.Post(path, body, header);
-			}
-			else if (verb == "PUT") {
-				AppAPI.Put(path, body, header);
-			}
-			else if (verb == "DELETE") {
-				AppAPI.Delete(path, header);
-			}
-			else {
-				AppAPI.Get(path, header);
-			}
-		}
-
+	/** Sends the request to tell APIs to push all messages in queue */
+	export function push(onNext?: () => void): void {
+		instance.send(JSON.stringify({
+			ServiceName: "APIGateway",
+			ObjectName: "RTU",
+			Verb: "HEAD"
+		}));
 		onNext != undefined && onNext();
 	}
+
+	/** Sends the request to a service */
+	export function send(request?: any, rtuNext?: () => void, ajaxNext?: (observable?: Observable<Response>) => void): void {
+		if (!AppUtility.isObject(request, true)) {
+			return;
+		}
+		else if (isReady()) {
+			instance.send(JSON.stringify(request));
+			rtuNext != undefined && rtuNext();
+		}
+		else {
+			let path = request.ServiceName + "/" + request.ObjectName;
+			if (AppUtility.isObject(request.Query, true)) {
+				path += "?"
+				for (let name in request.Query) {
+					path += name + "=" + encodeURIComponent(request.Query[name]);
+				}
+			}
+			
+			let observable: Observable<Response> = null;
+			if (request.Verb == "POST") {
+				observable = AppAPI.Post(path, request.Body, request.Header);
+			}
+			else if (request.Verb == "PUT") {
+				observable = AppAPI.Put(path, request.Body, request.Header);
+			}
+			else if (request.Verb == "DELETE") {
+				observable = AppAPI.Delete(path, request.Header);
+			}
+			else {
+				observable = AppAPI.Get(path, request.Header);
+			}
+
+			ajaxNext != undefined && ajaxNext(observable);
+		}
+	}
 		
-	/** Parses information from the message type */
+	/** Calls a service */
+	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, rtuNext?: () => void, ajaxNext?: (observable?: Observable<Response>) => void): void {
+		verb = verb || "GET"
+		var request = {
+			ServiceName: serviceName,
+			ObjectName: objectName,
+			Verb: verb,
+			Query: query,
+			Header: header,
+			Body: body,
+			Extra: extra
+		};
+		send(request, rtuNext, ajaxNext);
+	}
+		
+	/** Parses the type of the message */
 	export function parse(type: string): { ServiceName: string, ObjectName: string } {
 		var pos = AppUtility.indexOf(type, "#");
 		return {
@@ -207,11 +229,10 @@ export namespace AppRTU {
 	function process(message: any) {
 		var info = parse(message.Type);
 		if (info.ServiceName == "Knock") {
-			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock !!! => Yes, I'm right here (" + (new Date()).toJSON() + ")");
+			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
 		}
-		else if (info.ServiceName == "Ping") {
-			instance.send("Pong:" + message.Data);
-			AppUtility.isDebug() && console.log("[RTU]: Pong (" + message.Data + ")");
+		else if (info.ServiceName == "Flag") {
+			AppUtility.isDebug() && console.log("[RTU]: Got a flag (" + message.Data + ")");
 		}
 		else if (AppUtility.isNotEmpty(message.ExcludedDeviceID) && message.ExcludedDeviceID == AppData.Configuration.session.device) {
 			AppUtility.isDebug() && console.info("[RTU]: The device is excluded", message);

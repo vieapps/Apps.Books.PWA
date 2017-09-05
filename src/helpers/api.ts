@@ -44,7 +44,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Get(path: string, headers?: any) {
-		return getHttp().get(AppData.Configuration.api + path, { headers: getHeaders(headers) });
+		return getHttp().get(AppData.Configuration.app.uris.apis + path, { headers: getHeaders(headers) });
 	}
 
 	/**
@@ -63,7 +63,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Post(path: string, body: any, headers?: any) {
-		return getHttp().post(AppData.Configuration.api + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
+		return getHttp().post(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
 	}
 
 	/**
@@ -83,7 +83,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Put(path: string, body: any, headers?: any) {
-		return getHttp().put(AppData.Configuration.api + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
+		return getHttp().put(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
 	}
 
 	/**
@@ -102,7 +102,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Delete(path: string, headers?: any) {
-		return getHttp().delete(AppData.Configuration.api + path, { headers: getHeaders(headers) });
+		return getHttp().delete(AppData.Configuration.app.uris.apis + path, { headers: getHeaders(headers) });
 	}
 
 	/**

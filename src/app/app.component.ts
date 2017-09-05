@@ -394,9 +394,9 @@ export class App {
 							this.info.attemps++;
 							if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
 								console.warn("<Startup>: Cannot register, the session is need to be re-initialized (anonymous)");
-								window.setTimeout(async () => {
+								AppUtility.setTimeout(async () => {
 									await this.configSvc.deleteSessionAsync(() => {
-										window.setTimeout(() => {
+										AppUtility.setTimeout(() => {
 											this.initialize(onCompleted, noInitializeSession);
 										}, 234);
 									});
@@ -414,9 +414,9 @@ export class App {
 				this.info.attemps++;
 				if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
 					console.warn("<Startup>: Cannot initialize, the session is need to be re-initialized (anonymous)");
-					window.setTimeout(async () => {
+					AppUtility.setTimeout(async () => {
 						await this.configSvc.deleteSessionAsync(() => {
-							window.setTimeout(() => {
+							AppUtility.setTimeout(() => {
 								this.initialize(onCompleted, noInitializeSession);
 							}, 234);
 						});
@@ -473,10 +473,10 @@ export class App {
 
 		// start the real-time updater
 		AppRTU.start(() => {
-			// get account profile
+			// get profile
 			if (this.configSvc.isAuthenticated()) {
-				this.authSvc.patchAccount(() => {
-					this.authSvc.getProfileAsync();
+				this.configSvc.patchAccount(() => {
+					this.authSvc.getProfile();
 				}, 234);
 			}
 

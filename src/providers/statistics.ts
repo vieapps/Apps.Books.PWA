@@ -225,23 +225,31 @@ export class StatisticsService {
 
 	// fetch all statistics
 	fetchStatistics() {
-		window.setTimeout(async () => {
-			// use RTU
-			if (AppRTU.isReady()) {
-				AppRTU.call("books", "statistic", "GET", {
+		// fetch statistics
+		if (AppRTU.isReady()) {
+			AppRTU.send({
+				ServiceName: "books",
+				ObjectName: "statistic",
+				Verb: "GET",
+				Query: {
 					"object-identity": "all"
-				});
-			}
-
-			// use AJAX
-			else {
+				}
+			});
+		}
+		else {
+			AppUtility.setTimeout(async () => {
 				await Promise.all([
 					this.fetchCategoriesAsync(),
 					this.fetchAuthorsAsync(),
 					this.fetchStatusAsync()
 				]);
-			}
-		}, AppRTU.isReady() ? 456 : 123);
+			});
+		}
+
+		// to make sure the RTU got all messages
+		AppUtility.setTimeout(() => {
+			AppRTU.isReady() && AppRTU.push();
+		}, 1234);
 	}
 
 	// process RTU message
