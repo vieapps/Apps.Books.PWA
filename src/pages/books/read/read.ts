@@ -119,7 +119,7 @@ export class ReadBookPage {
 		}
 		else if (this.info.book.TotalChapters > 1 && this.info.chapter < this.info.book.TotalChapters) {
 			this.hideLoading();
-			this.booksSvc.pregetChapterAsync(this.info.book.ID, this.info.chapter + 1);
+			this.booksSvc.fetchChapterAsync(this.info.book.ID, this.info.chapter + 1);
 			AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
 		}
 		else {
@@ -148,7 +148,7 @@ export class ReadBookPage {
 						await this.scrollAsync(() => {
 							this.hideLoading();
 							AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
-							this.booksSvc.pregetChapterAsync(this.info.book.ID, this.info.chapter + 1);
+							this.booksSvc.fetchChapterAsync(this.info.book.ID, this.info.chapter + 1);
 						});
 					});
 				});
@@ -159,7 +159,7 @@ export class ReadBookPage {
 					await this.scrollAsync(() => {
 						this.hideLoading();
 						AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
-						this.booksSvc.pregetChapterAsync(this.info.book.ID, this.info.chapter + 1);
+						this.booksSvc.fetchChapterAsync(this.info.book.ID, this.info.chapter + 1);
 					});
 				});
 			}

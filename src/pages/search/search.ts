@@ -110,7 +110,7 @@ export class SearchPage {
 		}
 
 		// build well-formed request
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, (r) => {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
 				r.FilterBy.And.Category.Equals = undefined;
 			}
@@ -128,11 +128,11 @@ export class SearchPage {
 				}
 			}
 		);
-}
+	}
 
 	doBuild(results?: any) {
 		// get pagination
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, (r) => {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
 				r.FilterBy.And.Category.Equals = undefined;
 			}

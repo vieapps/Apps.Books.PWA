@@ -90,7 +90,7 @@ export class SurfBooksPage {
 	}
 
 	ionViewDidEnter() {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, (r) => {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
 				r.FilterBy.And.Category.Equals = undefined;
 			}
@@ -116,7 +116,7 @@ export class SurfBooksPage {
 
 	// search & build the listing of books
 	doSearch(onCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, (r) => {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
 				r.FilterBy.And.Category.Equals = undefined;
 			}
@@ -366,7 +366,8 @@ export class SurfBooksPage {
 			enableBackdropDismiss: true,
 			buttons: [
 			{
-				text: "Huỷ"
+				text: "Huỷ",
+				role: "cancel"
 			},
 			{
 				text: "Đặt",

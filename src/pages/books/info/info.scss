@@ -28,11 +28,12 @@ page-book-info {
 	ion-content > div.scroll-content  > div > figure {
 		text-align: center;
 		margin: 0;
-		float: left;
-		width: 286px;
 		padding-left: 16px;
+		width: 100%;
+		clear: both;
 	}
 	ion-content > div.scroll-content > div > figure > img {
+		width: 286px;
 		border-radius: 5px;
 	}
 	ion-content > div.scroll-content > div > ion-item {
@@ -72,7 +73,10 @@ page-book-info {
 	}
 	@media only screen and (min-width: 768px) {
 		ion-content > div.scroll-content  > div > figure > img {
-			
+			ion-content > div.scroll-content  > div > figure {
+				float: left;
+				clear: none;
+			}
 		}
 	}
 }

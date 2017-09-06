@@ -1,5 +1,5 @@
-import * as Rx from "rxjs/Rx";
 import { Response } from "@angular/http";
+import * as Rx from "rxjs/Rx";
 
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";
@@ -103,7 +103,7 @@ export namespace AppRTU {
 
 		instance.onmessage = (event) => {
 			var message = JSON.parse(event.data);
-			if (message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
+			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
 				console.info("[RTU]: Stop when got a security issue");
 				stop();
 			}
@@ -154,7 +154,7 @@ export namespace AppRTU {
 		return instance != null && status == "ready";
 	}
 
-	/** Sends the request to tell APIs to push all messages in queue */
+	/** Sends the request to tell APIs pushs all messages in the queue */
 	export function push(onNext?: () => void): void {
 		instance.send(JSON.stringify({
 			ServiceName: "APIGateway",
@@ -203,7 +203,7 @@ export namespace AppRTU {
 	/** Calls a service */
 	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, rtuNext?: () => void, ajaxNext?: (observable?: Rx.Observable<Response>) => void): void {
 		verb = verb || "GET"
-		var request = {
+		send({
 			ServiceName: serviceName,
 			ObjectName: objectName,
 			Verb: verb,
@@ -211,8 +211,7 @@ export namespace AppRTU {
 			Header: header,
 			Body: body,
 			Extra: extra
-		};
-		send(request, rtuNext, ajaxNext);
+		}, rtuNext, ajaxNext);
 	}
 		
 	/** Parses the type of the message */

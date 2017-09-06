@@ -38,7 +38,7 @@ export class BooksService {
 				if (data.Status == "OK") {
 					new List<any>(data.Data.Objects).ForEach(b => AppModels.Book.update(b));
 					!AppUtility.isNotEmpty(request.FilterBy.Query) && AppData.Paginations.set(data.Data, "B");
-					onNext != undefined && onNext(data);
+					onNext(data);
 				}
 				else {
 					console.error("[Books]: Error occurred while searching books");
@@ -123,7 +123,8 @@ export class BooksService {
 		}
 
 		try {
-			let path = "books/book/" + id + "?chapter=" + chapter;
+			let path = "books/book/" + id
+				+ "?chapter=" + chapter;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
 			if (data.Status == "OK") {
@@ -143,7 +144,7 @@ export class BooksService {
 		}
 	}
 
-	async pregetChapterAsync(id: string, chapter: number, onCompleted?: () => void) {
+	async fetchChapterAsync(id: string, chapter: number, onCompleted?: () => void) {
 		var book = AppData.Books.getValue(id);
 		while (chapter < book.TotalChapters && book.Chapters[chapter - 1] != "")
 			chapter += 1;
@@ -289,9 +290,7 @@ export class BooksService {
 			console.error("[Books]: Error occurred while loading the bookmarks", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.reading.bookmarks);
-		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.bookmarks);
 	}
 
 	async saveBookmarksAsync(onCompleted?: (data?: any) => void) {
@@ -302,9 +301,7 @@ export class BooksService {
 			console.error("[Books]: Error occurred while saving the bookmarks into storage", e);
 		}
 
-		if (onCompleted != undefined) {
-			onCompleted(AppData.Configuration.reading.bookmarks);
-		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.bookmarks);
 	}
 
 	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: (data?: any) => void) {

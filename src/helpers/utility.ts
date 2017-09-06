@@ -153,10 +153,8 @@ export namespace AppUtility {
 			return value;
 		});
 		var obj = JSON.parse(json);
-		if (beRemoved != undefined && beRemoved.length > 0) {
-			for (let attribute of beRemoved) {
-				delete obj[attribute];
-			}
+		if (beRemoved != undefined) {
+			new List(beRemoved).ForEach(a => delete obj[a]);
 		}
 		return obj;
 	}
@@ -218,12 +216,7 @@ export namespace AppUtility {
 			let array = indexOf(obj as string, seperator != undefined ? seperator : ",") > 0
 				? (obj as string).split(seperator != undefined ? seperator : ",")
 				: [obj as string];
-
-			return new List(array)
-				.Select((i) => {
-					return isNotEmpty(i) ? i.trim() : ""
-				})
-				.ToArray();
+			return new List(array).Select(i => isNotEmpty(i) ? i.trim() : "").ToArray();
 		}
 		else if (isObject(obj, true)) {
 			let array = new Array<any>();
@@ -258,25 +251,23 @@ export namespace AppUtility {
 
 	/** Gets the avatar image */
 	export function getAvatarImage(info?: any, noAvatar?: string) {
-		var avatar: string = isObject(info, true) && isNotEmpty(info.Avatar)
+		let avatar: string = isObject(info, true) && isNotEmpty(info.Avatar)
 			? info.Avatar
 			: isObject(info, true) && isNotEmpty(info.Gravatar)
 				? info.Gravatar
 				: "";
-		if (avatar == "" && isObject(info, true)) {
-			avatar = getGravatarImage(isObject(info.Contact, true) ? info.Contact.Email : info.Email, noAvatar);
-		}
-		return avatar;
+		return avatar == "" && isObject(info, true)
+			? getGravatarImage(isObject(info.Contact, true) ? info.Contact.Email : info.Email, noAvatar)
+			: avatar;
 	}
 
 	/** Gets the query from JSON */
 	export function getQuery(json: any): string {
 		try {
-			var query = "";
+			let query = "";
 			if (isObject(json, true)) {
-				for(var name in json) {
-					query += (query != "" ? "&" : "")
-						+ name + "=" + encodeURIComponent(json[name]);
+				for(let name in json) {
+					query += (query != "" ? "&" : "") + name + "=" + encodeURIComponent(json[name]);
 				}
 			}
 			return query;
@@ -346,11 +337,9 @@ export namespace AppUtility {
 
 		var list = new List(objects);
 		if (excluded != undefined) {
-			list = list.Where((o) => {
-				return excluded != o.ID
-			});
+			list = list.Where(o => excluded != o.ID);
 		}
-		list = list.Select((o) => {
+		list = list.Select(o => {
 			let i = clone(o);
 			if (isFalse(dontAddRandomScore)) {
 				i[nameOfRandomScore] = Math.random();
@@ -358,9 +347,7 @@ export namespace AppUtility {
 			return i;
 		});
 		if (isFalse(dontAddRandomScore)) {
-			list = list.OrderByDescending((i) => {
-				return i[nameOfRandomScore]
-			});
+			list = list.OrderByDescending(i => i[nameOfRandomScore]);
 		}
 		if (take != undefined) {
 			list = list.Take(take);
@@ -377,21 +364,20 @@ export namespace AppUtility {
 			: AppData.Configuration.meta.country;
 		if (!counties[country]) {
 			let theCounties: Array<any> = [];
-			new List<any>(
-				AppData.Configuration.meta.provinces[country]
-					? AppData.Configuration.meta.provinces[country].provinces
-					: []
-				).ForEach((p) => {
-					new List<any>(p.counties).ForEach((c) => {
-						theCounties.push({
-							county: c.title,
-							province: p.title,
-							country: country,
-							title: c.title + ", " + p.title + ", " + country,
-							titleANSI: toANSI(c.title + ", " + p.title + ", " + country)
-						});
+			new List<any>(AppData.Configuration.meta.provinces[country]
+				? AppData.Configuration.meta.provinces[country].provinces
+				: []
+			).ForEach(p => {
+				new List<any>(p.counties).ForEach(c => {
+					theCounties.push({
+						county: c.title,
+						province: p.title,
+						country: country,
+						title: c.title + ", " + p.title + ", " + country,
+						titleANSI: toANSI(c.title + ", " + p.title + ", " + country)
 					});
 				});
+			});
 			counties[country] = theCounties;
 		}
 		return counties[country] as Array<any>;
@@ -416,8 +402,7 @@ export namespace AppUtility {
 					country: ""
 				};
 
-		info.current =
-			address.county == "" && address.province == "" && address.country == ""
+		info.current = address.county == "" && address.province == "" && address.country == ""
 			? undefined
 			: new List(info.addresses).FirstOrDefault(a => a.county == address.county && a.province == address.province && a.country == address.country);
 

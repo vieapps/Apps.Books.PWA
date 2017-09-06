@@ -4,7 +4,6 @@ import { BrowserXhr, ConnectionBackend, XHRBackend, XSRFStrategy, CookieXSRFStra
 import { BaseRequestOptions, RequestOptions, BaseResponseOptions, ResponseOptions } from "@angular/http";
 import { CompleterData, CompleterItem } from "ng2-completer";
 import { List } from "linqts";
-
 import * as Rx from "rxjs/Rx";
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/map";
@@ -117,9 +116,9 @@ export namespace AppAPI {
 
 	/** Gets the headers for making requests to APIs */
 	export function getHeaders(additional?: any) {
-		var headers = new Headers();
+		let headers = new Headers();
 
-		var authHeaders = getAuthHeaders();
+		let authHeaders = getAuthHeaders();
 		for (let name in authHeaders) {
 			headers.append(name, authHeaders[name]);
 		}
@@ -132,7 +131,7 @@ export namespace AppAPI {
 				headers.append(additional.name as string, additional.value as string);
 			}
 			else if (AppUtility.isArray(additional)) {
-				new List<any>(additional).ForEach((h) => {
+				new List<any>(additional).ForEach(h => {
 					if (AppUtility.isObject(h, true) && AppUtility.isNotEmpty(h.name) && AppUtility.isNotEmpty(h.value)) {
 						headers.append(h.name as string, h.value as string);
 					}

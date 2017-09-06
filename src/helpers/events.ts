@@ -21,7 +21,7 @@ export namespace AppEvents {
 	/**
 	  * Registers a handler for processing data when a specified event has been raised/broadcasted
 	  * @param event The string that presents the name of an event
-	  * @param handler The function to handler data when an event is raised
+	  * @param handler The function to handler data when an event was raised
 	  * @param identity The string that presents identity of the handler for unregistering later
 	*/
 	export function on(event: string, handler: (info: any) => void, identity?: string) {

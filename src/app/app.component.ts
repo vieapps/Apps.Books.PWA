@@ -15,9 +15,9 @@ import { AppData } from "../models/data";
 
 import { ConfigurationService } from "../providers/configuration";
 import { AuthenticationService } from "../providers/authentication";
+import { BooksService } from "../providers/books";
 import { StatisticsService } from "../providers/statistics";
 import { ResourcesService } from "../providers/resources";
-import { BooksService } from "../providers/books";
 
 import { HomePage } from "../pages/home/home";
 
@@ -201,12 +201,9 @@ export class App {
 		// events to show chapters of a book
 		AppEvents.on("OpenBook", (info: any) => {
 			if (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true)) {
-				var showChapters = this.info.book.id != info.args.ID;
 				this.info.book.id = info.args.ID;
 				this.info.book.chapter = info.args.Chapter;
-				if (showChapters) {
-					this.showChapters();
-				}
+				this.info.book.id != info.args.ID && this.showChapters();
 			}
 		});
 	}
@@ -241,9 +238,15 @@ export class App {
 	}
 
 	navigateToPreviousPage() {
-		var name = AppUtility.isNotEmpty(this.info.nav.previous.name) ? this.info.nav.previous.name : "HomePage";
-		var component = AppUtility.isNotNull(this.info.nav.previous.component) ? this.info.nav.previous.component : this.info.nav.start;
-		var params = AppUtility.isNotNull(this.info.nav.previous.params) ? this.info.nav.previous.params : undefined;
+		var name = AppUtility.isNotEmpty(this.info.nav.previous.name)
+			? this.info.nav.previous.name
+			: "HomePage";
+		var component = AppUtility.isNotNull(this.info.nav.previous.component)
+			? this.info.nav.previous.component
+			: this.info.nav.start;
+		var params = AppUtility.isNotNull(this.info.nav.previous.params)
+			? this.info.nav.previous.params
+			: undefined;
 
 		this.updatePreviousNav(undefined, undefined);
 		this.updateActiveNav(name, component, params);
@@ -266,61 +269,10 @@ export class App {
 		};
 	}
 
-	// switch realm
-	setRealm() {
-		/*
-		var info = this.platform.getQueryParam("realm");
-		if (AppUtility.isNotEmpty(info)) {
-			try {
-				var data = AppUtility.getQueryParamJson(info);
-				if (AppUtility.isNotEmpty(data.realm) && AppUtility.isNotEmpty(data.token) && AppUtility.isNotEmpty(data.key) && AppData.Configuration.app.realm.current != data.realm) {
-					console.info("<Startup>: Switching the realm...", !AppUtility.isDebug() ? "" : data);
-					AppData.Configuration.app.realm.current = data.realm;
-					AppData.Configuration.session.jwt = AppCrypto.jwtDecode(data.token, data.key);
-					AppData.Configuration.session.account = this.configSvc.getAccount(true);
-					AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
-					if (!AppData.Configuration.session.keys) {
-						AppData.Configuration.session.keys = {};
-					}
-					AppData.Configuration.session.keys.jwt = data.key;
-					this.configSvc.saveSessionAsync(() => {
-						this.info.realm.current = AppData.Configuration.app.realm.current;
-						console.info("<Startup>: The transfering token has been updated, now initialize the session...", !AppUtility.isDebug() ? "" : AppData.Configuration.session);
-						this.initialize();
-					});
-				}
-			}
-			catch (e) {
-				console.error("<Startup>: Error occurred while switching the realm", e);
-				this.initialize();
-			}
-		}
-		else {
-			this.initialize();
-		}
-		*/
-	}
-
-	switchRealm(realm: string) {
-		/*
-		if (AppData.Configuration.app.realm.mode == "Direct") {
-			AppData.Configuration.app.realm.current = realm;
-			this.info.realm.current = AppData.Configuration.app.realm.current;
-			this.info.category.parent = { index: -1, title: "" };
-			this.showCategories();
-			this.navigateToHomePage();
-		}
-		else {
-
-		}
-		*/
-	}
-
-	// activate new account/password/email
+	// activate new account
 	activate() {
 		var mode = this.platform.getQueryParam("mode");
 		var code = this.platform.getQueryParam("code");
-		this.platform.setQueryParams("#");
 
 		if (AppUtility.isNotEmpty(mode) && AppUtility.isNotEmpty(code)) {
 			this.authSvc.activateAsync(mode, code,
@@ -349,12 +301,10 @@ export class App {
 		var message = data.Status == "OK"
 			? data.Mode == "account"
 				? "Tài khoản đã được kích hoạt thành công"
-				: data.Mode == "email"
-					? "Email đăng nhập mới đã được kích hoạt thành công"
-					: "Password đăng nhập mới đã được kích hoạt thành công"
+				: "Mật khẩu đã được kích hoạt thành công"
 			: data.Error.Message;
 
-		var alert = this.alertCtrl.create({
+		this.alertCtrl.create({
 			title: title,
 			message: message,
 			enableBackdropDismiss: false,
@@ -366,8 +316,7 @@ export class App {
 					}
 				}
 			}]
-		});
-		alert.present();
+		}).present();
 	}
 
 	// initialize
@@ -506,7 +455,7 @@ export class App {
 			else if (AppUtility.isWebApp() && this.platform.getQueryParam("book") != undefined) {
 				try {
 					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("book")));
-					console.info("<Startup>: Open the requested book", params);
+					AppUtility.isDebug() && console.info("<Startup>: Open the requested book", params);
 					this.navigate("ReadBookPage", ReadBookPage, params, true);
 				}
 				catch (e) { }

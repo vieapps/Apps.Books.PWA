@@ -5,7 +5,7 @@
     <author email="viebooks.net@gmail.com" href="https://vieapps.net/">VIEApps.net Team</author>
     <content src="index.html" />
     <access origin="*" />
-    <allow-navigation href="http://books.vieapps.net/*" />
+    <allow-navigation href="https://books.vieapps.net/*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />

@@ -50,7 +50,7 @@ export class AccountsService {
 				else if (data.Status == "OK") {
 					AppData.Paginations.set(data.Data, "A");
 					new List<any>(data.Data.Objects).ForEach(a => AppModels.Account.update(a));
-					onNext != undefined && onNext(data);
+					onNext(data);
 				}
 				else {
 					console.error("[Accounts]: Error occurred while searching accounts");

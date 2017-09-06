@@ -56,13 +56,13 @@ export namespace AppCrypto {
 	/** Encodes the JSON Web Token */
 	export function jwtEncode(jwt: any, key: string) {
 		jwt.iat = Math.round(+new Date() / 1000);
-		var encoded = urlEncode(JSON.stringify({ typ: "JWT", alg: "HS256" })) + "." + urlEncode(JSON.stringify(jwt));
+		let encoded = urlEncode(JSON.stringify({ typ: "JWT", alg: "HS256" })) + "." + urlEncode(JSON.stringify(jwt));
 		return encoded + "." + urlSign(encoded, key);
 	}
 
 	/** Decodes the JSON Web Token */
 	export function jwtDecode(jwt: string, key: string) {
-		var elements = jwt.split(".");
+		let elements = jwt.split(".");
 		return urlSign(elements[0] + "." + elements[1], key) == elements[2]
 			? JSON.parse(urlDecode(elements[1]))
 			: null;

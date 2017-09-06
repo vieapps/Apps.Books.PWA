@@ -33,7 +33,7 @@ export class AuthenticationService {
 	isSystemAdministrator(account?: any) {
 		account = account || this.configSvc.getAccount();
 		return account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-			&& (new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator")) != null;
+			&& (new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator")) != undefined;
 	}
 
 	/** Checks to see the account is administrator or not */
@@ -41,7 +41,7 @@ export class AuthenticationService {
 		account = account || this.configSvc.getAccount();
 		return this.isSystemAdministrator(account)
 			|| (account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-			&& (new List<string>(account.roles).FirstOrDefault(r => r == "Administrator")) != null);
+			&& (new List<string>(account.roles).FirstOrDefault(r => r == "Administrator")) != undefined);
 	}
 
 	/** Gets the working role of an account */
@@ -50,7 +50,7 @@ export class AuthenticationService {
 		return this.isSystemAdministrator(account)
 			? "Administrator"
 			: account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-				&& new List<string>(account.roles).FirstOrDefault(r => r == "Authenticated") != null
+				&& new List<string>(account.roles).FirstOrDefault(r => r == "Authenticated") != undefined
 				? "User"
 				: "Anonymous";
 	}
@@ -590,7 +590,7 @@ export class AuthenticationService {
 				await this.configSvc.updateSessionAsync(data.Data, () => {
 					AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
 					this.configSvc.saveSessionAsync();
-					console.info("Activated...", !AppUtility.isDebug() ? "" : AppData.Configuration.session);
+					console.info("Activated...", AppUtility.isDebug() ? AppData.Configuration.session : "");
 				});
 				onNext != undefined && onNext(data);
 			}

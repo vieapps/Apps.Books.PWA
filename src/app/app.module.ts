@@ -19,10 +19,10 @@ import { App } from "./app.component";
 
 import { ConfigurationService } from "../providers/configuration";
 import { AuthenticationService } from "../providers/authentication";
-import { StatisticsService } from "../providers/statistics";
-import { ResourcesService } from "../providers/resources";
 import { AccountsService } from "../providers/accounts";
 import { BooksService } from "../providers/books";
+import { StatisticsService } from "../providers/statistics";
+import { ResourcesService } from "../providers/resources";
 
 import { HomePage } from "../pages/home/home";
 import { SearchPage } from "../pages/search/search";
