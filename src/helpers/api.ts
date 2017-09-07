@@ -148,7 +148,7 @@ export namespace AppAPI {
 	}
 
 	/** Gets the authenticated headers (JSON) for making requests to APIs */
-	export function getAuthHeaders(addToken = true, addAppInfo = true, addDeviceUUID = true): any {
+	export function getAuthHeaders(addToken = true, addAppInfo = true, addDeviceID = true): any {
 		var headers = {};
 
 		if (addToken
@@ -163,7 +163,7 @@ export namespace AppAPI {
 			headers["x-app-platform"] = AppData.Configuration.app.platform;
 		}
 
-		if (addDeviceUUID && AppUtility.isNotEmpty(AppData.Configuration.session.device)) {
+		if (addDeviceID && AppUtility.isNotEmpty(AppData.Configuration.session.device)) {
 			headers["x-device-id"] = AppData.Configuration.session.device;
 		}
 

@@ -202,11 +202,10 @@ export namespace AppRTU {
 		
 	/** Calls a service */
 	export function call(serviceName: string, objectName: string, verb?: string, query?: any, header?: any, body?: string, extra?: any, rtuNext?: () => void, ajaxNext?: (observable?: Rx.Observable<Response>) => void): void {
-		verb = verb || "GET"
 		send({
 			ServiceName: serviceName,
 			ObjectName: objectName,
-			Verb: verb,
+			Verb: verb || "GET",
 			Query: query,
 			Header: header,
 			Body: body,
