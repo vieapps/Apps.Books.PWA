@@ -38,10 +38,13 @@
 </ion-footer>
 
 <ion-content [class.has-sub-header]="info.filtering" [class.no-footer]="info.filtering">
+	<ion-infinite-scroll threshold="150px" position="top" (ionInfinite)="onInfiniteScroll($event)" [hidden]="info.pageNumber <= info.displayPages">
+		<ion-infinite-scroll-content></ion-infinite-scroll-content>
+	</ion-infinite-scroll>
 	<ion-list class="books">
 		<button ion-item detail-none *ngFor="let b of books; trackBy: trackBy" (click)="openBook(b)">
 			<ion-thumbnail item-left>
-				<img [src]="b.Cover"/>
+				<img [src]="b.Cover" width="65" height="80"/>
 			</ion-thumbnail>
 			<p>
 				<span [hidden]="info.filterBy.And.Author.Equals != ''">
@@ -65,7 +68,7 @@
 			</h2>
 		</button>
 	</ion-list>
-	<ion-infinite-scroll threshold="50px" (ionInfinite)="onInfiniteScroll($event)">
+	<ion-infinite-scroll threshold="100px" position="bottom" (ionInfinite)="onInfiniteScroll($event)">
 		<ion-infinite-scroll-content></ion-infinite-scroll-content>
 	</ion-infinite-scroll>
 </ion-content>

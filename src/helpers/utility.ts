@@ -202,11 +202,6 @@ export namespace AppUtility {
 		}, defer || 0);
 	}
 
-	/** Gets the time-stamp */
-	export function getTimestamp() {
-		return Math.round(+new Date() / 1000);
-	}
-
 	/** Splits the string into the array of strings */
 	export function toArray(obj: any, seperator?: string): Array<string> | Array<any> {
 		if (isArray(obj)) {

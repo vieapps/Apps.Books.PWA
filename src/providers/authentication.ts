@@ -105,12 +105,10 @@ export class AuthenticationService {
 			delete body.ConfirmEmail;
 			delete body.ConfirmPassword;
 
-			body.Timestamp = AppUtility.getTimestamp();
 			body.ReferID = AppData.Configuration.app.refer.id;
 			body.ReferSection = AppData.Configuration.app.refer.section;
 			body.Email = AppCrypto.rsaEncrypt(body.Email);
 			body.Password = AppCrypto.rsaEncrypt(body.Password);
-			body.Session = AppCrypto.aesEncrypt(AppData.Configuration.session.id);
 			body.Captcha = AppCrypto.aesEncrypt(JSON.stringify({ Registered: AppData.Configuration.session.captcha.code, Input: captcha }));
 
 			let path = "users/account"
@@ -140,10 +138,8 @@ export class AuthenticationService {
 	async signInAsync(email: string, password: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let body = {
-				Timestamp: Math.round(+new Date() / 1000),
 				Email: AppCrypto.rsaEncrypt(email),
-				Password: AppCrypto.rsaEncrypt(password),
-				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id)
+				Password: AppCrypto.rsaEncrypt(password)
 			};
 			let response = await AppAPI.PostAsync("users/session", body);
 			let data = response.json();
