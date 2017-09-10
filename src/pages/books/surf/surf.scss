@@ -1,3 +1,16 @@
 page-surf-books {
-
+	ion-content > div.scroll-content > ion-list > button > div > div > ion-label > p {
+		margin: 3px 0 5px;
+	}
+	ion-content > div.scroll-content > ion-list > button > div > div > ion-label > p > span.info > rating {
+		display: none !important;
+	}
+	ion-content > div.scroll-content > ion-list > button > div > div > ion-label > h2 {
+		margin: 12px 0 5px;		
+	}
+	@media only screen and (min-width: 414px) {
+		ion-content > div.scroll-content > ion-list > button > div > div > ion-label > p > span.info > rating {
+			display: inline-block !important;
+		}
+	}
 }

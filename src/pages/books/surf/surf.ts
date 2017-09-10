@@ -50,7 +50,9 @@ export class SurfBooksPage {
 		filtering: false,
 		totalRecords: 0,
 		pageNumber: 0,
-		displayPages: 5,
+		displayPages: 3,
+		offset: 96,
+		mode: "auto",
 		isAppleOS: AppUtility.isAppleOS()
 	};
 	sorts: Array<any> = [];
@@ -61,7 +63,7 @@ export class SurfBooksPage {
 	@ViewChild(Searchbar) searchBarCtrl: Searchbar;
 	@ViewChild(Content) contentCtrl: Content;
 	
-	// page events
+	// when the page has loaded (only once)
 	ionViewDidLoad() {
 		this.sorts = [
 		{
@@ -88,64 +90,53 @@ export class SurfBooksPage {
 			? "Thể loại: " + this.info.filterBy.And.Category.Equals
 			: "Tác giả: " + this.info.filterBy.And.Author.Equals;
 	}
-
+	
+	// when the page has active
 	ionViewDidEnter() {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
-			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
-				r.FilterBy.And.Category.Equals = undefined;
-			}
-			if (!AppUtility.isNotEmpty(r.FilterBy.And.Author.Equals)) {
-				r.FilterBy.And.Author.Equals = undefined;
-			}
-		});
-		this.info.pagination = AppData.Paginations.get(request, "B");
+		// set active page
+		AppEvents.broadcast("UpdateActiveNav", { name: "SurfBooksPage", component: SurfBooksPage, params: this.navParams.data });
 
-		if (this.info.pagination == undefined) {
-			this.doSearch();
-		}
-		else {
-			if (this.info.pageNumber < 1) {
+		// books
+		if (this.books.length < 1) {
+			var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
+				if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
+					r.FilterBy.And.Category.Equals = undefined;
+				}
+				if (!AppUtility.isNotEmpty(r.FilterBy.And.Author.Equals)) {
+					r.FilterBy.And.Author.Equals = undefined;
+				}
+			});
+			this.info.pagination = AppData.Paginations.get(request, "B");
+	
+			if (this.info.pagination == undefined) {
+				this.search();
+			}
+			else {
 				this.info.pageNumber = 1;
 				this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+				this.build();
 			}
-			this.doBuild();
 		}
-
-		AppEvents.broadcast("UpdateActiveNav", { name: "SurfBooksPage", component: SurfBooksPage, params: this.navParams.data });
 	}
 
-	// search & build the listing of books
-	doSearch(onCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
-			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
-				r.FilterBy.And.Category.Equals = undefined;
-			}
-			if (!AppUtility.isNotEmpty(r.FilterBy.And.Author.Equals)) {
-				r.FilterBy.And.Author.Equals = undefined;
-			}
-		});
-		
-		this.booksSvc.fetchAsync(request, (data?: any) => {
-			this.info.pagination = AppData.Paginations.get(request, "B");
-			this.info.pageNumber = this.info.pagination.PageNumber;
-			this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
-			this.doBuild(undefined, onCompleted);
-		});
-	}
-
-	doBuild(results?: Array<AppModels.Book>, onCompleted?: () => void) {
+	// books
+	get(onepage: boolean = true, pageNumber?: number) {
 		// initialize
-		var books = new List(results || AppData.Books.values());
-
+		var books = new List(AppData.Books.values());
+		
 		// filter
 		var query = this.info.filtering && AppUtility.isNotEmpty(this.info.filterBy.Query)
 			? AppUtility.toANSI(this.info.filterBy.Query).trim().toLowerCase()
 			: "";
-		if (query != "" || this.info.filterBy.And.Category.Equals != "" || this.info.filterBy.And.Author.Equals != "") {
-			books = books.Where(b => (query != "" ? AppUtility.indexOf(b.ANSITitle, query) > -1 : true)
-				&& (this.info.filterBy.And.Category.Equals != "" ? AppUtility.indexOf(b.Category, this.info.filterBy.And.Category.Equals) == 0 : true)
-				&& (this.info.filterBy.And.Author.Equals != "" ? b.Author == this.info.filterBy.And.Author.Equals : true)
-			);
+		var filterByCategory = this.info.filterBy.And.Category.Equals != "";
+		var filterByAuthor = this.info.filterBy.And.Author.Equals != "";
+
+		if (query != "" || filterByCategory || filterByAuthor) {
+			books = books.Where(b => {
+				return (query != "" ? AppUtility.indexOf(b.ANSITitle, query) > -1 : true)
+					&& (filterByCategory ? AppUtility.indexOf(b.Category, this.info.filterBy.And.Category.Equals) == 0 : true)
+					&& (filterByAuthor ? b.Author == this.info.filterBy.And.Author.Equals : true);
+			});
 		}
 
 		// sort
@@ -164,23 +155,72 @@ export class SurfBooksPage {
 		}
 
 		// pagination
-		if (!this.info.filtering) {
-			let skip = this.info.pageNumber - 3;
-			if (skip > 0) {
-				books = books.Skip(skip * this.info.pagination.PageSize);
+		pageNumber = pageNumber || this.info.pageNumber;
+		if (onepage) {
+			if (pageNumber > 1) {
+				books = books.Skip((pageNumber - 1) * this.info.pagination.PageSize);
 			}
-
-			let take = this.info.displayPages * this.info.pagination.PageSize;
-			take = take > this.info.pagination.TotalRecords
-				? this.info.pagination.TotalRecords
-				: take;
-			books = books.Take(take);
+			books = books.Take(this.info.pagination.PageSize);
+		}
+		else if (!this.info.filtering) {
+			books = books.Take(pageNumber * this.info.pagination.PageSize);
 		}
 
-		// convert the list of results to array
-		this.books = books.ToArray();
+		// return the array of books
+		return books.ToArray();
+	}
 
-		// prepare ratings & stocks
+	search(onPreCompleted?: () => void, onPostCompleted?: () => void) {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
+			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
+				r.FilterBy.And.Category.Equals = undefined;
+			}
+			if (!AppUtility.isNotEmpty(r.FilterBy.And.Author.Equals)) {
+				r.FilterBy.And.Author.Equals = undefined;
+			}
+		});
+		
+		this.booksSvc.fetchAsync(request, (data?: any) => {
+			this.info.pagination = AppData.Paginations.get(request, "B");
+			this.info.pageNumber = this.info.pagination.PageNumber;
+			this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+			this.build("down", onPreCompleted, onPostCompleted);
+		});
+	}
+	
+	build(direction: string = "down", onPreCompleted?: () => void, onPostCompleted?: () => void) {
+		// pre handler
+		onPreCompleted != undefined && onPreCompleted();
+		
+		// books
+		/*
+		if (direction == "up") {
+			let books = new Array<AppModels.Book>();
+			if (this.info.pageNumber > 1) {
+				books = this.get(true, this.info.pageNumber - 1).concat(books);
+			}
+			if (this.info.pageNumber > 2) {
+				books = this.get(true, this.info.pageNumber - 2).concat(books);
+			}
+			this.books = new List(books.concat(this.books)).Distinct().ToArray();
+			AppUtility.setTimeout(() => {
+				if (this.books.length > this.info.displayPages * this.info.pagination.PageSize) {
+					AppUtility.splice(this.books, this.books.length - (this.info.displayPages * this.info.pagination.PageSize));
+				}
+			}, 678);
+		}
+		else {
+			this.books = this.books.concat(this.get());
+			AppUtility.setTimeout(() => {
+				if (this.books.length > this.info.displayPages * this.info.pagination.PageSize) {
+					this.books.splice(0, this.books.length - (this.info.displayPages * this.info.pagination.PageSize));
+				}
+			}, 678);
+		}
+		*/
+		this.books = this.get(false);
+		
+		// ratings & stocks
 		new List(this.books).ForEach(b => {
 			if (!this.ratings[b.ID]) {
 				let rating = b.RatingPoints.getValue("General");
@@ -188,15 +228,15 @@ export class SurfBooksPage {
 			}
 		});
 
-		// run handler
-		onCompleted != undefined && onCompleted();
+		// post handler
+		onPostCompleted != undefined && onPostCompleted();
 	}
 
+	// actions
 	trackBy(index: number, book: AppModels.Book) {
 		return book.ID;
 	}
 
-	// event handlers
 	openBook(book: AppModels.Book) {
 		this.navCtrl.push(ReadBookPage, { ID: book.ID });
 	}
@@ -236,7 +276,7 @@ export class SurfBooksPage {
 				handler: () => {
 					this.info.pageNumber = this.info.pagination.PageNumber;
 					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
-					this.doBuild();
+					this.build();
 				}
 			});
 		}
@@ -267,15 +307,7 @@ export class SurfBooksPage {
 			{
 				text: "Đặt",
 				handler: (sortBy: string) => {
-					if (this.info.sortBy != sortBy) {
-						this.info.sortBy = sortBy;
-						this.info.processing = true;
-						this.doBuild(this.books, () => {
-							this.scrollToTopAsync(() => {
-								this.info.processing = false;
-							});
-						});
-					}
+					this.onSort(sortBy);
 				}
 			}]
 		});
@@ -284,17 +316,12 @@ export class SurfBooksPage {
 		alert.present();
 	}
 
-	// filtering events
+	// event handlers
 	onFilter() {
-		this.info.processing = true;
-		this.doBuild(undefined, () => {
-			this.info.processing = false;
-		});
+		this.books = this.get(false);
 	}
 
 	onCancel() {
-		this.info.processing = true;
-		this.info.filtering = false;
 		this.info.filterBy.Query = "";
 
 		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
@@ -307,8 +334,29 @@ export class SurfBooksPage {
 		});
 		this.info.pagination = AppData.Paginations.get(request, "B");
 
-		this.doBuild(undefined, () => {
-			this.info.processing = false;
+		this.info.pageNumber = 1;
+		this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+		this.books = this.get();
+
+		AppUtility.setTimeout(() => {
+			this.info.filtering = false;
+		}, 234);
+	}
+
+	onSort(sortBy: string) {
+		if (this.info.sortBy == sortBy) {
+			return;
+		}
+
+		this.info.processing = true;
+		this.info.sortBy = sortBy;
+		this.contentCtrl.scrollTo(0, this.info.offset / 2).then(() => {
+			this.info.pageNumber = 1;
+			this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+			this.books = this.get();
+			AppUtility.setTimeout(() => {
+				this.info.processing = false;
+			}, 234);
 		});
 	}
 
@@ -321,6 +369,7 @@ export class SurfBooksPage {
 			// update state
 			this.info.processing = true;
 
+			/*
 			// scroll up
 			if (infiniteScroll._position != "bottom") {
 				this.info.pageNumber = this.info.pageNumber > this.info.displayPages
@@ -328,12 +377,13 @@ export class SurfBooksPage {
 					: this.info.displayPages;
 				this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
 				
-				infiniteScroll.enable(false);
-				this.doBuild(undefined, () => {
-					infiniteScroll.complete();
-					infiniteScroll.enable(true);
-					this.info.processing = false;
-				});
+				this.build("up",
+					() => { },
+					() => {
+						infiniteScroll.complete();
+						this.info.processing = false;
+					}
+				);
 			}
 
 			// scroll down
@@ -343,28 +393,32 @@ export class SurfBooksPage {
 					this.info.pageNumber++;
 					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
 					
-					this.doBuild(undefined, () => {
-						infiniteScroll.complete();
-						this.info.processing = false;
-					});
+					this.build("down",
+						() => {
+							if (AppUtility.isAppleSafari()) {
+								this.scrollDown();
+							}
+						},
+						() => {
+							infiniteScroll.complete();
+							this.info.processing = false;
+						}
+					);
 				}
 
 				// data is not available, then search next page
 				else if (this.info.pagination.PageNumber < this.info.pagination.TotalPages) {
-					if (this.info.sortBy != "LastUpdated") {
-						this.scrollToAsync(55, () => {
-							this.doSearch(() => {
-								infiniteScroll.complete();
-								this.info.processing = false;
-							});
-						});
-					}
-					else {
-						this.doSearch(() => {
+					this.search(
+						() => {
+							if (AppUtility.isAppleSafari()) {
+								this.scrollDown();
+							}
+						},
+						() => {
 							infiniteScroll.complete();
 							this.info.processing = false;
-						});
-					}
+						}
+					);
 				}
 
 				// all data are fetched
@@ -373,22 +427,49 @@ export class SurfBooksPage {
 					this.info.processing = false;
 				}
 			}
+			*/
+
+			// data is avalable
+			if (this.info.pageNumber < this.info.pagination.PageNumber) {
+				this.info.pageNumber++;
+				this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+				
+				this.build("down",
+					() => { },
+					() => {
+						infiniteScroll.complete();
+						this.info.processing = false;
+					}
+				);
+			}
+
+			// data is not available, then search next page
+			else if (this.info.pagination.PageNumber < this.info.pagination.TotalPages) {
+				this.search(
+					() => { },
+					() => {
+						infiniteScroll.complete();
+						this.info.processing = false;
+					}
+				);
+			}
+
+			// all data are fetched
+			else {
+				infiniteScroll.complete();
+				this.info.processing = false;
+			}
+
 		}
 	}
 
-	async scrollToAsync(offset?: number, onCompleted?: () => void) {
-		await this.contentCtrl.scrollTo(0, offset != undefined ? this.contentCtrl.scrollTop - offset : 0);
-		onCompleted != undefined && onCompleted();
-	}
-
-	async scrollToTopAsync(onCompleted?: () => void) {
-		await this.contentCtrl.scrollToTop();
-		onCompleted != undefined && onCompleted();
-	}
-
-	async scrollToBottomAsync(onCompleted?: () => void) {
-		await this.contentCtrl.scrollToBottom();
-		onCompleted != undefined && onCompleted();
+	scrollDown() {
+		try {
+			if (this.info.pageNumber > this.info.displayPages) {
+				this.contentCtrl.scrollTo(0, this.contentCtrl.scrollTop - (this.info.offset * this.info.pagination.PageSize), 567);
+			}
+		}
+		catch (e) { }
 	}
 
 }

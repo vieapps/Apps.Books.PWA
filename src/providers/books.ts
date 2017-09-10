@@ -155,8 +155,11 @@ export class BooksService {
 					"object-identity": "chapter",
 					"id": id,
 					"chapter": chapter
+				}, undefined, undefined, undefined, () => {
+					AppUtility.setTimeout(() => {
+						this.updateCounters(id, "View", onCompleted);
+					}, 123);
 				});
-				this.updateCounters(id, "View", onCompleted);
 			}
 			else {
 				await this.getChapterAsync(id, chapter, onCompleted);
@@ -185,9 +188,33 @@ export class BooksService {
 
 		if (book != undefined && AppUtility.isArray(info.Counters)) {
 			new List<any>(info.Counters).ForEach(c => book.Counters.setValue(c.Type, AppModels.CounterInfo.deserialize(c)));
+			AppEvents.broadcast("BookStatisticsAreUpdated", { ID: book.ID });
 		}
 
 		onCompleted != undefined && onCompleted();
+	}
+
+	generateFiles(id: string, onCompleted?: () => void) {
+		AppData.Books.getValue(id) != undefined
+		&& AppRTU.send({
+			ServiceName: "books",
+			ObjectName: "book",
+			Verb: "GET",
+			Query: {
+				"object-identity": "files",
+				"id": id
+			}
+		});
+	}
+
+	updateFiles(data: any) {
+		var book = data.ID != undefined
+			? AppData.Books.getValue(data.ID)
+			: undefined;
+		if (book != undefined && AppUtility.isObject(data.Files, true)) {
+			book.Files = data.Files;
+			AppEvents.broadcast("BookFilesAreUpdated", { ID: book.ID });
+		}
 	}
 
 	async requestUpdateAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
@@ -346,6 +373,11 @@ export class BooksService {
 			if (book != undefined) {
 				book.Chapters[message.Data.Chapter - 1] = message.Data.Content;
 			}
+		}
+
+		// files
+		else if (info.ObjectName == "Book#Files") {
+			this.updateFiles(message.Data);
 		}
 
 		// delete

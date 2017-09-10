@@ -426,7 +426,7 @@ export class App {
 			if (this.configSvc.isAuthenticated()) {
 				this.configSvc.patchAccount(() => {
 					this.authSvc.getProfile();
-				}, 234);
+				}, 345);
 			}
 
 			// load geo-meta

@@ -18,7 +18,7 @@
 	</div>
 
 	<div>
-		<figure [hidden]="info.book.Cover.indexOf('/no/cover/image.png') > 0">
+		<figure>
 			<img [src]="info.book.Cover" />
 		</figure>
 		<ion-item>
@@ -81,18 +81,18 @@
 			<span>
 				Nguồn:
 			</span>
-			<label *ngIf="info.book.SourceUri != ''">
-				<a href="{{info.book.SourceUri}}" target="_blank">
+			<label *ngIf="info.book.SourceUrl != ''">
+				<a href="{{info.book.SourceUrl}}" target="_blank">
 					{{info.book.Source}}
 				</a>
 			</label>
-			<label *ngIf="info.book.SourceUri == ''">
+			<label *ngIf="info.book.SourceUrl == ''">
 				{{info.book.Source}}
 			</label>
 		</ion-item>
-		<ion-item *ngIf="info.book.Files">
+		<ion-item>
 			<span>
-				Files:
+				e-Books:
 			</span>
 			<ul>
 				<li>
@@ -111,22 +111,84 @@
 		</ion-item>
 	</div>
 
-	<ion-item class="qr">
-		<span>
-		QR Code:
-		</span>
+	<div class="qr">
 		<div>
-			<qr-code [value]="info.qrcode" [size]="280"></qr-code>
-		</div>
-		<div>
+			<span>
+				QR Code:
+			</span>
+			<div>
+				<qr-code [value]="info.qrcode" [size]="290"></qr-code>
+			</div>
 			<span>
 				Dùng {{info.processByApp ? 'app' : 'smartphone'}} quét QR Code để mở nhanh
 			</span>
 		</div>
-	</ion-item>
+		<ion-item *ngIf="info.view">
+			<span>
+				Số lượt đọc:
+			</span>
+			<ul>
+				<li>
+					<span>
+					Tổng số:
+					</span>
+					<span>
+						{{info.view.Total}}
+					</span>
+				</li>
+				<li>
+					<span>
+					Trong tháng:
+					</span>
+					<span>
+							{{info.view.Month}}
+					</span>
+				</li>
+				<li>
+					<span>
+					Trong tuần:
+					</span>
+					<span>
+							{{info.view.Week}}
+					</span>
+				</li>
+			</ul>
+		</ion-item>
+		<ion-item *ngIf="info.download">
+			<span>
+				Số lượt tải về:
+			</span>
+			<ul>
+				<li>
+					<span>
+					Tổng số:
+					</span>
+					<span>
+						{{info.download.Total}}
+					</span>
+				</li>
+				<li>
+					<span>
+					Trong tháng:
+					</span>
+					<span>
+							{{info.download.Month}}
+					</span>
+				</li>
+				<li>
+					<span>
+					Trong tuần:
+					</span>
+					<span>
+							{{info.download.Week}}
+					</span>
+				</li>
+			</ul>
+		</ion-item>
+	</div>
 
 	<ion-item class="permanent-link">
-		<ion-label floating>Permanent link:</ion-label>
+		<ion-label floating>Liên kết tĩnh:</ion-label>
 		<ion-input readonly [(ngModel)]="info.uri"></ion-input>
 	</ion-item>
 

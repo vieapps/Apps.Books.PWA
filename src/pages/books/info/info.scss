@@ -24,12 +24,13 @@ page-book-info {
 	}
 	ion-content > div.scroll-content  > div {
 		padding-top: 16px;
+		width: 100%;
+		clear: both;
+		overflow: hidden;
 	}
 	ion-content > div.scroll-content  > div > figure {
 		text-align: center;
 		margin: 0;
-		padding-left: 16px;
-		width: 100%;
 		clear: both;
 	}
 	ion-content > div.scroll-content > div > figure > img {
@@ -68,15 +69,32 @@ page-book-info {
 	ion-content > div.scroll-content > div > ion-item.summary ion-label div > hr {
 		background-color: transparent !important;
 	}
-	ion-content > div.scroll-content > ion-item.qr ion-label div {
-		text-align: left;
+	ion-content > div.scroll-content > div.qr {
+		padding: 16px;
+	}
+	ion-content > div.scroll-content > div.qr > div > span,
+	ion-content > div.scroll-content > div.qr > div > div {
+		text-align: center;
+	}
+	ion-content > div.scroll-content > div.qr > div > span:first-child {
+		font-weight: bold;
+	}
+	ion-content > div.scroll-content > div.qr > div > span:last-child {
+		display: inline-block;
+		width: 100%;
+		clear: both;
 	}
 	@media only screen and (min-width: 768px) {
-		ion-content > div.scroll-content  > div > figure > img {
-			ion-content > div.scroll-content  > div > figure {
-				float: left;
-				clear: none;
-			}
+		ion-content > div.scroll-content  > div > figure,
+		ion-content > div.scroll-content > div.qr  > div {
+			float: left;
+			clear: none;
+		}
+		ion-content > div.scroll-content  > div > figure {
+			padding-left: 16px;
+		}
+		ion-content > div.scroll-content > div.qr > div > span {
+			text-align: left;
 		}
 	}
 }

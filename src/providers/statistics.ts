@@ -245,11 +245,6 @@ export class StatisticsService {
 				]);
 			});
 		}
-
-		// to make sure the RTU got all messages
-		AppUtility.setTimeout(() => {
-			AppRTU.isReady() && AppRTU.push();
-		}, 1234);
 	}
 
 	// process RTU message

@@ -38,7 +38,7 @@ export namespace AppEvents {
 	*/
 	export function off(event: string, identity: string) {
 		if (AppUtility.isNotEmpty(event) && AppUtility.isNotEmpty(identity) && handlers[event]) {
-			let index = AppUtility.findIndex<any>(handlers[event], h => h.identity == identity);
+			let index = AppUtility.find<any>(handlers[event], h => h.identity == identity);
 			if (index != -1) {
 				handlers[event].splice(index, 1);
 			}

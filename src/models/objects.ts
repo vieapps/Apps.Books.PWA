@@ -105,7 +105,6 @@ export namespace AppModels {
 	/** Present details information of a book */
 	export class Book extends Base {
 		ID = "";
-		Type = "";
 		Title = "";
 		Author = "";
 		Translator = "";
@@ -128,14 +127,14 @@ export namespace AppModels {
 		TOCs = new Array<string>();
 		Chapters = new Array<string>();
 		Body = "";
-		Files: {
+		Files = {
 			Epub: {
-				Size: "",
-				Uri: ""
+				Size: "generating...",
+				Url: ""
 			},
 			Mobi: {
-				Size: "",
-				Uri: ""
+				Size: "generating...",
+				Url: ""
 			}
 		};
 		
@@ -160,9 +159,9 @@ export namespace AppModels {
 					book.SourceUrl = "";
 				}
 	
-				if (book.TotalChapters > 1 && book.Chapters.length < 1) {
-					new List(book.TOCs).ForEach(_ => book.Chapters.push(""));
-				}
+				book.Chapters = book.TotalChapters > 1 && book.Chapters.length < 1
+					? new List(book.TOCs).Select(t => "").ToArray()
+					: book.Chapters;
 	
 				book.ANSITitle = AppUtility.toANSI(book.Title + " " + book.Author).toLowerCase();
 			});

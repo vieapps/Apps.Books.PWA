@@ -28,7 +28,9 @@ export class BookInfoPage {
 	// attributes
 	info = {
 		book: new AppModels.Book(),
-		title: "Loading...",
+		view: undefined,
+		download: undefined,
+		title: "Thông tin",
 		rating: 0.0,
 		limit: 260,
 		uri: "",
@@ -42,11 +44,11 @@ export class BookInfoPage {
 		var existed = AppData.Books.containsKey(id);
 			
 		if (existed) {
-			this.prepare();
+			this.prepare(true);
 		}
 		else {
 			this.booksSvc.getAsync(id, () => {
-				this.prepare();
+				this.prepare(true);
 			});
 		}
 
@@ -59,16 +61,27 @@ export class BookInfoPage {
 			},
 			"EventHandlerToUpdateBookStatistics"
 		);
+
+		AppEvents.on(
+			"BookFilesAreUpdated",
+			(info: any) => {
+				if (this.info.book != undefined && this.info.book.ID == info.args.ID) {
+					this.prepare();
+				}
+			},
+			"EventHandlerToUpdateBookFiles"
+		);
 	}
 
 	ionViewWillUnload() {
 		AppEvents.off("BookStatisticsAreUpdated", "EventHandlerToUpdateBookStatistics");
+		AppEvents.off("BookFilesAreUpdated", "EventHandlerToUpdateBookFiles");
 	}
 
-	prepare() {
-		var id = this.navParams.get("ID") as string;
-		this.info.book = AppData.Books.getValue(id);
-		this.info.title = "Thông tin: " + this.info.book.Title;
+	prepare(checkFiles?: boolean) {
+		this.info.book = AppData.Books.getValue(this.navParams.get("ID") as string);
+		this.info.view = this.info.book.Counters.getValue("View");
+		this.info.download = this.info.book.Counters.getValue("Download");
 
 		var rating = this.info.book.RatingPoints.getValue("General");
 		this.info.rating = rating != undefined
@@ -77,20 +90,25 @@ export class BookInfoPage {
 
 		this.info.uri = AppUtility.getUri() + "#?book=" + AppUtility.getBase64UrlParam({ ID: this.info.book.ID });
 		this.info.qrcode = this.info.processByApp
-			? "vieapps-ebooks://" + this.info.book.ID
+			? "vieapps-books://" + this.info.book.ID
 			: this.info.uri;
+
+		if (AppUtility.isTrue(checkFiles) && AppUtility.isObject(this.info.book.Files, true)
+		&& (this.info.book.Files.Epub.Size == "generating..." || this.info.book.Files.Mobi.Size == "generating...")) {
+			this.booksSvc.generateFiles(this.info.book.ID);
+		}
 	}
 
 	download(type: string) {
 		if (this.authSvc.isAuthenticated()) {
-			window.open(this.info.book.Files[type].Uri + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
+			window.open(this.info.book.Files[type].Url + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
 		}
 		else {
 			this.showAlert("Chú ý", "Cần đăng nhập để có thể tải được file e-book");
 		}
 	}
 
-	showAlert(title: string, message: string, button?: string, handler?: () => void) {
+	showAlert(title: string, message: string, button?: string, func?: () => void) {
 		this.alertCtrl.create({
 			title: title,
 			message: message,
@@ -98,9 +116,7 @@ export class BookInfoPage {
 			buttons: [{
 				text: button != undefined ? button : "Đóng",
 				handler: () => {
-					if (handler != undefined) {
-						handler();
-					}
+					func != undefined && func();
 				}
 			}]
 		}).present();

@@ -154,7 +154,9 @@ export class AuthenticationService {
 				AppEvents.broadcast("SessionIsRegistered");
 
 				this.patchSession(() => {
-					this.getProfile();
+					this.configSvc.patchAccount(() => {
+						this.getProfile();
+					});
 				}, 123);
 				onNext != undefined && onNext(data);
 			}
@@ -181,7 +183,8 @@ export class AuthenticationService {
 
 				await this.configSvc.registerSessionAsync(() => {
 					console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-					this.patchSession(onNext);
+					this.patchSession();
+					onNext != undefined && onNext(AppData.Configuration.session);
 				}, onError);
 			}
 			else {
@@ -197,22 +200,24 @@ export class AuthenticationService {
 	}
 
 	patchSession(onNext?: () => void, defer?: number): void {
-		var request = {
-			ServiceName: "users",
-			ObjectName: "session",
-			Verb: "PATCH",
-			Extra: {
-				"x-rtu-session": AppData.Configuration.session.id
-			}
-		};
-		AppRTU.send(request,
-			() => {
-				this.configSvc.patchAccount(onNext, 234);
-			},
-			() => {
-				this.configSvc.patchAccount(onNext, 234);
-			}
-		);
+		AppUtility.setTimeout(() => {
+			AppRTU.send(
+				{
+					ServiceName: "users",
+					ObjectName: "session",
+					Verb: "PATCH",
+					Extra: {
+						"x-session": AppData.Configuration.session.id
+					}
+				},
+				() => {
+					onNext != undefined && onNext();
+				},
+				() => {
+					onNext != undefined && onNext();
+				}
+			);
+		}, defer || 456);
 	}
 	
 	/** Get profile information */
@@ -630,15 +635,13 @@ export class AuthenticationService {
 
 		// update status
 		else if (info.ObjectName == "Status") {
+			let account = AppData.Accounts.getValue(message.Data.UserID);
+			if (account != undefined) {
+				account.IsOnline = message.Data.IsOnline;
+				account.LastAccess = new Date();
+			}
 			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID && AppData.Configuration.session.account.profile != null) {
 				AppData.Configuration.session.account.profile.LastAccess = new Date();
-			}
-			else {
-				let account = AppData.Accounts.getValue(message.Data.UserID);
-				if (account != undefined) {
-					account.IsOnline = message.Data.IsOnline;
-					account.LastAccess = new Date();
-				}
 			}
 		}
 

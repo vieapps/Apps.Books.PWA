@@ -96,6 +96,11 @@ export namespace AppUtility {
 		return AppData.Configuration.app.platform.indexOf("iOS") > -1;
 	}
 
+	/** Gets the state that determines the app is running on Apple Safari */
+	export function isAppleSafari() {
+		return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+	}
+
 	/** Gets the state that determines the app is running on Windows Phone */
 	export function isWindowsPhoneOS() {
 		return AppData.Configuration.app.platform.indexOf("Windows Phone") > -1;
@@ -114,7 +119,7 @@ export namespace AppUtility {
 	*/
 	export function copy(source: any, obj: any, onPreCompleted?: (data: any) => void) {
 		try {
-			var data = isNotEmpty(source)
+			let data = isNotEmpty(source)
 			? JSON.parse(source)
 			: isObject(source, true)
 				? source
@@ -182,13 +187,22 @@ export namespace AppUtility {
 	}
 
 	/** Finds the index of an item in the sequence base on a predicate */
-	export function findIndex<T>(items: Array<T>, predicate: (item: T) => boolean): number {
+	export function find<T>(items: Array<T>, predicate: (item: T) => boolean): number {
 		for (let index = 0; index < items.length; index++) {
 			if (predicate(items[index])) {
 				return index;
 			}
 		}
 		return -1;
+	}
+
+	/** Removes items in the sequence base on number that count from end */
+	export function splice<T>(items: Array<T>, number?: number) {
+		number = number || 1;
+		let index = items.length - number;
+		if (index > 0 && index < items.length) {
+			items.splice(index, number);
+		}
 	}
 
 	/**

@@ -274,33 +274,35 @@ export class ConfigurationService {
 	 * @param defer 
 	 */
 	patchAccount(onNext?: () => void, defer?: number) {
-		var request = {
-			ServiceName: "users",
-			ObjectName: "account",
-			Verb: "GET",
-			Query: {
-				"x-status": ""
-			},
-			Extra: {
-				"x-status": ""
-			}
-		};
-		AppRTU.send(request,
-			() => {
-				AppUtility.setTimeout(onNext, defer);
-			},
-			(observable) => {
-				observable.map(response => response.json()).subscribe(
-					(data: any) => {
-						this.updateAccount(data.Data);
-						AppUtility.setTimeout(onNext, defer);
+		AppUtility.setTimeout(() => {
+			AppRTU.send(
+				{
+					ServiceName: "users",
+					ObjectName: "account",
+					Verb: "GET",
+					Query: {
+						"x-status": ""
 					},
-					(error: any) => {
-						console.error("[Configuration]: Error occurred while patching an account", error);
+					Extra: {
+						"x-status": ""
 					}
-				);
-			}
-		);
+				},
+				() => {
+					onNext != undefined && onNext();
+				},
+				(observable) => {
+					observable.map(response => response.json()).subscribe(
+						(data: any) => {
+							this.updateAccount(data.Data);
+							onNext != undefined && onNext();
+						},
+						(error: any) => {
+							console.error("[Configuration]: Error occurred while patching an account", error);
+						}
+					);
+				}
+			);
+		}, defer || 345);
 	}
 
 	/** Gets the state that determines the app is ready to go */
