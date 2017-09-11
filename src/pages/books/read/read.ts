@@ -8,6 +8,7 @@ import { AppEvents } from "../../../helpers/events";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
+import { ConfigurationService } from "../../../providers/configuration";
 import { AuthenticationService } from "../../../providers/authentication";
 import { BooksService } from "../../../providers/books";
 
@@ -26,6 +27,7 @@ export class ReadBookPage {
 		public actionSheetCtrl: ActionSheetController,
 		public keyboard: Keyboard,
 		public loadingCtrl: LoadingController,
+		public configSvc: ConfigurationService,
 		public authSvc: AuthenticationService,
 		public booksSvc: BooksService
 	){
@@ -110,7 +112,7 @@ export class ReadBookPage {
 			let bookmark = AppData.Configuration.reading.bookmarks.getValue(this.info.book.ID);
 			if (bookmark != undefined) {
 				this.info.chapter = bookmark.Chapter;
-				this.info.offset = bookmark.Offset;
+				this.info.offset = bookmark.Position;
 			}
 		}
 
@@ -144,7 +146,7 @@ export class ReadBookPage {
 				this.showLoading();
 				this.booksSvc.getChapterAsync(this.info.book.ID, this.info.chapter, () => {
 					this.info.title = this.info.book.Title + " - " + this.info.book.TOCs[this.info.chapter - 1];
-					window.setTimeout(async () => {
+					AppUtility.setTimeout(async () => {
 						await this.scrollAsync(() => {
 							this.hideLoading();
 							AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
@@ -155,7 +157,7 @@ export class ReadBookPage {
 			}
 			else {
 				this.info.title = this.info.book.Title + " - " + this.info.book.TOCs[this.info.chapter - 1];
-				window.setTimeout(async () => {
+				AppUtility.setTimeout(async () => {
 					await this.scrollAsync(() => {
 						this.hideLoading();
 						AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
@@ -166,7 +168,7 @@ export class ReadBookPage {
 		}
 		else {
 			this.info.title = this.info.book.Title + " - " + this.info.book.Author;
-			window.setTimeout(async () => {
+			AppUtility.setTimeout(async () => {
 				await this.scrollAsync(() => {
 					AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });
 					this.contentCtrl.scrollTop = 0;
@@ -244,8 +246,8 @@ export class ReadBookPage {
 	}
 
 	onEndScroll() {
-		(this.info.chapter > 0 || this.info.book.Body != "")  && AppUtility.setTimeout(async () => {
-			await this.booksSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
+		(this.info.book.TotalChapters > 1 || this.info.book.Body != "")  && AppUtility.setTimeout(async () => {
+			await this.configSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
 		});
 	}
 

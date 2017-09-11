@@ -65,7 +65,7 @@ export class AccountsService {
 		);
 	}
 
-	async fetchAsync(accountIDs: Array<string>, onNext?: (d?: any) => void, onError?: (e: any) => void) {
+	async fetchAsync(accountIDs: Array<string>, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		var ids = new List(accountIDs).Except(new List(AppData.Accounts.keys())).ToArray();
 		if (ids.length < 1) {
 			onNext != undefined && onNext();

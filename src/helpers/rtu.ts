@@ -261,7 +261,10 @@ export namespace AppRTU {
 		}
 		else if (info.ServiceName == "OnlineStatus") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update online status");
-			call("Users", "Status");
+			call("users", "status");
+			if (handlers["Scheduler"]) {
+				subject.next({ "type": "Scheduler", "message": message });
+			}
 		}
 		else if (AppUtility.isNotEmpty(message.ExcludedDeviceID) && message.ExcludedDeviceID == AppData.Configuration.session.device) {
 			AppUtility.isDebug() && console.warn("[RTU]: The device is excluded", AppData.Configuration.session.device);

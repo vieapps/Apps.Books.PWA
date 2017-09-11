@@ -4,6 +4,7 @@ import { Platform } from "ionic-angular";
 import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
 import { List } from "linqts";
+import * as Collections from "typescript-collections";
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/map";
 
@@ -21,6 +22,7 @@ export class ConfigurationService {
 
 	constructor(public http: Http, public platform: Platform, public device: Device, public storage: Storage) {
 		AppAPI.setHttp(this.http);
+		AppRTU.register("Scheduler", (message: any) => this.syncBookmarks());
 	}
 
 	/** Prepare the working environments of the app */
@@ -305,6 +307,144 @@ export class ConfigurationService {
 		}, defer || 345);
 	}
 
+	/** Loads the reading options from storage */
+	async loadOptionsAsync(onCompleted?: (data?: any) => void) {
+		try {
+			let data = await this.storage.get("VIEApps-Reading-Options");
+			if (AppUtility.isNotEmpty(data) && data != "{}") {
+				AppData.Configuration.reading.options = JSON.parse(data as string);
+			}
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while loading the reading options", e);
+		}
+
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
+	}
+
+	/** Saves the reading options into storage */
+	async saveOptionsAsync(onCompleted?: (data?: any) => void) {
+		try {
+			await this.storage.set("VIEApps-Reading-Options", JSON.stringify(AppData.Configuration.reading.options));
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while saving the reading options into storage", e);
+		}
+
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
+	}
+
+	/** Loads the bookmarks from storage */
+	async loadBookmarksAsync(onCompleted?: () => void) {
+		AppData.Configuration.reading.bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
+		try {
+			let data = await this.storage.get("VIEApps-Bookmarks");
+			if (AppUtility.isNotEmpty(data) && data != "{}" && data != "[]") {
+				new List<any>(JSON.parse(data as string)).ForEach(b => {
+					let bookmark = AppModels.Bookmark.deserialize(b);
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				});
+
+				onCompleted != undefined && onCompleted();
+			}
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while loading the bookmarks", e);
+		}
+	}
+
+	/** Saves the bookmarks into storage */
+	async saveBookmarksAsync(onCompleted?: () => void) {
+		try {
+			let bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
+				.OrderByDescending(b => b.Time)
+				.Take(30)
+				.ToArray();
+			await this.storage.set("VIEApps-Bookmarks", JSON.stringify(bookmarks));
+
+			onCompleted != undefined && onCompleted();
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while saving the bookmarks into storage", e);
+		}
+	}
+
+	/** Updates a bookmark */
+	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: () => void) {
+		var bookmark = new AppModels.Bookmark();
+		bookmark.ID = id;
+		bookmark.Chapter = chapter;
+		bookmark.Position = offset;
+		AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+
+		await this.saveBookmarksAsync(onCompleted);
+	}
+
+	/** Sends the request to get bookmarks from APIs */
+	getBookmarks(onCompleted?: () => void) {
+		AppRTU.send({
+			ServiceName: "books",
+			ObjectName: "bookmarks",
+			Verb: "GET"
+		});
+
+		onCompleted != undefined && onCompleted();
+	}
+
+	/** Syncs the bookmarks with APIs */
+	syncBookmarks(onCompleted?: () => void) {
+		if (this.isAuthenticated()) {
+			let bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
+				.OrderByDescending(b => b.Time)
+				.Take(30)
+				.ToArray();
+		
+			AppRTU.send({
+				ServiceName: "books",
+				ObjectName: "bookmarks",
+				Verb: "POST",
+				Body: JSON.stringify(bookmarks)
+			});
+
+			onCompleted != undefined && onCompleted();
+		}
+	}
+
+	/** Merges the bookmarks with APIs */
+	mergeBookmarks(data: any, onCompleted?: () => void) {
+		AppData.Configuration.session.account.profile.LastSync = new Date();
+		new List<any>(data.Objects)
+			.ForEach(b => {
+				let bookmark = AppModels.Bookmark.deserialize(b);
+				if (!AppData.Configuration.reading.bookmarks.containsKey(bookmark.ID)) {
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				}
+				else if (bookmark.Time > AppData.Configuration.reading.bookmarks.getValue(bookmark.ID).Time) {
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				}
+			});
+
+		new List(AppData.Configuration.reading.bookmarks.values())
+			.ForEach((b, i)  => {
+				AppUtility.setTimeout(() => {
+					if (!AppData.Books.getValue(b.ID)) {
+						AppRTU.send({
+							ServiceName: "books",
+							ObjectName: "book",
+							Verb: "GET",
+							Query: {
+								"object-identity": b.ID
+							}
+						});
+					}
+				}, 456 + (i * 10));
+			});
+
+		AppUtility.setTimeout(async () => {
+			await this.saveBookmarksAsync(onCompleted);
+		});
+	}
+
 	/** Gets the state that determines the app is ready to go */
 	isReady() {
 		return AppUtility.isObject(AppData.Configuration.session.keys, true) && AppUtility.isObject(AppData.Configuration.session.jwt, true);
@@ -313,6 +453,25 @@ export class ConfigurationService {
 	/** Gets the state that determines the current account is authenticated or not */
 	isAuthenticated() {
 		return AppUtility.isObject(AppData.Configuration.session.jwt, true) && AppUtility.isNotEmpty(AppData.Configuration.session.jwt.uid);
+	}
+
+	/** Process the messages of RTU */
+	processRTU(message: any) {
+		// stop on error message
+		if (message.Type == "Error") {
+			console.warn("[Configuration]: got an error message from RTU", message);
+			return;
+		}
+
+		// parse
+		var info = AppRTU.parse(message.Type);
+
+		// bookmarks
+		if (info.ObjectName == "Bookmarks") {
+			if (this.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
+				this.mergeBookmarks(message.Data);
+			}
+		}
 	}
 
 }

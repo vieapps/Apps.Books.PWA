@@ -15,6 +15,7 @@ import { AuthenticationService } from "../../../providers/authentication";
 
 import { SignInPage } from "../signin/signin";
 import { HomePage } from "../../home/home";
+import { ReadBookPage } from "../../books/read/read";
 
 @Component({
 	selector: "page-profile",
@@ -55,6 +56,7 @@ export class ProfilePage {
 			uploaded: undefined
 		},
 		rating: 0.0,
+		bookmarks: [],
 		captcha: {
 			code: "",
 			uri: ""
@@ -174,6 +176,22 @@ export class ProfilePage {
 
 			var rating = (this.info.profile as AppModels.Account).RatingPoints.getValue("General");
 			this.info.rating = rating != undefined ? rating.Average : 0;
+
+			if (this.info.profile.ID == AppData.Configuration.session.account.id) {
+				this.info.bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
+					.Where(b => AppData.Books.getValue(b.ID) != undefined)
+					.Select(b => {
+						let book = AppData.Books.getValue(b.ID);
+						return {
+							id: b.ID,
+							title: book.Title + (book.Author != "" ? " - " + book.Author : ""),
+							position: (b.Chapter > 0 ? "Chương: " + b.Chapter + " - " : "") + "Vị trí: " + b.Position,
+							time: b.Time
+						};
+					})
+					.OrderByDescending(b => b.time)
+					.ToArray();
+			}
 		}
 
 		this.info.address = AppUtility.initializeAddress(this.info.profile);
@@ -734,4 +752,14 @@ export class ProfilePage {
 		}).present();
 	}
 
+	// bookmarks
+	trackBook(index: number, bookmark: any) {
+		return bookmark.id;
+	}
+
+	openBook(id: string) {
+		this.navCtrl.pop();
+		this.navCtrl.push(ReadBookPage, { ID: id });
+	}
+	
 }

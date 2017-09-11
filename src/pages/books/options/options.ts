@@ -4,7 +4,7 @@ import { NavController, NavParams } from "ionic-angular";
 import { AppEvents } from "../../../helpers/events";
 import { AppData } from "../../../models/data";
 
-import { BooksService } from "../../../providers/books";
+import { ConfigurationService } from "../../../providers/configuration";
 
 @Component({
 	selector: "page-book-options",
@@ -14,7 +14,7 @@ export class ReadingOptionsPage {
 	constructor(
 		public navCtrl: NavController,
 		public navParams: NavParams,
-		public booksSvc: BooksService
+		public configSvc: ConfigurationService
 	){
 	}
 
@@ -123,7 +123,7 @@ export class ReadingOptionsPage {
 	// events
 	ionViewWillUnload() {
 		window.setTimeout(async () => {
-			await this.booksSvc.saveOptionsAsync(() => {
+			await this.configSvc.saveOptionsAsync(() => {
 				AppEvents.broadcast("ReadingOptionsAreUpdated");
 			});
 		});

@@ -146,8 +146,8 @@ export namespace AppModels {
 			this.Language = "vi";
 		}
 
-		static deserialize(json: any) {
-			var book = new Book();
+		static deserialize(json: any, book?: Book) {
+			book = book || new Book();
 			AppUtility.copy(json, book, (data: any) => {
 				book.Counters = new Collections.Dictionary<string, CounterInfo>();
 				new List<any>(data.Counters).ForEach(c => book.Counters.setValue(c.Type, CounterInfo.deserialize(c)));
@@ -173,7 +173,7 @@ export namespace AppModels {
 			if (AppUtility.isObject(data, true)) {
 				let book = data instanceof Book
 					? data as Book
-					: Book.deserialize(data);
+					: Book.deserialize(data, AppData.Books.getValue(data.ID));
 				AppData.Books.setValue(book.ID, book);
 			}
 		}
@@ -231,7 +231,8 @@ export namespace AppModels {
 	export class Bookmark {
 		ID = "";
 		Chapter = 0;
-		Offset = 0;
+		Position = 0;
+		Time = new Date();
 
 		static deserialize(json: any) {
 			var obj = new Bookmark();

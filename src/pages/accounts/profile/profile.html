@@ -81,6 +81,25 @@
 				Truy cập: {{info.profile.LastAccess | date: 'h:mm a @ d/M/y'}}
 			</ion-item>
 		</ion-list>
+		<ion-list class="bookmarks" *ngIf="info.canSeeOthers && info.bookmarks.length > 0">
+			<ion-list-header>
+				Sách đang đọc
+			</ion-list-header>
+			<ion-item *ngFor="let b of info.bookmarks; trackBy: trackBook" (click)="openBook(b.id)">
+				<h2>{{b.title}}</h2>
+				<p>
+					<span>
+						{{b.time | date: 'h:mm a @ d/M/y'}}
+					</span>
+					<span [hidden]="b.position == ''">
+						{{b.position}}
+					</span>
+				</p>
+			</ion-item>
+			<ion-item class="time">
+				Đồng bộ lúc: {{info.profile.LastSync | date: 'h:mm a @ d/M/y'}}
+			</ion-item>
+		</ion-list>
 	</div>
 
 	<form #form="ngForm" [hidden]="info.state.mode != 'Register' && info.state.mode != 'Update'">

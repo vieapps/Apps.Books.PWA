@@ -1,8 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
-import { Storage } from "@ionic/storage";
 import { List } from "linqts";
-import * as Collections from "typescript-collections";
 import "rxjs/add/operator/map";
 
 import { AppUtility } from "../helpers/utility";
@@ -13,12 +11,13 @@ import { AppRTU } from "../helpers/rtu";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
 
+import { ConfigurationService } from "./configuration";
 import { StatisticsService } from "./statistics";
 
 @Injectable()
 export class BooksService {
 
-	constructor(public http: Http, public storage: Storage, public statisticsSvc: StatisticsService) {
+	constructor(public http: Http, public configSvc: ConfigurationService, public statisticsSvc: StatisticsService) {
 		AppAPI.setHttp(this.http);
 		AppRTU.register("Books", (message: any) => this.processRTU(message));
 	}
@@ -275,83 +274,6 @@ export class BooksService {
 		}
 	}
 
-	async loadOptionsAsync(onCompleted?: (data?: any) => void) {
-		try {
-			let data = await this.storage.get("VIEApps-Reading-Options");
-			if (AppUtility.isNotEmpty(data) && data != "{}") {
-				AppData.Configuration.reading.options = JSON.parse(data as string);
-			}
-		}
-		catch (e) {
-			console.error("[Books]: Error occurred while loading the reading options", e);
-		}
-
-		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
-	}
-
-	async saveOptionsAsync(onCompleted?: (data?: any) => void) {
-		try {
-			await this.storage.set("VIEApps-Reading-Options", JSON.stringify(AppData.Configuration.reading.options));
-		}
-		catch (e) {
-			console.error("[Books]: Error occurred while saving the reading options into storage", e);
-		}
-
-		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
-	}
-
-	async loadBookmarksAsync(onCompleted?: (data?: any) => void) {
-		AppData.Configuration.reading.bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
-
-		try {
-			let data = await this.storage.get("VIEApps-Bookmarks");
-			if (AppUtility.isNotEmpty(data) && data != "{}") {
-				let bookmarks = JSON.parse(data as string);
-				for (let name in bookmarks.table) {
-					let bookmark = bookmarks.table[name];
-					AppData.Configuration.reading.bookmarks.setValue(bookmark.key, AppModels.Bookmark.deserialize(bookmark.value));
-				}
-			}
-		}
-		catch (e) {
-			console.error("[Books]: Error occurred while loading the bookmarks", e);
-		}
-
-		onCompleted != undefined && onCompleted(AppData.Configuration.reading.bookmarks);
-	}
-
-	async saveBookmarksAsync(onCompleted?: (data?: any) => void) {
-		try {
-			await this.storage.set("VIEApps-Bookmarks", JSON.stringify(AppData.Configuration.reading.bookmarks));
-		}
-		catch (e) {
-			console.error("[Books]: Error occurred while saving the bookmarks into storage", e);
-		}
-
-		onCompleted != undefined && onCompleted(AppData.Configuration.reading.bookmarks);
-	}
-
-	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: (data?: any) => void) {
-		var bookmark = new AppModels.Bookmark();
-		bookmark.ID = id;
-		bookmark.Chapter = chapter;
-		bookmark.Offset = offset;
-		AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
-
-		if (AppData.Configuration.reading.bookmarks.size() > 30) {
-			let bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
-			let min = AppData.Configuration.reading.bookmarks.size() - 30;
-			new List(AppData.Configuration.reading.bookmarks.values()).ForEach((b, i) => {
-				if (i >= min) {
-					bookmarks.setValue(b.ID, b);
-				}
-			});
-			AppData.Configuration.reading.bookmarks = bookmarks;
-		}
-
-		await this.saveBookmarksAsync(onCompleted);
-	}
-
 	processRTU(message: any) {
 		// stop on error message
 		if (message.Type == "Error") {
@@ -362,8 +284,13 @@ export class BooksService {
 		// parse
 		var info = AppRTU.parse(message.Type);
 
+		// meta of a book
+		if (info.ObjectName == "Book") {
+			AppModels.Book.update(message.Data);
+		}
+
 		// counters
-		if (info.ObjectName == "Book#Counters") {
+		else if (info.ObjectName == "Book#Counters") {
 			this.setCounters(message.Data);
 		}
 
@@ -389,6 +316,11 @@ export class BooksService {
 		// statistics
 		else if (AppUtility.indexOf(info.ObjectName, "Statistic#") > -1) {
 			this.statisticsSvc.processRTU(message);
+		}
+		
+		// bookmarks
+		else if (info.ObjectName == "Bookmarks") {
+			this.configSvc.processRTU(message);
 		}
 	}
 

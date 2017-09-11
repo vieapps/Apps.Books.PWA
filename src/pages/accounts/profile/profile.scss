@@ -14,4 +14,18 @@ page-profile {
 	.captcha input {
 		text-transform: uppercase;
 	}
+	ion-list.bookmarks > ion-list-header > div > div {
+		margin-top: 30px;
+	}
+	ion-list.bookmarks > ion-item {
+		cursor: pointer;
+	}
+	ion-list.bookmarks > ion-item > div > div > ion-label > p > span:last-child {
+		margin-left: 30px;
+	}
+	ion-list.bookmarks > ion-item.time > div > div > ion-label {
+		cursor: default;
+		text-align: right;
+		font-size: 80%;
+	}
 }

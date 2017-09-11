@@ -203,7 +203,7 @@ export class App {
 			if (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true)) {
 				this.info.book.id = info.args.ID;
 				this.info.book.chapter = info.args.Chapter;
-				this.info.book.id != info.args.ID && this.showChapters();
+				this.info.book.id == info.args.ID && this.showChapters();
 			}
 		});
 	}
@@ -428,16 +428,21 @@ export class App {
 					this.authSvc.getProfile();
 				}, 345);
 			}
+			
+			// load & get/merge bookmarks
+			this.configSvc.loadBookmarksAsync();
+			if (this.configSvc.isAuthenticated()) {
+				this.configSvc.getBookmarks();
+			}
 
+			// load reading options
+			this.configSvc.loadOptionsAsync();
+			
 			// load geo-meta
 			this.resourcesSvc.loadGeoMetaAsync();
 
 			// load statistics
 			this.statisticsSvc.fetchStatistics();
-
-			// load reading options and bookmarks
-			this.booksSvc.loadOptionsAsync();
-			this.booksSvc.loadBookmarksAsync();
 
 			// raise an event when done
 			AppEvents.broadcast("AppIsInitialized");
@@ -534,14 +539,16 @@ export class App {
 
 	// sub section: chapters
 	showChapters() {
-		var book = AppData.Books.getValue(this.info.book.id);
+		let book = AppData.Books.getValue(this.info.book.id);
 		this.info.book.title = book.Title;
 
-		this.chapters = new List(book.TOCs)
-			.Select((title, index) => {
-				return { title: title, index: index };
-			})
-			.ToArray();
+		if (book.TotalChapters > 1) {
+			this.chapters = new List(book.TOCs)
+				.Select((toc, index) => {
+					return { title: toc, index: index };
+				})
+				.ToArray();
+		}
 	}
 
 	trackChapter(index: number, chapter: any) {

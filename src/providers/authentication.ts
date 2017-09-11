@@ -156,6 +156,7 @@ export class AuthenticationService {
 				this.patchSession(() => {
 					this.configSvc.patchAccount(() => {
 						this.getProfile();
+						this.configSvc.getBookmarks();
 					});
 				}, 123);
 				onNext != undefined && onNext(data);
