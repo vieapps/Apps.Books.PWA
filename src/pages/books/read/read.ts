@@ -1,7 +1,7 @@
 import { Component, ViewChild } from "@angular/core";
-import { NavController, NavParams, ActionSheetController, Content, Loading, LoadingController } from "ionic-angular";
+import { NavController, NavParams, ActionSheetController, Content, Loading, LoadingController, Platform, MenuController } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
-import { List } from "linqts";
+import { List } from "linqts"; 
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppEvents } from "../../../helpers/events";
@@ -24,8 +24,10 @@ export class ReadBookPage {
 	constructor(
 		public navCtrl: NavController,
 		public navParams: NavParams,
+		public menuCtrl: MenuController,
 		public actionSheetCtrl: ActionSheetController,
 		public keyboard: Keyboard,
+		public platform: Platform,
 		public loadingCtrl: LoadingController,
 		public configSvc: ConfigurationService,
 		public authSvc: AuthenticationService,
@@ -268,15 +270,26 @@ export class ReadBookPage {
 					handler: () => {
 						this.showInfo();
 					}
-				},
-				{
-					text: "Tuỳ chọn đọc",
-					icon: this.info.isAppleOS ? undefined : "options",
-					handler: () => {
-						this.showOptions();
-					}
-				}
+				}				
 			]
+		});
+
+		if (this.info.book.TOCs.length > 1 && this.platform.width() < 992) {
+			actionSheet.addButton({
+				text: "Mục lục",
+				icon: this.info.isAppleOS ? undefined : "list",
+				handler: () => {
+					this.menuCtrl.open();
+				}
+			});
+		}
+
+		actionSheet.addButton({
+			text: "Tuỳ chọn đọc",
+			icon: this.info.isAppleOS ? undefined : "options",
+			handler: () => {
+				this.showOptions();
+			}
 		});
 
 		if (this.authSvc.isAdministrator() || this.authSvc.isAuthorized("Books", "", "Full")) {

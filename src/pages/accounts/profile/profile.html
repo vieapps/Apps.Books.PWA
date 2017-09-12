@@ -85,17 +85,29 @@
 			<ion-list-header>
 				Sách đang đọc
 			</ion-list-header>
-			<ion-item *ngFor="let b of info.bookmarks; trackBy: trackBook" (click)="openBook(b.id)">
-				<h2>{{b.title}}</h2>
-				<p>
-					<span>
-						{{b.time | date: 'h:mm a @ d/M/y'}}
-					</span>
-					<span [hidden]="b.position == ''">
-						{{b.position}}
-					</span>
-				</p>
-			</ion-item>
+			<ion-item-sliding #item *ngFor="let b of info.bookmarks; trackBy: trackBookmark">
+				<ion-item (click)="openBookmark(b.id)">
+					<h2>{{b.title}}</h2>
+					<p>
+						<span>
+							{{b.time | date: 'h:mm a @ d/M/y'}}
+						</span>
+						<span [hidden]="b.position == ''">
+							{{b.position}}
+						</span>
+					</p>
+				</ion-item>
+				<ion-item-options>
+					<button ion-button (click)="openBookmark(b.id)">
+						<ion-icon name="book"></ion-icon>
+						Đọc
+					</button>
+					<button ion-button color="danger" (click)="deleteBookmark(b.id)">
+						<ion-icon name="trash"></ion-icon>
+						Xoá
+					</button>
+				</ion-item-options>
+			</ion-item-sliding>
 			<ion-item class="time">
 				Đồng bộ lúc: {{info.profile.LastSync | date: 'h:mm a @ d/M/y'}}
 			</ion-item>

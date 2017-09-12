@@ -17,10 +17,13 @@ page-profile {
 	ion-list.bookmarks > ion-list-header > div > div {
 		margin-top: 30px;
 	}
-	ion-list.bookmarks > ion-item {
+	ion-list.bookmarks > ion-item-sliding > ion-item {
 		cursor: pointer;
 	}
-	ion-list.bookmarks > ion-item > div > div > ion-label > p > span:last-child {
+	ion-list.bookmarks > ion-item-sliding > ion-item > div > div > ion-label > h2 {
+		margin-top: 7px;
+	}
+	ion-list.bookmarks > ion-item-sliding > ion-item > div > div > ion-label > p > span:last-child {
 		margin-left: 30px;
 	}
 	ion-list.bookmarks > ion-item.time > div > div > ion-label {

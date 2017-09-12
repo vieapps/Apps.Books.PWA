@@ -445,6 +445,20 @@ export class ConfigurationService {
 		});
 	}
 
+	/** Sends the request to delete a bookmark from APIs */
+	deleteBookmark(id: string, onCompleted?: () => void) {
+		AppRTU.send({
+			ServiceName: "books",
+			ObjectName: "bookmarks",
+			Verb: "DELETE",
+			Query: {
+				"object-identity": id
+			}
+		});
+		AppData.Configuration.reading.bookmarks.remove(id);
+		onCompleted != undefined && onCompleted();
+	}
+
 	/** Gets the state that determines the app is ready to go */
 	isReady() {
 		return AppUtility.isObject(AppData.Configuration.session.keys, true) && AppUtility.isObject(AppData.Configuration.session.jwt, true);

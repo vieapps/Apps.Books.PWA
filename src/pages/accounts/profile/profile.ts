@@ -178,19 +178,7 @@ export class ProfilePage {
 			this.info.rating = rating != undefined ? rating.Average : 0;
 
 			if (this.info.profile.ID == AppData.Configuration.session.account.id) {
-				this.info.bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
-					.Where(b => AppData.Books.getValue(b.ID) != undefined)
-					.Select(b => {
-						let book = AppData.Books.getValue(b.ID);
-						return {
-							id: b.ID,
-							title: book.Title + (book.Author != "" ? " - " + book.Author : ""),
-							position: (b.Chapter > 0 ? "Chương: " + b.Chapter + " - " : "") + "Vị trí: " + b.Position,
-							time: b.Time
-						};
-					})
-					.OrderByDescending(b => b.time)
-					.ToArray();
+				this.buildBookmakrs();
 			}
 		}
 
@@ -753,13 +741,35 @@ export class ProfilePage {
 	}
 
 	// bookmarks
-	trackBook(index: number, bookmark: any) {
+	buildBookmakrs() {
+		this.info.bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
+		.Where(b => AppData.Books.getValue(b.ID) != undefined)
+		.Select(b => {
+			let book = AppData.Books.getValue(b.ID);
+			return {
+				id: b.ID,
+				title: book.Title + (book.Author != "" ? " - " + book.Author : ""),
+				position: (b.Chapter > 0 ? "Chương: " + b.Chapter + " - " : "") + "Vị trí: " + b.Position,
+				time: b.Time
+			};
+		})
+		.OrderByDescending(b => b.time)
+		.ToArray();
+	}
+
+	trackBookmark(index: number, bookmark: any) {
 		return bookmark.id;
 	}
 
-	openBook(id: string) {
+	openBookmark(id: string) {
 		this.navCtrl.pop();
 		this.navCtrl.push(ReadBookPage, { ID: id });
+	}
+	
+	deleteBookmark(id: string) {
+		this.configSvc.deleteBookmark(id, () => {
+			this.buildBookmakrs();
+		});
 	}
 	
 }

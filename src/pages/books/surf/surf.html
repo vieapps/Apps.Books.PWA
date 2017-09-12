@@ -38,9 +38,11 @@
 </ion-footer>
 
 <ion-content [class.has-sub-header]="info.filtering" [class.no-footer]="info.filtering">
+
 	<ion-infinite-scroll threshold="288px" position="top" (ionInfinite)="onInfiniteScroll($event)" [hidden]="true || info.mode != 'auto' || info.pageNumber <= info.displayPages">
 		<ion-infinite-scroll-content></ion-infinite-scroll-content>
 	</ion-infinite-scroll>
+
 	<ion-list class="books">
 		<button ion-item detail-none *ngFor="let b of books; trackBy: trackBy" (click)="openBook(b)">
 			<ion-thumbnail item-left>
@@ -68,7 +70,9 @@
 			</h2>
 		</button>
 	</ion-list>
-	<ion-infinite-scroll threshold="288px" position="bottom" (ionInfinite)="onInfiniteScroll($event)" [hidden]="info.mode != 'auto'">
+
+	<ion-infinite-scroll threshold="288px" position="bottom" (ionInfinite)="onInfiniteScroll($event)" [hidden]="info.mode != 'auto' || (info.pagination && info.pageNumber == info.pagination.TotalPages)">
 		<ion-infinite-scroll-content></ion-infinite-scroll-content>
 	</ion-infinite-scroll>
+	
 </ion-content>
