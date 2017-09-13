@@ -260,7 +260,7 @@ export namespace AppRTU {
 			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
 		}
 		else if (info.ServiceName == "OnlineStatus") {
-			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update online status");
+			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update status & run scheduler");
 			call("users", "status");
 			if (handlers["Scheduler"]) {
 				subject.next({ "type": "Scheduler", "message": message });
