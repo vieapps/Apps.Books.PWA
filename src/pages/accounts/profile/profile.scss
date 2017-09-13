@@ -8,11 +8,11 @@ page-profile {
 	.captcha img {
 		border: solid 1px #eee;
 	}
-	.ios .captcha img {
-		border-radius: 5px;
-	}
 	.captcha input {
 		text-transform: uppercase;
+	}
+	.ios .captcha img {
+		border-radius: 5px;
 	}
 	ion-list.bookmarks > ion-list-header > div > div {
 		margin-top: 30px;
@@ -21,7 +21,7 @@ page-profile {
 		cursor: pointer;
 	}
 	ion-list.bookmarks > ion-item-sliding > ion-item > div > div > ion-label > h2 {
-		margin-top: 7px;
+		margin-top: 7px !important;
 	}
 	ion-list.bookmarks > ion-item-sliding > ion-item > div > div > ion-label > p > span:last-child {
 		margin-left: 30px;

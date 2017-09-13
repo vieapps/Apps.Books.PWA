@@ -35,7 +35,7 @@
         "cordova-plugin-statusbar": "2.2.1",
         "cordova-plugin-whitelist": "1.3.1",
         "crypto-js": "^3.1.9-1",
-        "ionic-angular": "^3.6.0",
+        "ionic-angular": "^3.6.1",
         "ionic-plugin-keyboard": "~2.2.1",
         "ionicons": "3.0.0",
         "linqts": "^1.9.1",
@@ -48,8 +48,8 @@
         "zone.js": "0.8.12"
     },
     "devDependencies": {
-        "@ionic/app-scripts": "2.0.2",
-        "ionic": "3.9.2",
+        "@ionic/app-scripts": "^2.1.4",
+        "ionic": "3.10.1",
         "typescript": "2.3.4"
     },
     "cordovaPlugins": [
