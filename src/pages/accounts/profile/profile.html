@@ -164,7 +164,7 @@
 			<ion-input #address name="address" type="text" maxlength="250" placehoder="Số nhà đường/phố, Phường/Xã" [(ngModel)]="info.profile.Address"></ion-input>
 		</ion-item>
 		<ion-item class="item-label-floating completer-container" [class.invalid]="!info.state.valid && !info.address.current" *ngIf="info.state.mode == 'Update'">
-			<ng2-completer #addresses name="addresses" inputClass="{{info.state.css}}" inputId="addresses" placeholder="Quận/Huyện, Thành phố/Tỉnh"
+			<ng2-completer #addresses name="addresses" inputClass="{{info.state.css}}" placeholder="Quận/Huyện, Thành phố/Tỉnh"
 				textSearching="tìm kiếm..." [(ngModel)]="info.address.search" [datasource]="completerData" [initialValue]="info.address.current"
 				[minSearchLength]="2" (selected)="selectAddress($event)"></ng2-completer>
 		</ion-item>
@@ -184,6 +184,29 @@
 			<ion-input #captcha required name="captcha" type="text" placeholder="Mã xác thực" maxlength="4" [(ngModel)]="info.captcha.code"></ion-input>
 		</ion-item>
 	</form>
+
+	<div padding class="avatar" [hidden]="info.state.mode != 'Update'">
+		<h2>
+			Ảnh đại diện
+		</h2>
+		<ion-list radio-group name="avatar" [(ngModel)]="info.avatar.mode">
+			<ion-item>
+				<ion-label>Tự tải lên</ion-label>
+				<ion-radio value="Avatar"></ion-radio>
+			</ion-item>
+			<ion-item>
+				<ion-label>Sử dụng dịch vụ của Gravatar</ion-label>
+				<ion-radio value="Gravatar"></ion-radio>
+			</ion-item>
+		</ion-list>
+		<div>
+			<img-cropper [image]="cropper.data" [settings]="cropper.settings" [hidden]="info.avatar.mode != 'Avatar'"></img-cropper>
+		</div>
+		<div>
+			<img [src]="cropper.data.image" [width]="cropper.settings.croppedWidth" [height]="cropper.settings.croppedHeight" [hidden]="info.avatar.mode != 'Avatar'">
+			<img [src]="info.profile.Gravatar" [width]="cropper.settings.croppedWidth" [height]="cropper.settings.croppedHeight" [hidden]="info.avatar.mode == 'Avatar'">
+		</div>
+	</div>
 
 	<div [hidden]="info.state.mode != 'ChangePassword' && info.state.mode != 'ChangeEmail'">
 		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.change.OldPassword)">

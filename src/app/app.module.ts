@@ -10,6 +10,8 @@ import { StatusBar } from "@ionic-native/status-bar";
 import { SplashScreen } from "@ionic-native/splash-screen";
 import { Keyboard } from "@ionic-native/keyboard";
 import { IonicStorageModule } from "@ionic/storage";
+import { FileTransfer } from "@ionic-native/file-transfer";
+import { ImageCropperModule } from "ng2-img-cropper";
 
 import { Ng2CompleterModule } from "ng2-completer";
 import { RatingModule } from "ngx-rating";
@@ -61,6 +63,7 @@ const cloudSettings: CloudSettings = {
 		IonicStorageModule.forRoot({ name: "vieappsDB" }),
 		CloudModule.forRoot(cloudSettings),
 		Ng2CompleterModule,
+		ImageCropperModule,
 		RatingModule,
 		QRCodeModule,
 	],
@@ -88,8 +91,11 @@ const cloudSettings: CloudSettings = {
 		SplashScreen,
 		Device,
 		Keyboard,
+		FileTransfer,
 		Ng2CompleterModule,
+		ImageCropperModule,
 		RatingModule,
+		QRCodeModule,
 		{ provide: ErrorHandler, useClass: IonicErrorHandler }
 	]
 })

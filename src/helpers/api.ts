@@ -63,7 +63,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Post(path: string, body: any, headers?: any) {
-		return getHttp().post(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
+		return getHttp().post(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(headers, true) });
 	}
 
 	/**
@@ -83,7 +83,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Put(path: string, body: any, headers?: any) {
-		return getHttp().put(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(AppUtility.isArray(headers) ? headers : true) });
+		return getHttp().put(AppData.Configuration.app.uris.apis + path, JSON.stringify(body), { headers: getHeaders(headers, true) });
 	}
 
 	/**
@@ -102,7 +102,7 @@ export namespace AppAPI {
 		* @param headers Additional headers to perform the request
 	*/
 	export function Delete(path: string, headers?: any) {
-		return getHttp().delete(AppData.Configuration.app.uris.apis + path, { headers: getHeaders(headers) });
+		return getHttp().delete(AppData.Configuration.app.uris.apis + path, { headers: getHeaders(headers, false) });
 	}
 
 	/**
@@ -115,8 +115,11 @@ export namespace AppAPI {
 	}
 
 	/** Gets the headers for making requests to APIs */
-	export function getHeaders(additional?: any) {
+	export function getHeaders(additional?: any, addContentType?: boolean) {
 		let headers = new Headers();
+		if (addContentType) {
+			headers.append("content-type", "application/json");
+		}
 
 		let authHeaders = getAuthHeaders();
 		for (let name in authHeaders) {
@@ -124,13 +127,7 @@ export namespace AppAPI {
 		}
 
 		if (additional != undefined) {
-			if (AppUtility.isTrue(additional)) {
-				headers.append("Content-Type", "application/json");
-			}
-			else if (AppUtility.isObject(additional, true) && AppUtility.isNotEmpty(additional.name) && AppUtility.isNotEmpty(additional.value)) {
-				headers.append(additional.name as string, additional.value as string);
-			}
-			else if (AppUtility.isArray(additional)) {
+			if (AppUtility.isArray(additional)) {
 				new List<any>(additional).ForEach(h => {
 					if (AppUtility.isObject(h, true) && AppUtility.isNotEmpty(h.name) && AppUtility.isNotEmpty(h.value)) {
 						headers.append(h.name as string, h.value as string);

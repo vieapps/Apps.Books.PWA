@@ -1,12 +1,16 @@
 import { Component, ViewChild } from "@angular/core";
+import { Http } from "@angular/http";
 import { NgForm } from "@angular/forms";
-import { NavController, NavParams, ViewController, ActionSheetController, AlertController, Loading, LoadingController } from "ionic-angular";
+import { NavController, NavParams, ViewController, ActionSheetController, AlertController, Loading, LoadingController, TextInput, Content } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
-import { CompleterService, CompleterData } from "ng2-completer";
+import { CompleterService, CompleterData, CompleterCmp } from "ng2-completer";
+import { ImageCropperComponent, CropperSettings } from "ng2-img-cropper";
 import { List } from "linqts";
+import "rxjs/add/operator/map";
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppEvents } from "../../../helpers/events";
+import { AppAPI } from "../../../helpers/api";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
@@ -23,6 +27,7 @@ import { ReadBookPage } from "../../books/read/read";
 })
 export class ProfilePage {
 	constructor(
+		public http: Http,
 		public navCtrl: NavController,
 		public navParams: NavParams,
 		public viewCtrl: ViewController,
@@ -34,10 +39,19 @@ export class ProfilePage {
 		public configSvc: ConfigurationService,
 		public authSvc: AuthenticationService
 	){
+		// initialize
 		this.info.state.mode = !this.authSvc.isAuthenticated() && AppUtility.isTrue(this.navParams.get("Register"))
 			? "Register"
 			: "Profile";
 		this.initialize();
+
+		// image cropper
+		this.cropper.settings.width = 100;
+		this.cropper.settings.height = 100;
+		this.cropper.settings.croppedWidth = 300;
+		this.cropper.settings.croppedHeight = 300;
+		this.cropper.settings.canvasWidth = 272;
+		this.cropper.settings.canvasHeight = 272;
 	}
 
 	// attributes
@@ -52,8 +66,9 @@ export class ProfilePage {
 		id: "",
 		profile: undefined,
 		avatar: {
+			mode: "Avatar",
 			current: "",
-			uploaded: undefined
+			uploaded: ""
 		},
 		rating: 0.0,
 		bookmarks: [],
@@ -87,32 +102,43 @@ export class ProfilePage {
 		isAppleOS: AppUtility.isAppleOS()
 	};
 	completerData: CompleterData = undefined;
+	cropper = {
+		settings: new CropperSettings(),
+		data: {
+			image: "",
+			original: undefined
+		}
+	};
 
 	// controls
-	@ViewChild("name") nameCtrl;
-	@ViewChild("email") emailCtrl;
-	@ViewChild("confirmEmail") confirmEmailCtrl;
-	@ViewChild("password") passwordCtrl;
-	@ViewChild("confirmPassword") confirmPasswordCtrl;
-	@ViewChild("gender") genderCtrl;
-	@ViewChild("birthDay") birthDayCtrl;
-	@ViewChild("address") addressCtrl;
-	@ViewChild("addresses") addressesCtrl;
-	@ViewChild("mobile") mobileCtrl;
-	@ViewChild("captcha") captchaCtrl;
-
-	@ViewChild("oldPassword") oldPasswordCtrl;
-	@ViewChild("newPassword") newPasswordCtrl;
-	@ViewChild("confirmNewPassword") confirmNewPasswordCtrl;
-	@ViewChild("newEmail") newEmailCtrl;
-	@ViewChild("confirmNewEmail") confirmNewEmailCtrl;
-	@ViewChild("changeCaptcha") changeCaptchaCtrl;
-
-	@ViewChild("guestname") guestnameCtrl;
-	@ViewChild("guestemail") guestemailCtrl;
-
 	loading: Loading = undefined;
+	
+	@ViewChild("name") nameCtrl: TextInput;
+	@ViewChild("email") emailCtrl: TextInput;
+	@ViewChild("confirmEmail") confirmEmailCtrl: TextInput;
+	@ViewChild("password") passwordCtrl: TextInput;
+	@ViewChild("confirmPassword") confirmPasswordCtrl: TextInput;
+	@ViewChild("gender") genderCtrl: TextInput;
+	@ViewChild("birthDay") birthDayCtrl: TextInput;
+	@ViewChild("address") addressCtrl: TextInput;
+	@ViewChild("addresses") addressesCtrl: CompleterCmp;
+	@ViewChild("mobile") mobileCtrl: TextInput;
+	@ViewChild("captcha") captchaCtrl: TextInput;
 
+	@ViewChild("oldPassword") oldPasswordCtrl: TextInput;
+	@ViewChild("newPassword") newPasswordCtrl: TextInput;
+	@ViewChild("confirmNewPassword") confirmNewPasswordCtrl: TextInput;
+	@ViewChild("newEmail") newEmailCtrl: TextInput;
+	@ViewChild("confirmNewEmail") confirmNewEmailCtrl: TextInput;
+	@ViewChild("changeCaptcha") changeCaptchaCtrl: TextInput;
+
+	@ViewChild("guestname") guestnameCtrl: TextInput;
+	@ViewChild("guestemail") guestemailCtrl: TextInput;
+
+	@ViewChild("avatarcropper") cropperCtrl: ImageCropperComponent;
+
+	@ViewChild(Content) contentCtrl: Content;
+	
 	// page events
 	ionViewDidLoad() {
 		this.info.state.processing = false;
@@ -122,6 +148,14 @@ export class ProfilePage {
 				: AppUtility.isWindowsPhoneOS()
 					? "text-input-wp"
 					: "text-input-md");
+
+		AppEvents.on(
+			"BookmarksAreUpdated",
+			(info: any) => {
+				this.buildBookmakrs();
+			},
+			"UpdateBookmarksEventHandler"
+		);
 	}
 
 	ionViewCanEnter() {
@@ -138,6 +172,7 @@ export class ProfilePage {
 	}
 
 	ionViewDidLeave() {
+		AppEvents.off("BookmarksAreUpdated", "UpdateBookmarksEventHandler");
 		AppEvents.broadcast("SetPreviousPageActive", { current: "ProfilePage" });
 	}
 
@@ -170,6 +205,9 @@ export class ProfilePage {
 				: AppData.Accounts.getValue(this.info.id);
 				
 			this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
+			this.info.avatar.mode = this.info.avatar.current == this.info.profile.Gravatar
+				? "Gravatar"
+				: "Avatar";
 			this.info.title = this.info.id != "" && this.info.id != AppData.Configuration.session.account.id
 				? this.info.profile.Name
 				: "Thông tin tài khoản";
@@ -256,6 +294,7 @@ export class ProfilePage {
 		this.setBackButton(false);
 		this.info.state.mode = "Update";
 		this.info.title = "Cập nhật tài khoản";
+		this.cropper.data.image = this.info.avatar.current;
 		AppUtility.focus(this.nameCtrl, this.keyboard);
 	}
 
@@ -341,10 +380,12 @@ export class ProfilePage {
 
 	cancelUpdate() {
 		this.hideLoading();
-		this.info.state.processing = false;
-		this.setBackButton(true);
-		this.info.state.mode = "Profile";
-		this.info.title = "Thông tin tài khoản";
+		this.contentCtrl.scrollToTop().then(() => {
+			this.info.state.processing = false;
+			this.setBackButton(true);
+			this.info.state.mode = "Profile";
+			this.info.title = "Thông tin tài khoản";
+		});
 	}
 
 	exit() {
@@ -398,7 +439,7 @@ export class ProfilePage {
 				AppUtility.focus(this.addressCtrl, this.keyboard);
 			}
 			else if (this.addressesCtrl && !this.info.address.current) {
-				AppUtility.focus(this.addressesCtrl.inputId, this.keyboard);
+				AppUtility.focus(this.addressesCtrl.ctrInput, this.keyboard);
 			}
 			else if (this.mobileCtrl && !form.controls.mobile.valid) {
 				AppUtility.focus(this.mobileCtrl, this.keyboard);
@@ -591,18 +632,70 @@ export class ProfilePage {
 			this.info.profile.County = this.info.address.current.county;
 			this.info.profile.Province = this.info.address.current.province;
 			this.info.profile.Country = this.info.address.current.country;
-			this.authSvc.saveProfileAsync(this.info.profile,
-				() => {
-					this.info.profile = AppUtility.clone(this.configSvc.getAccount().profile);
-					this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
-					this.cancelUpdate();
+			this.uploadAvatar(() => {
+				this.info.profile.Avatar = this.info.avatar.mode == "Avatar" && this.info.avatar.uploaded != ""
+					? this.info.avatar.uploaded
+					: "";
+				this.authSvc.saveProfileAsync(this.info.profile,
+					() => {
+						this.info.profile = AppUtility.clone(this.configSvc.getAccount().profile);						
+						this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
+						this.info.avatar.uploaded = "";
+						this.cancelUpdate();
+					},
+					(error: any) => {
+						this.showError(error);
+					}
+				);
+			});
+		}
+	}
+
+	uploadAvatar(onCompleted?: () => void) {
+		if (this.info.avatar.mode == "Avatar" && this.cropper.data.image != "" && this.info.avatar.current) {
+			this.http.post(
+				AppData.Configuration.app.uris.files + "avatars",
+				JSON.stringify({ "Data": this.cropper.data.image }),
+				{
+					headers: AppAPI.getHeaders({
+						"content-type": "application/json",
+						"x-as-base64": "yes"
+					})
+				}
+			)
+			.map(response => response.json())
+			.subscribe(
+				(data: any) => {
+					this.info.avatar.uploaded = data.Uri;
+					this.cropper.data = {
+						image: data.Uri,
+						original: undefined
+					};
+					onCompleted && onCompleted();
 				},
 				(error: any) => {
-					this.showError(error);
+					console.error("Error occurred while uploading avatar image", error);
+					onCompleted && onCompleted();
 				}
 			);
 		}
+		else {
+			onCompleted && onCompleted();
+		}
 	}
+	
+	/*
+	onChangeAvatarImageFile(event: any) {
+		var image = new Image();
+    var file = event.target.files[0];
+    var reader = new FileReader();
+    reader.onloadend = (loadEvent: any) => {
+			image.src = loadEvent.target.result;
+			this.cropperCtrl.setImage(image);
+    };
+		reader.readAsDataURL(file);
+	}
+	*/
 
 	doChangePassword() {
 		var setFocus = () => {
@@ -771,5 +864,5 @@ export class ProfilePage {
 			this.buildBookmakrs();
 		});
 	}
-	
+
 }

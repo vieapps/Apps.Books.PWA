@@ -22,7 +22,7 @@ export class ConfigurationService {
 
 	constructor(public http: Http, public platform: Platform, public device: Device, public storage: Storage) {
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Scheduler", (message: any) => this.syncBookmarks());
+		AppRTU.register("Scheduler", (message: any) => this.sendBookmarks());
 	}
 
 	/** Prepare the working environments of the app */
@@ -387,23 +387,20 @@ export class ConfigurationService {
 			ObjectName: "bookmarks",
 			Verb: "GET"
 		});
-
 		onCompleted != undefined && onCompleted();
 	}
 
 	/** Syncs the bookmarks with APIs */
-	syncBookmarks(onCompleted?: () => void) {
+	sendBookmarks(onCompleted?: () => void) {
 		if (this.isAuthenticated()) {
-			let bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
-				.OrderByDescending(b => b.Time)
-				.Take(30)
-				.ToArray();
-		
 			AppRTU.send({
 				ServiceName: "books",
 				ObjectName: "bookmarks",
 				Verb: "POST",
-				Body: JSON.stringify(bookmarks)
+				Body: JSON.stringify(new List(AppData.Configuration.reading.bookmarks.values())
+					.OrderByDescending(b => b.Time)
+					.Take(30)
+					.ToArray())
 			});
 
 			onCompleted != undefined && onCompleted();
@@ -411,8 +408,12 @@ export class ConfigurationService {
 	}
 
 	/** Merges the bookmarks with APIs */
-	mergeBookmarks(data: any, onCompleted?: () => void) {
+	syncBookmarks(data: any, onCompleted?: () => void) {
 		AppData.Configuration.session.account.profile.LastSync = new Date();
+		if (AppUtility.isTrue(data.Sync)) {
+			AppData.Configuration.reading.bookmarks.clear();
+		}
+
 		new List<any>(data.Objects)
 			.ForEach(b => {
 				let bookmark = AppModels.Bookmark.deserialize(b);
@@ -441,6 +442,7 @@ export class ConfigurationService {
 			});
 
 		AppUtility.setTimeout(async () => {
+			AppEvents.broadcast("BookmarksAreUpdated");
 			await this.saveBookmarksAsync(onCompleted);
 		});
 	}
@@ -483,7 +485,7 @@ export class ConfigurationService {
 		// bookmarks
 		if (info.ObjectName == "Bookmarks") {
 			if (this.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
-				this.mergeBookmarks(message.Data);
+				this.syncBookmarks(message.Data);
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+import { ElementRef } from "@angular/core";
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
@@ -171,11 +172,17 @@ export namespace AppUtility {
 	  * @param defer Defer time (in miliseconds)
 	*/
 	export function focus(control: any, keyboard?: Keyboard, defer?: number) {
-		if (isObject(control, true) && typeof control.setFocus == "function") {
+		if (control && typeof control.setFocus == "function") {
 			setTimeout(() => {
 				control.setFocus();
 				isNotNull(keyboard) && isNativeApp() && keyboard.show();
-			}, defer || (isNativeApp() ? 567 : 234));
+			}, defer || (isNativeApp() ? 456 : 345));
+		}
+		else if (control && control instanceof ElementRef) {
+			setTimeout(() => {
+				(control as ElementRef).nativeElement.focus();
+				isNotNull(keyboard) && isNativeApp() && keyboard.show();
+			}, defer || (isNativeApp() ? 456 : 345));
 		}
 	}
 
