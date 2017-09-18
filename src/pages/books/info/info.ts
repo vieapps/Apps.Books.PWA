@@ -7,7 +7,7 @@ import { AppEvents } from "../../../helpers/events";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
-import { AuthenticationService } from "../../../providers/authentication";
+import { ConfigurationService } from "../../../providers/configuration";
 import { BooksService } from "../../../providers/books";
 
 @Component({
@@ -20,7 +20,7 @@ export class BookInfoPage {
 		public navParams: NavParams,
 		public alertCtrl: AlertController,
 		public modalCtrl: ModalController,
-		public authSvc: AuthenticationService,
+		public configSvc: ConfigurationService,
 		public booksSvc: BooksService
 	){
 	}
@@ -100,7 +100,7 @@ export class BookInfoPage {
 	}
 
 	download(type: string) {
-		if (this.authSvc.isAuthenticated()) {
+		if (this.configSvc.isAuthenticated()) {
 			window.open(this.info.book.Files[type].Url + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
 		}
 		else {

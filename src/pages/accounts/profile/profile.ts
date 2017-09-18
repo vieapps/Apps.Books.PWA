@@ -40,7 +40,7 @@ export class ProfilePage {
 		public authSvc: AuthenticationService
 	){
 		// initialize
-		this.info.state.mode = !this.authSvc.isAuthenticated() && AppUtility.isTrue(this.navParams.get("Register"))
+		this.info.state.mode = !this.configSvc.isAuthenticated() && AppUtility.isTrue(this.navParams.get("Register"))
 			? "Register"
 			: "Profile";
 		this.initialize();
@@ -52,6 +52,7 @@ export class ProfilePage {
 		this.cropper.settings.croppedHeight = 300;
 		this.cropper.settings.canvasWidth = 272;
 		this.cropper.settings.canvasHeight = 272;
+		this.cropper.settings.noFileInput = true;
 	}
 
 	// attributes
@@ -97,6 +98,7 @@ export class ProfilePage {
 			url: undefined
 		},
 		privileges: null,
+		permissions: null,
 		appMode: AppData.Configuration.app.mode,
 		canSeeOthers: false,
 		isAppleOS: AppUtility.isAppleOS()
@@ -218,6 +220,11 @@ export class ProfilePage {
 			if (this.info.profile.ID == AppData.Configuration.session.account.id) {
 				this.buildBookmakrs();
 			}
+			else if (this.authSvc.isAdministrator()) {
+				this.authSvc.getPrivilegesAsync(this.info.profile.ID, (data: any) => {
+					this.preparePrivileges(data);
+				});
+			}
 		}
 
 		this.info.address = AppUtility.initializeAddress(this.info.profile);
@@ -313,35 +320,46 @@ export class ProfilePage {
 		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
 	}
 
+	preparePrivileges(data: any) {
+		this.info.privileges = this.configSvc.prepareAccount(data).Privileges;
+	}
+
 	openPrivileges() {
 		this.setBackButton(false);
 		this.info.state.mode = "SetPrivileges";
 		this.info.title = "Đặt quyền truy cập";
-		this.info.privileges = {
+		this.info.permissions = {
 			roles: [
 				{ label: "Người quản trị", value: "Administrator" },
 				{ label: "Người kiểm duyệt", value: "Moderator" },
-				{ label: "Người dùng", value: "User" }
+				{ label: "Người dùng", value: "Viewer" }
 			],
-			sections: [
-				{ label: "Sách điện tử", serviceName: "Books", objectName: "Book" },
-				{ label: "Thông tin thống kê", serviceName: "Books", objectName: "Statistic" },
-				{ label: "Tài khoản người dùng", serviceName: "Users", objectName: "Profile" }
+			objects: [
+				{ label: "Sách điện tử", value: "book" },
+				{ label: "Thể loại", value: "category" },
+				{ label: "Thông tin thống kê", value: "statistic" }
 			],
-			permissions: {
-				role: this.authSvc.getRole(this.info.profile),
-				sections: {}
-			}
+			privileges: {}
 		};
-		new List<any>(this.info.privileges.sections).ForEach((s) => {
-			let isAdministrator = this.authSvc.isAuthorized(s.serviceName, s.objectName, "Full");
-			let isModerator = !isAdministrator && (this.authSvc.isAuthorized(s.serviceName, s.objectName, "Write") || this.authSvc.isAuthorized(s.serviceName, s.objectName, "Lock"));
-			this.info.privileges.permissions.sections[s.value] = isAdministrator
-				? "Administrator"
-				: isModerator
-					? "Moderator"
-					: "User";
-		});
+		new List<any>(this.info.permissions.objects)
+			.ForEach(o => {
+				let role: string = undefined;
+				if (this.info.privileges) {
+					let privilege = new List<AppModels.Privilege>(this.info.privileges)
+						.FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == o.value);
+					if (privilege) {
+						role = privilege.Role;
+					}
+				}
+				if (!role) {
+					role = this.authSvc.isInRole("books", o.value, "Administrator")
+						? "Administrator"
+						: this.authSvc.isInRole("books", o.value, "Moderator")
+							? "Moderator"
+							: "Viewer"
+				}
+				this.info.permissions.privileges[o.value] = role;
+			});
 	}
 
 	// helpers
@@ -684,8 +702,7 @@ export class ProfilePage {
 		}
 	}
 	
-	/*
-	onChangeAvatarImageFile(event: any) {
+	changeAvatar(event: any) {
 		var image = new Image();
     var file = event.target.files[0];
     var reader = new FileReader();
@@ -695,7 +712,6 @@ export class ProfilePage {
     };
 		reader.readAsDataURL(file);
 	}
-	*/
 
 	doChangePassword() {
 		var setFocus = () => {
@@ -778,21 +794,20 @@ export class ProfilePage {
 	}
 
 	doSetPrivileges() {
-		var body = {
-			ID: this.info.profile.ID,
-			Role: this.info.privileges.permissions.role,
-			Sections: {}
+		var info = {
+			Privileges: new List<any>(this.info.permissions.objects)
+				.Select(o => AppModels.Privilege.deserialize({
+					ServiceName: "books",
+					ObjectName: o.value,
+					Role: this.info.permissions.privileges[o.value]
+				}))
+				.ToArray()
 		};
-		for (let s in this.info.privileges.permissions.sections) {
-			body.Sections[s] = this.info.privileges.permissions.sections[s];
-		}
-
 		this.showLoading("Đặt quyền truy cập...");
 		this.info.state.processing = true;
-		this.authSvc.setPrivilegesAsync(body,
-			() => {
-				this.info.profile = AppData.Accounts.getValue(this.info.id);
-				this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
+		this.authSvc.setPrivilegesAsync(this.info.profile.ID, info,
+			(data: any) => {
+				this.preparePrivileges(data);
 				this.cancelUpdate();
 			},
 			(error: any) => {

@@ -38,6 +38,7 @@ page-profile {
 	div.avatar > div {
 		width: 272px;
 	}
+	div.avatar > div:first-of-type > input,
 	div.avatar > div:first-of-type > img-cropper > span > input {
 		display: inline-block;
 		width: 100%;

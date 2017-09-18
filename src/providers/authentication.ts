@@ -24,52 +24,22 @@ export class AuthenticationService {
 		AppRTU.register("Users", (message: any) => this.processRTU(message));
 	}
 
-	/** Checks to see the current account is authenticated or not */
-	isAuthenticated() {
-		return this.configSvc.isAuthenticated();
-	}
-
-	/** Checks to see the account is system administrator or not */
-	isSystemAdministrator(account?: any) {
-		account = account || this.configSvc.getAccount();
-		return account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-			&& (new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator")) != undefined;
-	}
-
 	/** Checks to see the account is administrator or not */
 	isAdministrator(account?: any) {
 		account = account || this.configSvc.getAccount();
-		return this.isSystemAdministrator(account)
-			|| (account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-			&& (new List<string>(account.roles).FirstOrDefault(r => r == "Administrator")) != undefined);
-	}
-
-	/** Gets the working role of an account */
-	getRole(account?: any) {
-		account = account || this.configSvc.getAccount();
-		return this.isSystemAdministrator(account)
-			? "Administrator"
-			: account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
-				&& new List<string>(account.roles).FirstOrDefault(r => r == "Authenticated") != undefined
-				? "User"
-				: "Anonymous";
+		return account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
+			&& new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator") != undefined;
 	}
 
 	/** Checks to see the account is authorized to do a specified action on a specified section */
-	isAuthorized(serviceName: string, objectName: string, action: string) {
+	isInRole(serviceName: string, objectName: string, role: string, privileges?: Array<AppModels.Privilege>) {
 		serviceName = AppUtility.isNotEmpty(serviceName) ? serviceName : "";
 		objectName = AppUtility.isNotEmpty(objectName) ? objectName : "";
-		action = AppUtility.isNotEmpty(action) ? action : "";
-
-		var account = this.configSvc.getAccount();
-		var privileges = account != null && AppUtility.isArray(account.privileges)
-			? account.privileges as Array<AppModels.Privilege>
-			: new Array<AppModels.Privilege>();
-		var matched = new List(privileges).FirstOrDefault(p => p.ServiceName == serviceName && p.ObjectName == objectName);
-
-		return matched != undefined
-			? new List(matched.Actions).FirstOrDefault(a => a == "Full" || a == action) != undefined
-			: false;
+		role = AppUtility.isNotEmpty(role) ? role : "Viewer";
+		privileges = privileges || this.configSvc.getAccount().privileges as Array<AppModels.Privilege>;
+		
+		let privilege = new List(privileges).FirstOrDefault(p => p.ServiceName == serviceName && p.ObjectName == objectName);
+		return privilege != undefined && privilege.Role == role;
 	}
 
 	/** Registers a captcha with REST API */
@@ -399,53 +369,47 @@ export class AuthenticationService {
 	}
 
 	// privileges
-	async getLibrariesAsync(onCompleted?: (d: any) => void) {
+	async getPrivilegesAsync(id: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.GetAsync("accounts/libraries");
+			let path = "users/account/" + id
+				+ "?related-service=books"
+				+ "&languague=vi-VN"
+			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
 			if (data.Status == "OK") {
-				if (onCompleted != undefined) {
-					onCompleted(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
-				console.error("[Authentication]: Error occurred while fetching accounts' libraries");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
+				console.error("[Authentication]: Error occurred while fetching privileges of an user");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while fetching accounts' libraries", e);
+			console.error("[Authentication]: Error occurred while fetching privileges of an user", e);
+			onError != undefined && onError(e);
 		}
 	}
 
-	async setPrivilegesAsync(body: any, onNext?: (d: any) => void, onError?: (e: any) => void) {
+	async setPrivilegesAsync(id: string, privileges: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.PostAsync("accounts/privileges", body);
+			let path = "users/account/" + id
+				+ "?related-service=books"
+				+ "&languague=vi-VN"
+			let response = await AppAPI.PutAsync(path, privileges);
 			let data = response.json();
 			if (data.Status == "OK") {
-				AppModels.Account.update(data.Data);
-				if (onNext != undefined) {
-					onNext(data);
-				}
+				onNext != undefined && onNext(data);
 			}
 			else {
-				console.error("[Authentication]: Error occurred while updating privileges of the account");
-				if (AppUtility.isObject(data.Error, true)) {
-					console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-
-				if (onError != undefined) {
-					onError(data);
-				}
+				console.error("[Authentication]: Error occurred while updating privileges of an user");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while updating privileges of the account", e);
-			if (onError != undefined) {
-				onError(e);
-			}
+			console.error("[Authentication]: Error occurred while updating privileges of an user", e);
+			onError != undefined && onError(e);
 		}
 	}
 
@@ -458,10 +422,8 @@ export class AuthenticationService {
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 			let body = {
-				Timestamp: Math.round(+new Date() / 1000),
 				Name: name,
 				Email: AppCrypto.rsaEncrypt(email),
-				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id),
 				Campaign: "Books-Email-Invitation"
 			};
 			let response = await AppAPI.PostAsync(path, body);
@@ -490,9 +452,7 @@ export class AuthenticationService {
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 			let body = {
-				Timestamp: Math.round(+new Date() / 1000),
 				Email: AppCrypto.rsaEncrypt(email),
-				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id),
 				Captcha: AppCrypto.aesEncrypt(JSON.stringify({ Registered: AppData.Configuration.session.captcha.code, Input: captcha }))
 			};
 			let response = await AppAPI.PutAsync(path, body);
@@ -521,10 +481,8 @@ export class AuthenticationService {
 				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let body = {
-				Timestamp: Math.round(+new Date() / 1000),
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
-				Password: AppCrypto.rsaEncrypt(password),
-				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id)
+				Password: AppCrypto.rsaEncrypt(password)
 			};
 			let response = await AppAPI.PutAsync(path, body);
 			let data = response.json();
@@ -551,10 +509,8 @@ export class AuthenticationService {
 				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let body = {
-				Timestamp: Math.round(+new Date() / 1000),
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
-				Email: AppCrypto.rsaEncrypt(email),
-				Session: AppCrypto.aesEncrypt(AppData.Configuration.session.id)
+				Email: AppCrypto.rsaEncrypt(email)
 			};		
 			let response = await AppAPI.PutAsync(path, body);
 			let data = response.json();
@@ -621,7 +577,20 @@ export class AuthenticationService {
 
 		// update account
 		if (info.ObjectName == "Account") {
-			this.configSvc.updateAccount(message.Data);
+			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
+				this.configSvc.updateAccount(message.Data);
+			}
+		}
+
+		// got new access token, then need to update session
+		else if ((info.ObjectName == "Session")
+		&& AppData.Configuration.session.id == message.Data.ID
+		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
+			this.configSvc.updateSessionAsync(message.Data, () => {
+				AppUtility.isDebug() && console.warn("[Authentication]: Update session with the new token", AppData.Configuration.session);
+				this.configSvc.patchAccount();
+				this.patchSession();
+			});
 		}
 
 		// update profile
@@ -641,18 +610,11 @@ export class AuthenticationService {
 				account.IsOnline = message.Data.IsOnline;
 				account.LastAccess = new Date();
 			}
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID && AppData.Configuration.session.account.profile != null) {
+			if (AppData.Configuration.session.account != null
+				&& AppData.Configuration.session.account.id == message.Data.UserID
+				&& AppData.Configuration.session.account.profile != null) {
 				AppData.Configuration.session.account.profile.LastAccess = new Date();
 			}
-		}
-
-		// new permissions (new access token)
-		else if (message.Verb == "Permissions" && AppData.Configuration.session.account.profile != null) {
-			this.updateProfileAsync(message.Data.Profile, () => {
-				this.configSvc.updateSessionAsync(message.Data, () => {
-					AppRTU.restart("Re-start when got the new access token...", 1234);
-				});
-			});
 		}
 	}
 

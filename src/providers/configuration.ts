@@ -230,11 +230,10 @@ export class ConfigurationService {
 		return AppUtility.isTrue(getDefault) || AppData.Configuration.session.account == null
 			? {
 					id: null,
-					status: null,
 					roles: null,
 					privileges: null,
+					status: null,
 					profile: null,
-					role: "Anonymous",
 					facebook: {
 						id: null,
 						name: null,
@@ -245,28 +244,50 @@ export class ConfigurationService {
 			: AppData.Configuration.session.account;
 	}
 
+	/** Prepares account information */
+	prepareAccount(data: any) {
+		let account: { Roles: Array<string>, Privileges: Array<AppModels.Privilege>, Status: string } = {
+			Roles: undefined,
+			Privileges: undefined,
+			Status: undefined
+		};
+
+		if (data.Roles && AppUtility.isArray(data.Roles)) {
+			account.Roles = new List<string>(data.Roles)
+				.Select(r => r.trim())
+				.Distinct()
+				.ToArray();
+		}
+
+		if (data.Privileges && AppUtility.isArray(data.Privileges)) {
+			account.Privileges = new List<any>(data.Privileges)
+				.Select(p => AppModels.Privilege.deserialize(p))
+				.ToArray();
+		}
+
+		if (AppUtility.isNotEmpty(data.Status)) {
+			account.Status = data.Status as string;
+		}
+
+		return account;
+	}
+
 	/**
 	 * Updates information of the account
 	 * @param data 
 	 * @param onCompleted 
 	 */
 	updateAccount(data: any, onCompleted?: () => void) {
-		if (AppData.Configuration.session.account == null || AppData.Configuration.session.account.id != data.ID) {
-			return;
+		let info = this.prepareAccount(data);
+		if (info.Roles) {
+			AppData.Configuration.session.account.roles = info.Roles;
 		}
-		AppData.Configuration.session.account.status = data.Status as string;
-		AppData.Configuration.session.account.roles = new List<string>(data.Roles)
-			.Select(r => r.trim())
-			.Distinct()
-			.ToArray();
-		AppData.Configuration.session.account.privileges = new List<any>(data.Privileges)
-			.Select(p => AppModels.Privilege.deserialize(p))
-			.ToArray();
-		AppData.Configuration.session.account.role = new List<string>(data.Roles).FirstOrDefault(r => r == "SystemAdministrator") != null
-			? "Administrator"
-			: new List<string>(data.Roles).FirstOrDefault(r => r == "Authenticated") != null
-				? "User"
-				: "Anonymous";
+		if (info.Privileges) {
+			AppData.Configuration.session.account.privileges = info.Privileges;
+		}
+		if (info.Status) {
+			AppData.Configuration.session.account.status = info.Status;
+		}
 		onCompleted != undefined && onCompleted();
 	}
 
@@ -409,7 +430,10 @@ export class ConfigurationService {
 
 	/** Merges the bookmarks with APIs */
 	syncBookmarks(data: any, onCompleted?: () => void) {
-		AppData.Configuration.session.account.profile.LastSync = new Date();
+		if (AppData.Configuration.session.account && AppData.Configuration.session.account.profile) {
+			AppData.Configuration.session.account.profile.LastSync = new Date();
+		}
+		
 		if (AppUtility.isTrue(data.Sync)) {
 			AppData.Configuration.reading.bookmarks.clear();
 		}

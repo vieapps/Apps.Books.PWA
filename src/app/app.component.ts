@@ -472,7 +472,7 @@ export class App {
 	updateSidebar() {
 		this.info.title.top = AppData.Configuration.app.name;
 		this.info.title.avatar = undefined;
-		if (this.authSvc.isAuthenticated()) {
+		if (this.configSvc.isAuthenticated()) {
 			this.info.title.top = AppUtility.isObject(AppData.Configuration.session.account.profile, true)
 				? AppData.Configuration.session.account.profile.Name
 				: AppData.Configuration.app.name;
@@ -486,7 +486,7 @@ export class App {
 			{ name: "HomePage", component: HomePage, title: "Trang nhất", icon: "home" }
 		];
 
-		if (this.authSvc.isAuthenticated()) {
+		if (this.configSvc.isAuthenticated()) {
 			this.pages.push({ name: "ProfilePage", component: ProfilePage, title: "Thông tin tài khoản", icon: "person", doPush: true, noNestedStack: true });
 			if (this.authSvc.isAdministrator()) {
 				this.pages.push({ name: "ProfileListPage", component: SearchProfilesPage, title: "Tài khoản người dùng", icon: "people" });

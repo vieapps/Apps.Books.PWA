@@ -48,15 +48,7 @@ export namespace AppModels {
 		Status = "";
 		Joined = new Date();
 		LastAccess = new Date();
-		ReferID = "";
-		ReferSection = "";
 
-		Roles = new Array<string>();
-		Privileges = new Array<Privilege>();
-		Libraries = new Array<string>();
-		OAuths = new Collections.Dictionary<string, string>();
-		
-		IsOAuth = false;
 		IsOnline = false;
 		Title = "";
 		FullAddress = "";

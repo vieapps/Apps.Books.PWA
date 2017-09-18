@@ -199,8 +199,9 @@
 				<ion-radio value="Gravatar"></ion-radio>
 			</ion-item>
 		</ion-list>
-		<div>
-			<img-cropper [image]="cropper.data" [settings]="cropper.settings" [hidden]="info.avatar.mode != 'Avatar'"></img-cropper>
+		<div [hidden]="info.avatar.mode != 'Avatar'">
+			<input type="file" (change)="changeAvatar($event)" />
+			<img-cropper #avatarcropper [image]="cropper.data" [settings]="cropper.settings"></img-cropper>
 		</div>
 		<div>
 			<img [src]="cropper.data.image" [width]="cropper.settings.croppedWidth" [height]="cropper.settings.croppedHeight" [hidden]="info.avatar.mode != 'Avatar'">
@@ -232,20 +233,11 @@
 	</div>
 
 	<div *ngIf="info.state.mode == 'SetPrivileges'">
-		<ion-list radio-group name="role" [(ngModel)]="info.privileges.permissions.role">
-			<ion-list-header no-lines style="margin-top:5px">
-				<b>Vai trò trong hệ thống</b>
-			</ion-list-header>
-			<ion-item *ngFor="let r of info.privileges.roles">
-				<ion-label>{{r.label}}</ion-label>
-				<ion-radio value="{{r.value}}"></ion-radio>
-			</ion-item>
-		</ion-list>
-		<ion-list radio-group *ngFor="let s of info.privileges.sections" name="section-{{s.value}}" [(ngModel)]="info.privileges.permissions.sections[s.value]">
+		<ion-list radio-group *ngFor="let o of info.permissions.objects" name="o-{{o.value}}" [(ngModel)]="info.permissions.privileges[o.value]">
 			<ion-list-header style="margin-top:5px">
-				Vai trò đối với '<b>{{s.label}}</b>'
+				Vai trò đối với '<b>{{o.label}}</b>'
 			</ion-list-header>
-			<ion-item *ngFor="let r of info.privileges.roles">
+			<ion-item *ngFor="let r of info.permissions.roles">
 				<ion-label>{{r.label}}</ion-label>
 				<ion-radio value="{{r.value}}"></ion-radio>
 			</ion-item>
