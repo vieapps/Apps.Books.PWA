@@ -88,8 +88,14 @@ export class SearchProfilesPage {
 				}
 			};
 
-			this.info.pagination = AppData.Paginations.get(AppData.buildRequest(this.info.filterBy, null, this.info.pagination), "A");
-			if (this.info.pagination == undefined) {
+			let request = AppData.buildRequest(this.info.filterBy, null, this.info.pagination, r => {
+				if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
+					r.FilterBy.And.Province.Equals = undefined;
+				}
+			});
+			this.info.pagination = AppData.Paginations.get(request, "A");
+
+			if (!this.info.pagination) {
 				this.doSearch();
 			}
 			else {
@@ -104,7 +110,11 @@ export class SearchProfilesPage {
 
 	// search & build the listing of account profiles
 	doSearch(onCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination);
+		let request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
+			if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
+				r.FilterBy.And.Province.Equals = undefined;
+			}
+		});
 		this.accountsSvc.search(request,
 			(data?: any) => {
 				this.info.pagination = this.info.state.searching && data != undefined
