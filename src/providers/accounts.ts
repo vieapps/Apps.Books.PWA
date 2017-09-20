@@ -38,7 +38,7 @@ export class AccountsService {
 			+ "&language=vi-VN";
 		let searcher = AppAPI.Get(path);
 		
-		if (onNext == undefined) {
+		if (!onNext) {
 			return searcher;
 		}
 
