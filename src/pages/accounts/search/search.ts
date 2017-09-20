@@ -13,7 +13,7 @@ import { AccountsService } from "../../../providers/accounts";
 import { ProfilePage } from "../profile/profile";
 
 @Component({
-	selector: "page-search-profiles",
+	selector: "page-search-accounts",
 	templateUrl: "search.html"
 })
 export class SearchProfilesPage {
@@ -34,11 +34,11 @@ export class SearchProfilesPage {
 			Query: "",
 			And: {
 				Province: {
-					Equals: ""
+					Equals: undefined
 				}
 			}
 		},
-		orderBy: "Name",
+		sortBy: "",
 		pagination: AppData.Paginations.default(),
 		state: {
 			searching: false,
@@ -51,20 +51,7 @@ export class SearchProfilesPage {
 		pageNumber: 0,
 		isAppleOS: AppUtility.isAppleOS()
 	};
-	orders = [
-		{
-			label: "Tên (A - Z)",
-			value: "Name"
-		},
-		{
-			label: "Mới truy cập",
-			value: "LastAccess"
-		},
-		{
-			label: "Mới đăng ký",
-			value: "Registered"
-		}
-	];
+	sorts: Array<any> = [];
 	accounts: Array<AppModels.Account> = undefined;
 	ratings = {};
 
@@ -73,29 +60,43 @@ export class SearchProfilesPage {
 	infiniteScrollCtrl: InfiniteScroll = undefined;
 
 	// page events
+	ionViewDidLoad() {
+		this.sorts = [
+			{
+				label: "Tên (A - Z)",
+				value: "Name"
+			},
+			{
+				label: "Mới truy cập",
+				value: "LastAccess"
+			},
+			{
+				label: "Mới đăng ký",
+				value: "Registered"
+			}
+		];
+		this.info.sortBy = this.sorts[0].value;
+
+		this.info.filterBy.Query = this.navParams.get("Query");
+		this.info.filterBy.And.Province.Equals = this.navParams.get("Province");
+		this.info.filterBy.And.Province.Equals = this.info.filterBy.And.Province.Equals || "";
+}
+
 	ionViewCanEnter() {
 		return this.authSvc.isAdministrator();
 	}
 
 	ionViewDidEnter() {
 		if (this.accounts == undefined) {
-			this.info.filterBy = {
-				Query: this.navParams.get("Query"),
-				And: {
-					Province: {
-						Equals: this.navParams.get("Province")
-					}
-				}
-			};
-
-			let request = AppData.buildRequest(this.info.filterBy, null, this.info.pagination, r => {
+			
+			var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
 				if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
 					r.FilterBy.And.Province.Equals = undefined;
 				}
 			});
 			this.info.pagination = AppData.Paginations.get(request, "A");
 
-			if (!this.info.pagination) {
+			if (this.info.pagination == undefined) {
 				this.doSearch();
 			}
 			else {
@@ -110,7 +111,7 @@ export class SearchProfilesPage {
 
 	// search & build the listing of account profiles
 	doSearch(onCompleted?: () => void) {
-		let request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
+		var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
 				r.FilterBy.And.Province.Equals = undefined;
 			}
@@ -152,7 +153,7 @@ export class SearchProfilesPage {
 		}
 
 		// apply order-by
-		switch (this.info.orderBy) {
+		switch (this.info.sortBy) {
 			case "LastAccess":
 				accounts = accounts.OrderByDescending(a => a.LastAccess).ThenBy(a => a.Name);
 				break;
@@ -299,7 +300,7 @@ export class SearchProfilesPage {
 					text: "Thay đổi cách sắp xếp",
 					icon: this.info.isAppleOS ? undefined : "list-box",
 					handler: () => {
-						this.showOrders();
+						this.showSorts();
 					}
 				}
 			]
@@ -326,19 +327,20 @@ export class SearchProfilesPage {
 		actionSheet.present();
 	}
 
-	showOrders() {
+	showSorts() {
 		var alert = this.alertCtrl.create({
 			title: "Sắp xếp theo",
 			enableBackdropDismiss: true,
 			buttons: [
 				{
-					text: "Huỷ"
+					text: "Huỷ",
+					role: "cancel"
 				},
 				{
 					text: "Đặt",
-					handler: (orderBy: string) => {
-						if (this.info.orderBy != orderBy) {
-							this.info.orderBy = orderBy;
+					handler: (sortBy: string) => {
+						if (this.info.sortBy != sortBy) {
+							this.info.sortBy = sortBy;
 							this.doBuild();
 						}
 					}
@@ -346,12 +348,12 @@ export class SearchProfilesPage {
 			]
 		});
 
-		new List<any>(this.orders).ForEach((o) => {
+		new List<any>(this.sorts).ForEach(o => {
 			alert.addInput({
 				type: "radio",
 				label: o.label,
 				value: o.value,
-				checked: this.info.orderBy == o.value
+				checked: this.info.sortBy == o.value
 			});
 		});
 
