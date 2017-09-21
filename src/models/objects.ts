@@ -175,13 +175,14 @@ export namespace AppModels {
 	export class Privilege {
 		ServiceName = "";
 		ObjectName = "";
+		ObjectIdentity = "";
 		Role = "";
-		Actions: Array<string> = [];
+		Actions = new Array<string>();
 
-		static deserialize(json: any) {
-			var obj = new Privilege();
-			AppUtility.copy(json, obj);
-			return obj;
+		static deserialize(json: any, privilege?: Privilege) {
+			privilege = privilege || new Privilege();
+			AppUtility.copy(json, privilege);
+			return privilege;
 		}
 	}
 
