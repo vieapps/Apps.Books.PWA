@@ -16,7 +16,11 @@ import { ConfigurationService } from "./configuration";
 @Injectable()
 export class StatisticsService {
 
-	constructor(public http: Http, public storage: Storage, public configSvc: ConfigurationService) {
+	constructor(
+		public http: Http,
+		public storage: Storage,
+		public configSvc: ConfigurationService
+	){
 		AppAPI.setHttp(this.http);
 	}
 

@@ -292,7 +292,7 @@ export class ReadBookPage {
 			}
 		});
 
-		if (this.authSvc.isAdministrator() || this.authSvc.isInRole("books", "book", "Administrator") || this.authSvc.isInRole("books", "book", "Moderator")) {
+		if (this.authSvc.isSystemAdministrator() || this.authSvc.isInAppRole("book", "Administrator") || this.authSvc.isInAppRole("book", "Moderator")) {
 			actionSheet.addButton({
 				text: "Cập nhật",
 				icon: this.info.isAppleOS ? undefined : "create",

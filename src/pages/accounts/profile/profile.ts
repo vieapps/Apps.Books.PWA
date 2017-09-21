@@ -220,7 +220,7 @@ export class ProfilePage {
 			if (this.info.profile.ID == AppData.Configuration.session.account.id) {
 				this.buildBookmakrs();
 			}
-			else if (this.authSvc.isAdministrator()) {
+			else if (this.authSvc.isSystemAdministrator()) {
 				this.authSvc.getPrivilegesAsync(this.info.profile.ID, (data: any) => {
 					this.preparePrivileges(data);
 				});
@@ -343,22 +343,14 @@ export class ProfilePage {
 		};
 		new List<any>(this.info.permissions.objects)
 			.ForEach(o => {
-				let role: string = undefined;
-				if (this.info.privileges) {
-					let privilege = new List<AppModels.Privilege>(this.info.privileges)
-						.FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == o.value);
-					if (privilege) {
-						role = privilege.Role;
-					}
-				}
-				if (!role) {
-					role = this.authSvc.isInRole("books", o.value, "Administrator")
+				let privilege = new List<AppModels.Privilege>(this.info.privileges).FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == o.value);
+				this.info.permissions.privileges[o.value] = privilege
+					? privilege.Role
+					: this.authSvc.isInAppRole(o.value, "Administrator")
 						? "Administrator"
-						: this.authSvc.isInRole("books", o.value, "Moderator")
+						: this.authSvc.isInAppRole(o.value, "Moderator")
 							? "Moderator"
-							: "Viewer"
-				}
-				this.info.permissions.privileges[o.value] = role;
+							: "Viewer";
 			});
 	}
 
@@ -415,7 +407,7 @@ export class ProfilePage {
 	}
 
 	isAdministrator() {
-		return this.authSvc.isAdministrator();
+		return this.authSvc.isSystemAdministrator();
 	}
 
 	isNotNull(value: string) {

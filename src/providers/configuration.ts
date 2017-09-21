@@ -20,7 +20,12 @@ import { AppModels } from "../models/objects";
 @Injectable()
 export class ConfigurationService {
 
-	constructor(public http: Http, public platform: Platform, public device: Device, public storage: Storage) {
+	constructor(
+		public http: Http,
+		public platform: Platform,
+		public device: Device,
+		public storage: Storage
+	){
 		AppAPI.setHttp(this.http);
 		AppRTU.register("Scheduler", (message: any) => this.sendBookmarks());
 	}
@@ -493,25 +498,6 @@ export class ConfigurationService {
 	/** Gets the state that determines the current account is authenticated or not */
 	isAuthenticated() {
 		return AppUtility.isObject(AppData.Configuration.session.jwt, true) && AppUtility.isNotEmpty(AppData.Configuration.session.jwt.uid);
-	}
-
-	/** Process the messages of RTU */
-	processRTU(message: any) {
-		// stop on error message
-		if (message.Type == "Error") {
-			console.warn("[Configuration]: got an error message from RTU", message);
-			return;
-		}
-
-		// parse
-		var info = AppRTU.parse(message.Type);
-
-		// bookmarks
-		if (info.ObjectName == "Bookmarks") {
-			if (this.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
-				this.syncBookmarks(message.Data);
-			}
-		}
 	}
 
 }

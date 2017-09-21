@@ -117,8 +117,8 @@ export namespace AppData {
 				}
 				else if (prefix == "A") {
 					sortby = AppUtility.isNotEmpty(sortby.Name)
-					? sortby.Name as string
-					: "Ascending"
+						? sortby.Name as string
+						: "Ascending"
 				}
 				else {
 					sortby = "Descending";

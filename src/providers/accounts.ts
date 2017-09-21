@@ -24,7 +24,7 @@ export class AccountsService {
 	}
 
 	/** Performs a request to REST API to search account profiles */
-	search(request: any, onNext?: (d?: any) => void, onError?: (e: any) => void) {
+	search(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		var pagination = AppData.Paginations.get(request, "A");
 		if (pagination != null && pagination.PageNumber >= pagination.TotalPages) {
 			onNext != undefined && onNext();

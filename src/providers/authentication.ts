@@ -25,20 +25,18 @@ export class AuthenticationService {
 	}
 
 	/** Checks to see the account is administrator or not */
-	isAdministrator(account?: any) {
+	isSystemAdministrator(account?: any) {
 		account = account || this.configSvc.getAccount();
 		return account && AppUtility.isNotEmpty(account.id) && AppUtility.isArray(account.roles)
 			&& new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator") != undefined;
 	}
 
-	/** Checks to see the account is authorized to do a specified action on a specified section */
-	isInRole(serviceName: string, objectName: string, role: string, privileges?: Array<AppModels.Privilege>) {
-		serviceName = AppUtility.isNotEmpty(serviceName) ? serviceName : "";
+	/** Checks to see the account is has a specific role of the app */
+	isInAppRole(objectName?: string, role?: string, privileges?: Array<AppModels.Privilege>) {
 		objectName = AppUtility.isNotEmpty(objectName) ? objectName : "";
 		role = AppUtility.isNotEmpty(role) ? role : "Viewer";
 		privileges = privileges || this.configSvc.getAccount().privileges as Array<AppModels.Privilege>;
-		
-		let privilege = new List(privileges).FirstOrDefault(p => p.ServiceName == serviceName && p.ObjectName == objectName);
+		let privilege = new List(privileges).FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == objectName);
 		return privilege != undefined && privilege.Role == role;
 	}
 

@@ -17,7 +17,11 @@ import { StatisticsService } from "./statistics";
 @Injectable()
 export class BooksService {
 
-	constructor(public http: Http, public configSvc: ConfigurationService, public statisticsSvc: StatisticsService) {
+	constructor(
+		public http: Http,
+		public configSvc: ConfigurationService,
+		public statisticsSvc: StatisticsService
+	){
 		AppAPI.setHttp(this.http);
 		AppRTU.register("Books", (message: any) => this.processRTU(message));
 	}
@@ -28,7 +32,7 @@ export class BooksService {
 			+ "?x-request=" + AppUtility.getBase64UrlParam(request);
 		var searcher = AppAPI.Get(path);
 
-		if (onNext == undefined) {
+		if (!onNext) {
 			return searcher;
 		}
 
@@ -284,17 +288,17 @@ export class BooksService {
 		// parse
 		var info = AppRTU.parse(message.Type);
 
-		// meta of a book
+		// book information
 		if (info.ObjectName == "Book") {
 			AppModels.Book.update(message.Data);
 		}
 
-		// counters
+		// books' counters
 		else if (info.ObjectName == "Book#Counters") {
 			this.setCounters(message.Data);
 		}
 
-		// chapter
+		// book's chapter
 		else if (info.ObjectName == "Book#Chapter") {
 			let book = AppData.Books.getValue(message.Data.ID);
 			if (book != undefined) {
@@ -302,25 +306,27 @@ export class BooksService {
 			}
 		}
 
-		// files
+		// books' files
 		else if (info.ObjectName == "Book#Files") {
 			this.updateFiles(message.Data);
 		}
 
-		// delete
+		// book is deleted
 		else if (info.ObjectName == "Book#Delete") {
 			AppData.Books.remove(message.Data.ID);
 			AppEvents.broadcast("BooksAreUpdated");
 		}
 		
-		// statistics
-		else if (AppUtility.indexOf(info.ObjectName, "Statistic#") > -1) {
-			this.statisticsSvc.processRTU(message);
-		}
-		
 		// bookmarks
 		else if (info.ObjectName == "Bookmarks") {
-			this.configSvc.processRTU(message);
+			if (this.configSvc.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
+				this.configSvc.syncBookmarks(message.Data);
+			}
+		}
+		
+		// statistics
+		else if (AppUtility.indexOf(info.ObjectName, "Statistic#") == 0) {
+			this.statisticsSvc.processRTU(message);
 		}
 	}
 
