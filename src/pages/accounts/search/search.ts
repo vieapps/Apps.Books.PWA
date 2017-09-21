@@ -80,15 +80,14 @@ export class SearchProfilesPage {
 		this.info.filterBy.Query = this.navParams.get("Query");
 		this.info.filterBy.And.Province.Equals = this.navParams.get("Province");
 		this.info.filterBy.And.Province.Equals = this.info.filterBy.And.Province.Equals || "";
-}
+	}
 
 	ionViewCanEnter() {
-		return this.authSvc.isAdministrator();
+		return this.authSvc.isSystemAdministrator();
 	}
 
 	ionViewDidEnter() {
-		if (this.accounts == undefined) {
-			
+		if (!this.accounts) {
 			var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
 				if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
 					r.FilterBy.And.Province.Equals = undefined;
