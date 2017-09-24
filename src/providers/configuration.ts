@@ -252,9 +252,9 @@ export class ConfigurationService {
 	/** Prepares account information */
 	prepareAccount(data: any) {
 		let account: { Roles: Array<string>, Privileges: Array<AppModels.Privilege>, Status: string } = {
-			Roles: undefined,
-			Privileges: undefined,
-			Status: undefined
+			Roles: [],
+			Privileges: [],
+			Status: "Registered"
 		};
 
 		if (data.Roles && AppUtility.isArray(data.Roles)) {

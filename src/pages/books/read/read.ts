@@ -48,11 +48,11 @@ export class ReadBookPage {
 		color: AppData.Configuration.reading.options.color,
 		style: AppData.Configuration.reading.options.font + " " + AppData.Configuration.reading.options.size + " " + AppData.Configuration.reading.options.paragraph + " " + AppData.Configuration.reading.options.align
 	};
-	loading: Loading = undefined;
 
 	// controls
 	@ViewChild(Content) contentCtrl: Content;
-
+	loading: Loading = undefined;
+	
 	// page events
 	ionViewDidLoad() {
 		this.showLoading();
@@ -292,7 +292,7 @@ export class ReadBookPage {
 			}
 		});
 
-		if (this.authSvc.isSystemAdministrator() || this.authSvc.isInAppRole("book", "Administrator") || this.authSvc.isInAppRole("book", "Moderator")) {
+		if (this.authSvc.isModerator("book")) {
 			actionSheet.addButton({
 				text: "Cập nhật",
 				icon: this.info.isAppleOS ? undefined : "create",

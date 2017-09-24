@@ -21,7 +21,7 @@ export namespace AppData {
 			host: "",
 			tracking: {
 				google: "UA-3060572-8",
-				googleDomains: ["chomuonsach.com"],
+				googleDomains: ["books.vieapps.net"],
 				facebook: ""
 			},
 			refer: {
@@ -60,7 +60,7 @@ export namespace AppData {
 			id: null,
 			token: null,
 			url: null,
-			version: "v2.9",
+			version: "v2.10",
 		}
 	};
 

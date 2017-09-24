@@ -32,7 +32,6 @@ export class BookInfoPage {
 		download: undefined,
 		title: "Thông tin",
 		rating: 0.0,
-		limit: 260,
 		uri: "",
 		qrcode: "",
 		processByApp: AppUtility.isNativeApp()

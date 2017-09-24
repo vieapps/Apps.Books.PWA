@@ -29,7 +29,7 @@
 	</ion-navbar>
 </ion-header>
 
-<ion-footer *ngIf="info.state.mode == 'Profile' && (isAdministrator() || info.id == '')">
+<ion-footer *ngIf="info.state.mode == 'Profile' && (authSvc.isAdministrator() || info.id == '')">
 	<ion-toolbar>
 		<ion-buttons left *ngIf="info.id == ''">
 			<button ion-button icon-left (click)="openInvitation()">
@@ -233,11 +233,21 @@
 	</div>
 
 	<div *ngIf="info.state.mode == 'SetPrivileges'">
-		<ion-list radio-group *ngFor="let o of info.permissions.objects" name="o-{{o.value}}" [(ngModel)]="info.permissions.privileges[o.value]">
+		<ion-list radio-group name="role" [(ngModel)]="permissions.update.role">
+			<ion-list-header style="margin-top:5px">
+				Vai trò chung trong hệ thống
+			</ion-list-header>
+			<ion-item *ngFor="let r of permissions.info.roles">
+				<ion-label>{{r.label}}</ion-label>
+				<ion-radio value="{{r.value}}"></ion-radio>
+			</ion-item>
+		</ion-list>
+		<ion-list radio-group *ngFor="let o of permissions.info.objects" name="{{o.value}}"
+			[hidden]="permissions.update.role != 'Viewer'" [(ngModel)]="permissions.update.privileges[o.value]">
 			<ion-list-header style="margin-top:5px">
 				Vai trò đối với '<b>{{o.label}}</b>'
 			</ion-list-header>
-			<ion-item *ngFor="let r of info.permissions.roles">
+			<ion-item *ngFor="let r of permissions.info.roles">
 				<ion-label>{{r.label}}</ion-label>
 				<ion-radio value="{{r.value}}"></ion-radio>
 			</ion-item>

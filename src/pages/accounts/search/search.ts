@@ -83,7 +83,7 @@ export class SearchProfilesPage {
 	}
 
 	ionViewCanEnter() {
-		return this.authSvc.isSystemAdministrator();
+		return this.authSvc.isAdministrator();
 	}
 
 	ionViewDidEnter() {

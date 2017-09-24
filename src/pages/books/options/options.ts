@@ -2,6 +2,7 @@ import { Component } from "@angular/core";
 import { NavController, NavParams } from "ionic-angular";
 
 import { AppEvents } from "../../../helpers/events";
+import { AppUtility } from "../../../helpers/utility";
 import { AppData } from "../../../models/data";
 
 import { ConfigurationService } from "../../../providers/configuration";
@@ -122,7 +123,7 @@ export class ReadingOptionsPage {
 
 	// events
 	ionViewWillUnload() {
-		window.setTimeout(async () => {
+		AppUtility.setTimeout(async () => {
 			await this.configSvc.saveOptionsAsync(() => {
 				AppEvents.broadcast("ReadingOptionsAreUpdated");
 			});
