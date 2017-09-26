@@ -44,7 +44,7 @@
         "ionic-plugin-keyboard": "~2.2.1",
         "ionicons": "3.0.0",
         "linqts": "^1.9.1",
-        "ng2-completer": "^1.6.2",
+        "ng2-completer": "^1.6.3",
         "ng2-img-cropper": "^0.9.0",
         "ngx-rating": "0.0.9",
         "rxjs": "5.4.0",
