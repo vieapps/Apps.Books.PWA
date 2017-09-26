@@ -9,8 +9,8 @@ export namespace AppData {
 	export var Configuration = {
 		app: {
 			uris: {
-				apis: "https://apis.vieapps.net/",
-				files: "https://afs.vieapps.net/",
+				apis: "https://apis.prj.vn/",
+				files: "https://afs.prj.vn/",
 				activations: "http://viebooks.net/"
 			},
 			debug: true,
@@ -21,7 +21,7 @@ export namespace AppData {
 			host: "",
 			tracking: {
 				google: "UA-3060572-8",
-				googleDomains: ["books.vieapps.net"],
+				googleDomains: ["books.apps.prj.vn"],
 				facebook: ""
 			},
 			refer: {
