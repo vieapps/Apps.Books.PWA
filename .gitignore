@@ -6,6 +6,8 @@ node_modules/
 platforms/*
 !platforms/platforms.json
 plugins/*
-!plugins/browser.json
 !plugins/fetch.json
+!plugins/browser.json
+!plugins/ios.json
+!plugins/android.json
 www/

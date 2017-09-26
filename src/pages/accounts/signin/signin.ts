@@ -31,7 +31,7 @@ export class SignInPage {
   		processing: true,
 	  	mode: "SignIn",
 	  	title: "Đăng nhập",
-	  	valid: true
+			valid: true
   	},
 	  account: {
 			email: "",

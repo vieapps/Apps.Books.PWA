@@ -1,6 +1,6 @@
 {
   "name": "VIEApps Online Books",
-  "short_name": "vaob",
+  "short_name": "vieapps-books",
   "start_url": "index.html",
   "display": "standalone",
   "icons": [{

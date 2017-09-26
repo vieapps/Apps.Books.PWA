@@ -94,7 +94,7 @@ export namespace AppUtility {
 
 	/** Gets the state that determines the app is running on Apple iOS */
 	export function isAppleOS() {
-		return AppData.Configuration.app.platform.indexOf("iOS") > -1;
+		return AppData.Configuration.app.platform.indexOf("iOS") == 0;
 	}
 
 	/** Gets the state that determines the app is running on Apple Safari */
@@ -104,7 +104,7 @@ export namespace AppUtility {
 
 	/** Gets the state that determines the app is running on Windows Phone */
 	export function isWindowsPhoneOS() {
-		return AppData.Configuration.app.platform.indexOf("Windows Phone") > -1;
+		return AppData.Configuration.app.platform.indexOf("Windows Phone") == 0;
 	}
 
 	/** Gets the state that determines the app is running in debug mode */
@@ -172,17 +172,37 @@ export namespace AppUtility {
 	  * @param defer Defer time (in miliseconds)
 	*/
 	export function focus(control: any, keyboard?: Keyboard, defer?: number) {
-		if (control && typeof control.setFocus == "function") {
-			setTimeout(() => {
-				control.setFocus();
-				isNotNull(keyboard) && isNativeApp() && keyboard.show();
-			}, defer || (isNativeApp() ? 456 : 345));
+		// stop if has no control
+		if (!control) {
+			return;
 		}
-		else if (control && control instanceof ElementRef) {
-			setTimeout(() => {
-				(control as ElementRef).nativeElement.focus();
-				isNotNull(keyboard) && isNativeApp() && keyboard.show();
-			}, defer || (isNativeApp() ? 456 : 345));
+
+		// not Apple iOS
+		if (!isAppleOS()) {
+			if (typeof control.setFocus == "function") {
+				setTimeout(() => {
+					control.setFocus();
+					isNotNull(keyboard) && isNativeApp() && keyboard.show();
+				}, defer || (isNativeApp() ? 456 : 345));
+			}
+			else if (control instanceof ElementRef) {
+				setTimeout(() => {
+					(control as ElementRef).nativeElement.focus();
+					isNotNull(keyboard) && isNativeApp() && keyboard.show();
+				}, defer || (isNativeApp() ? 234 : 123));
+			}
+		}
+
+		// Apple iOS => use native element instead of Ionic element
+		else {
+			var ctrl = control instanceof ElementRef
+				? (control as ElementRef).nativeElement
+				: control._elementRef && control._elementRef instanceof ElementRef
+					? (control._elementRef as ElementRef).nativeElement
+					: undefined;
+			ctrl != undefined && setTimeout(() => {
+				ctrl.focus();
+			}, defer || 123);
 		}
 	}
 

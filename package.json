@@ -1,7 +1,7 @@
 {
     "name": "vieapps-online-books",
     "author": "VIEApps Online Books",
-    "homepage": "httpss://books.vieapps.net/",
+    "homepage": "https://books.vieapps.net/",
     "private": true,
     "scripts": {
         "clean": "ionic-app-scripts clean",
@@ -30,18 +30,19 @@
         "@ngx-translate/core": "^6.0.1",
         "@ngx-translate/http-loader": "0.0.3",
         "angular2-qrcode": "^2.0.1",
+        "cordova-android": "^6.2.3",
         "cordova-browser": "^4.1.0",
-        "cordova-plugin-compat": "^1.1.0",
-        "cordova-plugin-console": "1.0.5",
-        "cordova-plugin-device": "1.1.4",
+        "cordova-ios": "^4.5.1",
+        "cordova-plugin-compat": "^1.2.0",
+        "cordova-plugin-device": "^1.1.4",
         "cordova-plugin-file": "^4.3.3",
         "cordova-plugin-file-transfer": "^1.6.3",
-        "cordova-plugin-splashscreen": "~4.0.1",
-        "cordova-plugin-statusbar": "2.2.1",
-        "cordova-plugin-whitelist": "^1.3.1",
+        "cordova-plugin-splashscreen": "^4.0.3",
+        "cordova-plugin-statusbar": "^2.2.1",
+        "cordova-plugin-whitelist": "^1.3.2",
         "crypto-js": "^3.1.9-1",
         "ionic-angular": "^3.6.1",
-        "ionic-plugin-keyboard": "~2.2.1",
+        "ionic-plugin-keyboard": "^2.2.1",
         "ionicons": "3.0.0",
         "linqts": "^1.9.1",
         "ng2-completer": "^1.6.3",
@@ -59,28 +60,32 @@
         "typescript": "2.3.4"
     },
     "cordovaPlugins": [
-        "cordova-plugin-statusbar",
         "cordova-plugin-console",
-        "cordova-plugin-whitelist",
         "cordova-plugin-device",
         "cordova-plugin-splashscreen",
+        "cordova-plugin-statusbar",
+        "cordova-plugin-whitelist",
+        "cordova-plugin-file",
+        "cordova-plugin-file-transfer",
         "ionic-plugin-keyboard"
     ],
     "cordovaPlatforms": [],
     "description": "VIEApps Online Books",
     "cordova": {
         "plugins": {
-            "cordova-plugin-console": {},
             "cordova-plugin-device": {},
             "cordova-plugin-splashscreen": {},
             "cordova-plugin-statusbar": {},
             "cordova-plugin-whitelist": {},
-            "ionic-plugin-keyboard": {},
+            "cordova-plugin-file": {},
             "cordova-plugin-file-transfer": {},
-            "cordova-plugin-file": {}
+            "cordova-plugin-compat": {},
+            "ionic-plugin-keyboard": {}
         },
         "platforms": [
-            "browser"
+            "android",
+            "browser",
+            "ios"
         ]
     }
 }

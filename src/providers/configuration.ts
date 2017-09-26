@@ -38,7 +38,7 @@ export class ConfigurationService {
 		// native app
 		if (AppUtility.isNativeApp()) {
 			AppData.Configuration.app.platform = this.device.platform;
-			AppData.Configuration.session.device = this.device.uuid;
+			AppData.Configuration.session.device = this.device.uuid + "@" + AppData.Configuration.app.name;
 		}
 
 		// progressive web app

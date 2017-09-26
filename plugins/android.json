@@ -7,7 +7,16 @@
         "files": {}
     },
     "installed_plugins": {
+        "cordova-plugin-compat": {
+            "PACKAGE_NAME": "net.vieapps.apps.books"
+        },
         "cordova-plugin-device": {
+            "PACKAGE_NAME": "net.vieapps.apps.books"
+        },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "net.vieapps.apps.books"
+        },
+        "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "net.vieapps.apps.books"
         },
         "cordova-plugin-splashscreen": {
@@ -20,15 +29,6 @@
             "PACKAGE_NAME": "net.vieapps.apps.books"
         },
         "ionic-plugin-keyboard": {
-            "PACKAGE_NAME": "net.vieapps.apps.books"
-        },
-        "cordova-plugin-file-transfer": {
-            "PACKAGE_NAME": "net.vieapps.apps.books"
-        },
-        "cordova-plugin-file": {
-            "PACKAGE_NAME": "net.vieapps.apps.books"
-        },
-        "cordova-plugin-compat": {
             "PACKAGE_NAME": "net.vieapps.apps.books"
         }
     },
