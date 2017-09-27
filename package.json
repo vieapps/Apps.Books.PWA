@@ -60,7 +60,6 @@
         "typescript": "2.3.4"
     },
     "cordovaPlugins": [
-        "cordova-plugin-console",
         "cordova-plugin-device",
         "cordova-plugin-splashscreen",
         "cordova-plugin-statusbar",

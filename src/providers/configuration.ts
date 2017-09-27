@@ -232,21 +232,10 @@ export class ConfigurationService {
 
 	/** Gets the information of the current/default account */
 	getAccount(getDefault?: boolean) {
-		return AppUtility.isTrue(getDefault) || AppData.Configuration.session.account == null
-			? {
-					id: null,
-					roles: null,
-					privileges: null,
-					status: null,
-					profile: null,
-					facebook: {
-						id: null,
-						name: null,
-						pictureUrl: null,
-						profileUrl: null
-					}
-				}
+		let account = AppUtility.isTrue(getDefault) || AppData.Configuration.session.account == null
+			? undefined
 			: AppData.Configuration.session.account;
+		return account || new AppData.Account();
 	}
 
 	/** Prepares account information */

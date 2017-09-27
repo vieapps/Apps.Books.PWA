@@ -10,7 +10,7 @@ export namespace AppData {
 		app: {
 			uris: {
 				apis: "https://apis.vieapps.net/",
-				files: "https://afs..vieapps.net/",
+				files: "https://afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
 			debug: true,
@@ -30,9 +30,9 @@ export namespace AppData {
 			}
 		},
 		session: {
-			id: null,
+			id: null as string,
 			jwt: null,
-			account: null,
+			account: null as Account,
 			keys: null,
 			device: "",
 			captcha: {
@@ -64,8 +64,20 @@ export namespace AppData {
 		}
 	};
 
-	/** Statistics */
-	export var Statistics = new AppModels.Statistics();
+	/** Account (of the app) */
+	export class Account {
+		id: string = null;
+		roles: Array<string> = null;
+		privileges: Array<AppModels.Privilege> = null;
+		status: string = null;
+		profile: AppModels.Account = null;
+		facebook = {
+			id: null as string,
+			name: null as string,
+			pictureUrl: null as string,
+			profileUrl: null as string
+		};
+	}
 
 	/** Accounts */
 	export var Accounts = new Collections.Dictionary<string, AppModels.Account>();
@@ -73,6 +85,9 @@ export namespace AppData {
 	/** Books */
 	export var Books = new Collections.Dictionary<string, AppModels.Book>();
 
+	/** Statistics */
+	export var Statistics = new AppModels.Statistics();
+	
 	/** Paginations */
 	export var Paginations = {
 		info: {},

@@ -28,7 +28,7 @@ export class AuthenticationService {
 	isInAppRole(objectName?: string, role?: string, privileges?: Array<AppModels.Privilege>) {
 		objectName = AppUtility.isNotEmpty(objectName) ? objectName : "";
 		role = AppUtility.isNotEmpty(role) ? role : "Viewer";
-		privileges = privileges || this.configSvc.getAccount().privileges as Array<AppModels.Privilege>;
+		privileges = privileges || this.configSvc.getAccount().privileges;
 		let privilege = privileges
 			? new List(privileges).FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == objectName)
 			: undefined;
@@ -36,27 +36,27 @@ export class AuthenticationService {
 	}
 
 	/** Checks to see the account is system administrator or not */
-	isSystemAdministrator(account?: any) {
+	isSystemAdministrator(account?: AppData.Account) {
 		account = account || this.configSvc.getAccount();
 		return account && AppUtility.isNotEmpty(account.id) && account.roles && AppUtility.isArray(account.roles)
-			&& new List<string>(account.roles).FirstOrDefault(r => r == "SystemAdministrator") != undefined;
+			&& new List(account.roles).FirstOrDefault(r => r == "SystemAdministrator") != undefined;
 	}
 
 	/** Checks to see the account is service administrator or not */
-	isServiceAdministrator(account?: any) {
+	isServiceAdministrator(account?: AppData.Account) {
 		account = account || this.configSvc.getAccount();
-		return this.isInAppRole("", "Administrator", account.privileges as Array<AppModels.Privilege>);
+		return this.isInAppRole("", "Administrator", account.privileges);
 	}
 
 	/** Checks to see the account is administrator (means system administrator or service administrator) or not */
-	isAdministrator(objectName?: string, account?: any) {
+	isAdministrator(objectName?: string, account?: AppData.Account) {
 		account = account || this.configSvc.getAccount();
-		return this.isSystemAdministrator(account) || this.isServiceAdministrator(account) || this.isInAppRole(objectName || "", "Administrator");
+		return this.isSystemAdministrator(account) || this.isServiceAdministrator(account) || this.isInAppRole(objectName || "", "Administrator", account.privileges);
 	}
 
 	/** Checks to see the account is moderator of the service/object or not */
-	isModerator(objectName?: string, account?: any) {
-		return this.isAdministrator(objectName) || this.isInAppRole(objectName || "", "Moderator");
+	isModerator(objectName?: string, account?: AppData.Account) {
+		return this.isAdministrator(objectName, account) || this.isInAppRole(objectName || "", "Moderator", account ? account.privileges : undefined);
 	}
 
 	/** Registers a captcha with REST API */
