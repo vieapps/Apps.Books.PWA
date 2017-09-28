@@ -172,6 +172,14 @@ export class ProfilePage {
 					: "text-input-md");
 
 		AppEvents.on(
+			"AccountIsUpdated",
+			(info: any) => {
+				this.initialize();
+			},
+			"UpdateAccountInfoEventHandler"
+		);
+			
+		AppEvents.on(
 			"BookmarksAreUpdated",
 			(info: any) => {
 				this.buildBookmakrs();
@@ -194,6 +202,7 @@ export class ProfilePage {
 	}
 
 	ionViewDidLeave() {
+		AppEvents.off("AccountIsUpdated", "UpdateAccountInfoEventHandler");
 		AppEvents.off("BookmarksAreUpdated", "UpdateBookmarksEventHandler");
 		AppEvents.broadcast("SetPreviousPageActive", { current: "ProfilePage" });
 	}

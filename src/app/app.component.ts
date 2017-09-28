@@ -120,8 +120,7 @@ export class App {
 			// prepare environment
 			this.configSvc.prepare();
 			this.info.title.top = AppData.Configuration.app.name;
-			//this.info.iOSPWA = AppData.Configuration.app.platform == "iOS PWA";
-			this.info.iOSPWA = AppUtility.isAppleOS();
+			this.info.iOSPWA = AppUtility.isAppleOS() && AppData.Configuration.app.mode == "PWA";
 			
 			// build the listing of pages
 			this.buildPages();
