@@ -124,7 +124,6 @@ export namespace AppRTU {
 		sender.onclose = (event) => {
 			status.sender = "close";
 			AppUtility.isDebug() && console.info("[RTU]: Sender is closed...");
-			AppUtility.isNotEmpty(uri) && status.sender != "restarting" && restart();
 		};
 
 		sender.onerror = (event) => {
