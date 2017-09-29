@@ -97,7 +97,7 @@ export class ReadBookPage {
 		);
 	}
 
-	ionViewDidLeave() {
+	ionViewWillUnload() {
 		AppEvents.off("OpenChapter", "OpenBookChapterEventHandler");
 		AppEvents.off("ReadingOptionsAreUpdated", "UpdateReadingOptionsEventHandler");
 		AppEvents.broadcast("CloseBook", { ID: this.info.book.ID });

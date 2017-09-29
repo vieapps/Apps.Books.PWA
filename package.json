@@ -67,6 +67,7 @@
         "cordova-plugin-whitelist",
         "cordova-plugin-file",
         "cordova-plugin-file-transfer",
+        "cordova-plugin-ionic-webview",
         "ionic-plugin-keyboard"
     ],
     "cordovaPlatforms": [],
@@ -80,8 +81,8 @@
             "cordova-plugin-file": {},
             "cordova-plugin-file-transfer": {},
             "cordova-plugin-compat": {},
-            "ionic-plugin-keyboard": {},
-            "cordova-plugin-ionic-webview": {}
+            "cordova-plugin-ionic-webview": {},
+            "ionic-plugin-keyboard": {}
         },
         "platforms": [
             "android",

@@ -19,7 +19,6 @@ export class ReadingOptionsPage {
 	){
 	}
 
-	// attributes
 	info = {
 		title: "Tuỳ chọn đọc",
 		options: AppData.Configuration.reading.options
@@ -121,10 +120,10 @@ export class ReadingOptionsPage {
 		]
 	};
 
-	// events
-	ionViewWillUnload() {
+	ionViewWillLeave() {
 		AppUtility.setTimeout(async () => {
 			await this.configSvc.saveOptionsAsync(() => {
+				AppUtility.isDebug() && console.warn("<ReadingOptions>: The options are saved");
 				AppEvents.broadcast("ReadingOptionsAreUpdated");
 			});
 		});

@@ -201,7 +201,7 @@ export class ProfilePage {
 		}
 	}
 
-	ionViewDidLeave() {
+	ionViewWillUnload() {
 		AppEvents.off("AccountIsUpdated", "UpdateAccountInfoEventHandler");
 		AppEvents.off("BookmarksAreUpdated", "UpdateBookmarksEventHandler");
 		AppEvents.broadcast("SetPreviousPageActive", { current: "ProfilePage" });

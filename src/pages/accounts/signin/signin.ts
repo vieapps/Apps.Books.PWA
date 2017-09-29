@@ -60,7 +60,7 @@ export class SignInPage {
 		AppUtility.focus(this.emailCtrl, this.keyboard);
 	}
 
-  ionViewDidLeave() {
+  ionViewWillUnload() {
 		AppEvents.broadcast("SetPreviousPageActive", { current: "SignInPage" });
   }
 
