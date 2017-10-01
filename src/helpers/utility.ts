@@ -1,9 +1,20 @@
-import { ElementRef } from "@angular/core";
+import { ElementRef, Pipe } from "@angular/core";
+import { DecimalPipe } from "@angular/common";
+
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
 import { AppCrypto } from "./crypto";
 import { AppData } from "../models/data";
+
+@Pipe({
+  name: "vinumber"
+})
+export class VinumberPipe extends DecimalPipe {
+  transform(value: number): string {
+		return super.transform(value, "1.2-2").replace(".", "#").replace(/,/g, ".").replace("#", ",").replace(",00", "");
+  }
+}
 
 export namespace AppUtility {
 	/** Checks to see the object is boolean and equals to true */

@@ -16,10 +16,10 @@
 		<button ion-button icon-left clear>
 			<ion-icon name="book"></ion-icon>
 			<span>
-				{{info.totalRecords | number}} / {{info.pagination.TotalRecords | number}}
+				{{info.totalRecords | vinumber}} / {{info.pagination.TotalRecords | vinumber}}
 			</span>
 			<span [hidden]="info.pagination.TotalPages < 2" style="margin-left:16px">
-				({{info.pageNumber | number}}/{{info.pagination.TotalPages | number}})
+				({{info.pageNumber | vinumber}}/{{info.pagination.TotalPages | vinumber}})
 			</span>
 		</button>
 	</ion-toolbar>
@@ -41,7 +41,7 @@
 				<span class="info">
 					<span *ngIf="b.TotalChapters > 1">
 						<span class="chapters">
-							{{b.TotalChapters | number}}
+							{{b.TotalChapters | vinumber}}
 						</span>
 						<ion-icon name="copy"></ion-icon>
 					</span>

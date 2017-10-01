@@ -18,6 +18,7 @@ import { RatingModule } from "ngx-rating";
 import { QRCodeModule } from "angular2-qrcode";
 
 import { App } from "./app.component";
+import { VinumberPipe } from "../helpers/utility";
 
 import { ConfigurationService } from "../providers/configuration";
 import { AuthenticationService } from "../providers/authentication";
@@ -45,6 +46,7 @@ const cloudSettings: CloudSettings = {
 @NgModule({
 	declarations: [
 		App,
+		VinumberPipe,
 		HomePage,
 		SearchPage,
 		SignInPage,

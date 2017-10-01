@@ -18,7 +18,7 @@
 			<button ion-button icon-left>
 			<ion-icon name="bookmark"></ion-icon>
 			<span>
-				{{info.chapter}} / {{info.book.TotalChapters}}
+				{{info.chapter | vinumber}} / {{info.book.TotalChapters | vinumber}}
 			</span>
 		</button>
 		</ion-buttons>
@@ -99,7 +99,7 @@
 				Số chương/phần:
 			</span>
 			<label *ngIf="info.book.TotalChapters > 1">
-				{{info.book.TotalChapters | number}}
+				{{info.book.TotalChapters | vinumber}}
 			</label>
 			<span *ngIf="info.book.Source != ''">
 				Nguồn:
