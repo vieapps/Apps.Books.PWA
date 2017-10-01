@@ -19,6 +19,9 @@
         "cordova-plugin-file-transfer": {
             "PACKAGE_NAME": "net.vieapps.apps.books"
         },
+        "cordova-plugin-ionic-webview": {
+            "PACKAGE_NAME": "net.vieapps.apps.books"
+        },
         "cordova-plugin-splashscreen": {
             "PACKAGE_NAME": "net.vieapps.apps.books"
         },
@@ -30,9 +33,6 @@
         },
         "ionic-plugin-keyboard": {
             "PACKAGE_NAME": "net.vieapps.apps.books"
-        },
-        "cordova-plugin-ionic-webview": {
-            "PACKAGE_NAME": "$(PRODUCT_BUNDLE_IDENTIFIER)"
         }
     },
     "dependent_plugins": {}
