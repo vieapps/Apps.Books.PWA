@@ -59,10 +59,6 @@ export class ReadBookPage {
 
 		var id = this.navParams.get("ID") as string;
 		var chapter = this.navParams.get("Chapter");
-		if (AppData.Books.containsKey(id)) {
-			this.info.book = AppData.Books.getValue(id);
-		}
-
 		this.booksSvc.getAsync(
 			id,
 			() => {

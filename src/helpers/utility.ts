@@ -347,11 +347,11 @@ export namespace AppUtility {
 
 	/** Gets the current uri */
 	export function getUri() {
-		return isWebApp()
-			? indexOf(window.location.hostname, ".") < 0
+		return !isWebApp() || indexOf(window.location.href, "file://") > - 1
+			? AppData.Configuration.app.uris.activations
+			: indexOf(window.location.hostname, ".") < 0
 				? window.location.href
-				: window.location.protocol + "//" + window.location.hostname + "/"
-			: AppData.Configuration.app.uris.activations;
+				: window.location.protocol + "//" + window.location.hostname + "/";
 	}
 
 	/** Gets the CSS classes for working with input control */
