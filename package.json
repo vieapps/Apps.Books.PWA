@@ -1,6 +1,10 @@
 {
     "name": "vieapps-online-books",
-    "author": "VIEApps.net",
+    "description": "VIEApps Online Books",
+    "author": {
+        "name": "VIEApps.net",
+        "email": "vieapps.net@gmail.com"
+    },
     "homepage": "https://books.vieapps.net/",
     "private": true,
     "scripts": {
@@ -39,7 +43,7 @@
         "cordova-plugin-file-transfer": "^1.6.3",
         "cordova-plugin-ionic-webview": "^1.1.8",
         "cordova-plugin-splashscreen": "^4.0.3",
-        "cordova-plugin-statusbar": "^2.2.1",
+        "cordova-plugin-statusbar": "^2.2.3",
         "cordova-plugin-whitelist": "^1.3.2",
         "crypto-js": "^3.1.9-1",
         "ionic-angular": "^3.7.1",
@@ -60,18 +64,8 @@
         "ionic": "3.12.0",
         "typescript": "2.3.4"
     },
-    "cordovaPlugins": [
-        "cordova-plugin-device",
-        "cordova-plugin-splashscreen",
-        "cordova-plugin-statusbar",
-        "cordova-plugin-whitelist",
-        "cordova-plugin-file",
-        "cordova-plugin-file-transfer",
-        "cordova-plugin-ionic-webview",
-        "ionic-plugin-keyboard"
-    ],
+    "cordovaPlugins": [],
     "cordovaPlatforms": [],
-    "description": "VIEApps Online Books",
     "cordova": {
         "plugins": {
             "cordova-plugin-device": {},

@@ -189,6 +189,7 @@ export namespace AppModels {
 	/** Contact information */
 	export class ContactInfo {
 		Name = "";
+		Title = "";
 		Phone = "";
 		Email = "";
 		Address = "";
