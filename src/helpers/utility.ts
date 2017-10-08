@@ -365,6 +365,13 @@ export namespace AppUtility {
 				: window.location.protocol + "//" + window.location.hostname + "/";
 	}
 
+	/** Opens an uri by OS/In-App browser */
+	export function openUri(uri?: string) {
+		if (isNotEmpty(uri) && indexOf(uri, "http") == 0) {
+			window.open(uri);
+		}
+	}
+
 	/** Gets the CSS classes for working with input control */
 	export function getInputCss() {
 		return "text-input "

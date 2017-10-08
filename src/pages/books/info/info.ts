@@ -100,10 +100,10 @@ export class BookInfoPage {
 
 	download(type: string) {
 		if (this.configSvc.isAuthenticated()) {
-			window.open(this.info.book.Files[type].Url + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
+			AppUtility.openUri(this.info.book.Files[type].Url + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
 		}
 		else {
-			this.showAlert("Chú ý", "Cần đăng nhập để có thể tải được file e-book");
+			this.showAlert("Chú ý", "Cần đăng nhập để có thể tải được e-book!");
 		}
 	}
 

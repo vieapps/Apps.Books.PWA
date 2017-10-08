@@ -1,13 +1,13 @@
 {
-  "name": "VIEApps Online Books",
-  "short_name": "vieapps-books",
-  "start_url": "index.html",
-  "display": "standalone",
-  "icons": [{
-    "src": "assets/icon/viebooks.net-icon.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }],
-  "background_color": "#4e8ef7",
-  "theme_color": "#4e8ef7"
+	"name": "VIEApps Online Books",
+	"short_name": "vieapps-books",
+	"start_url": "index.html",
+	"display": "standalone",
+	"icons": [{
+		"src": "assets/images/icon.png",
+		"sizes": "512x512",
+		"type": "image/png"
+	}],
+	"background_color": "#4e8ef7",
+	"theme_color": "#4e8ef7"
 }

@@ -51,7 +51,7 @@ export class App {
 			}
 		},
 		title: {
-			avatar: undefined,
+			avatar: undefined as string,
 			top: "Menu",
 			main: "Chính",
 			sub: "Thể loại"
@@ -69,7 +69,7 @@ export class App {
 			chapter: 0
 		},
 		iOSPWA: false,
-		startupURI: "",
+		originalURI: "",
 		attemps: 0
 	};
 	pages: Array<{ name: string, component: any, title: string, icon: string, params?: any, doPush?: boolean, popIfContains?: string, noNestedStack?: boolean }> = [];
@@ -106,12 +106,16 @@ export class App {
 
 		// run initialize process when ready
 		this.platform.ready().then(() => {
-			// prepare
-			this.info.startupURI = this.platform.url();
-			
-			this.statusBar.styleDefault();
-			this.splashScreen.hide();
+			// original URI for open the requested resources or do the activation
+			this.info.originalURI = this.platform.url();
 
+			// hide the splash screen
+			this.splashScreen.hide();
+			
+			// prepare the status bar
+			this.statusBar.styleDefault();
+			this.statusBar.overlaysWebView(false);
+			
 			// make sure the storage is ready
 			this.storage.ready().then(() => {
 				AppUtility.isDebug() && console.info("<Startup>: The storage is ready for serving...");
@@ -127,9 +131,9 @@ export class App {
 
 			// load statistics
 			this.statisticsSvc.loadStatisticsAsync();
-
+			
 			// run initialize process
-			var prego = AppUtility.isWebApp()
+			let prego = AppUtility.isWebApp()
 				? this.platform.getQueryParam("prego")
 				: "";
 
@@ -294,11 +298,11 @@ export class App {
 	}
 
 	showActivationResults(data: any) {
-		var title = data.Status == "OK"
+		let title = data.Status == "OK"
 			? "Kích hoạt thành công"
 			: "Lỗi kích hoạt";
 
-		var message = data.Status == "OK"
+		let message = data.Status == "OK"
 			? data.Mode == "account"
 				? "Tài khoản đã được kích hoạt thành công"
 				: "Mật khẩu đã được kích hoạt thành công"
@@ -311,9 +315,7 @@ export class App {
 			buttons: [{
 				text: "Đóng",
 				handler: () => {
-					if (this.info.startupURI.indexOf("#") > 0) {
-						window.location.href = this.info.startupURI.substring(0, this.info.startupURI.indexOf("#") + 1);
-					}
+					this.normalizeWindowHref(this.info.originalURI);
 				}
 			}]
 		}).present();
@@ -409,8 +411,8 @@ export class App {
 				};
 			}
 
-			// scrollbars on Windows
-			if (/Windows/i.test(window.navigator.userAgent)) {
+			// scrollbars (on Windows & Linux)
+			if (/Windows/i.test(window.navigator.userAgent) || /Linux/i.test(window.navigator.userAgent)) {
 				let css = window.document.createElement("style");
 				css.type = "text/css";
 				css.innerText = "::-webkit-scrollbar{height:14px;width:10px;background:#eee;border-left:solid1px#ddd;}::-webkit-scrollbar-thumb{background:#ddd;border:solid1px#cfcfcf;}::-webkit-scrollbar-thumb:hover{background:#b2b2b2;border:solid1px#b2b2b2;}::-webkit-scrollbar-thumb:active{background:#b2b2b2;border:solid1px#b2b2b2;}";
@@ -464,6 +466,11 @@ export class App {
 					this.navigate("ReadBookPage", ReadBookPage, params, true);
 				}
 				catch (e) { }
+			}
+
+			// normalize the window's href
+			if (AppUtility.isWebApp()) {
+				this.normalizeWindowHref(this.info.originalURI);
 			}
 		});
 	}
@@ -562,6 +569,15 @@ export class App {
 	openChapter(chapter: any) {
 		this.info.book.chapter = chapter.index + 1;
 		AppEvents.broadcast("OpenChapter", { ID: this.info.book.id, Chapter: this.info.book.chapter });
+	}
+
+	// normalize the window's HREF
+	normalizeWindowHref(uri?: string) {
+		uri = uri || window.location.href;
+		let pos = AppUtility.indexOf(uri, "#");
+		if (pos > 0) {
+			window.location.href = uri.substring(0, pos + 1);
+		}
 	}
 
 }
