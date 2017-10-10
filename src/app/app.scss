@@ -79,18 +79,6 @@ ion-content.content-ios.has-footer > div.scroll-content {
 ion-content.content-ios.has-sub-footer > div.scroll-content {
 	margin-bottom: 88px !important;
 }
-ion-content.content-wp.has-header > div.scroll-content {
-	margin-top: 46px;
-}
-ion-content.content-wp.has-sub-header > div.scroll-content {
-	margin-top: 92px !important;
-}
-ion-content.content-wp.has-footer > div.scroll-content {
-	margin-bottom: 46px;
-}
-ion-content.content-wp.has-sub-footer > div.scroll-content {
-	margin-bottom: 92px !important;
-}
 ion-content.content.no-footer > div.scroll-content {
 	margin-bottom: 0 !important;
 }
@@ -116,13 +104,6 @@ ion-content.content.no-footer > div.scroll-content {
 		border-bottom-color: #488aff;
 		box-shadow: inset 0 -1px 0 0 #488aff;
 	}
-	.list.invalid .item-radio .radio .radio-icon {
-		border-color: #f53d3d;
-	}
-}
-.wp {
-	.item.invalid .text-input.ng-invalid,
-	.item.invalid .completer-input.text-input,
 	.list.invalid .item-radio .radio .radio-icon {
 		border-color: #f53d3d;
 	}
