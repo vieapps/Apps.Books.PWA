@@ -110,7 +110,8 @@ export class App {
 			this.info.originalURI = this.platform.url();
 			
 			// prepare the status bar
-			this.statusBar.styleDefault();
+			this.statusBar.styleLightContent();
+			this.statusBar.backgroundColorByName("black");
 			this.statusBar.overlaysWebView(false);
 			
 			// hide the splash screen
