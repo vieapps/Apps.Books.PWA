@@ -86,10 +86,12 @@ export class BooksService {
 		}
 	}
 
-	async getAsync(id: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+	async getAsync(id: string, onNext?: (data?: any) => void, onError?: (error?: any) => void, dontUpdateCounter?: boolean) {
 		var book = AppData.Books.getValue(id);
 		if (book != undefined && (book.TOCs.length > 0 || book.Body != "")) {
-			this.updateCounters(id);
+			if (!AppUtility.isTrue(dontUpdateCounter)) {
+				this.updateCounters(id);
+			}
 			onNext != undefined && onNext();
 			return;
 		}
@@ -99,7 +101,9 @@ export class BooksService {
 			let data = response.json();
 			if (data.Status == "OK") {
 				AppModels.Book.update(data.Data);
-				this.updateCounters(id);
+				if (!AppUtility.isTrue(dontUpdateCounter)) {
+					this.updateCounters(id);
+				}
 				onNext != undefined && onNext(data);
 			}
 			else {
@@ -197,9 +201,8 @@ export class BooksService {
 		onCompleted != undefined && onCompleted();
 	}
 
-	generateFiles(id: string, onCompleted?: () => void) {
-		AppData.Books.getValue(id) != undefined
-		&& AppRTU.send({
+	generateFiles(id: string) {
+		AppData.Books.containsKey(id) && AppRTU.send({
 			ServiceName: "books",
 			ObjectName: "book",
 			Verb: "GET",
