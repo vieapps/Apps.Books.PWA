@@ -369,7 +369,7 @@ export namespace AppUtility {
 
 	/** Gets the CSS classes for working with input control */
 	export function getTextInputCss() {
-		return "text-input " + (isAppleOS() ? "text-input-ios" : "text-input-wp");
+		return "text-input " + (isAppleOS() ? "text-input-ios" : "text-input-md");
 	}
 
 	/** Gets the array of objects with random scoring number (for ordering) */
