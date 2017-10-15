@@ -113,11 +113,6 @@ export namespace AppUtility {
 		return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 	}
 
-	/** Gets the state that determines the app is running on Windows Phone */
-	export function isWindowsPhoneOS() {
-		return AppData.Configuration.app.platform.indexOf("Windows Phone") == 0;
-	}
-
 	/** Gets the state that determines the app is running in debug mode */
 	export function isDebug() {
 		return AppData.Configuration.app.debug;
@@ -373,13 +368,8 @@ export namespace AppUtility {
 	}
 
 	/** Gets the CSS classes for working with input control */
-	export function getInputCss() {
-		return "text-input "
-			+ (isAppleOS()
-				? "text-input-ios"
-				: isWindowsPhoneOS()
-					? "text-input-wp"
-					: "text-input-md");
+	export function getTextInputCss() {
+		return "text-input " + (isAppleOS() ? "text-input-ios" : "text-input-wp");
 	}
 
 	/** Gets the array of objects with random scoring number (for ordering) */

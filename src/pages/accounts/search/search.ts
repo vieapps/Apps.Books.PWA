@@ -72,7 +72,7 @@ export class SearchProfilesPage {
 			},
 			{
 				label: "Mới đăng ký",
-				value: "Registered"
+				value: "Joined"
 			}
 		];
 		this.info.sortBy = this.sorts[0].value;
@@ -147,7 +147,7 @@ export class SearchProfilesPage {
 		}
 
 		// transform
-		if (searchResults != undefined) {
+		if (searchResults) {
 			accounts = accounts.Select(a => AppModels.Account.deserialize(a));
 		}
 

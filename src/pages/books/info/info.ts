@@ -28,8 +28,8 @@ export class BookInfoPage {
 	// attributes
 	info = {
 		book: new AppModels.Book(),
-		view: undefined,
-		download: undefined,
+		view: undefined as AppModels.CounterInfo,
+		download: undefined as AppModels.CounterInfo,
 		title: "Thông tin",
 		rating: 0.0,
 		uri: "",
@@ -39,18 +39,17 @@ export class BookInfoPage {
 
 	// events
 	ionViewDidLoad() {
-		var id = this.navParams.get("ID") as string;
-		var existed = AppData.Books.containsKey(id);
-			
-		if (existed) {
-			this.prepare(true);
-		}
-		else {
-			this.booksSvc.getAsync(id, () => {
+		// get info
+		this.booksSvc.getAsync(
+			this.navParams.get("ID") as string,
+			() => {
 				this.prepare(true);
-			});
-		}
+			},
+			undefined,
+			true
+		);
 
+		// setup events
 		AppEvents.on(
 			"BookStatisticsAreUpdated",
 			(info: any) => {
@@ -82,9 +81,8 @@ export class BookInfoPage {
 		this.info.view = this.info.book.Counters.getValue("View");
 		this.info.download = this.info.book.Counters.getValue("Download");
 
-		var rating = this.info.book.RatingPoints.getValue("General");
-		this.info.rating = rating != undefined
-			? rating.Average
+		this.info.rating = this.info.book.RatingPoints.containsKey("General")
+			? this.info.book.RatingPoints.getValue("General").Average
 			: 0.0;
 
 		this.info.uri = AppUtility.getUri() + "#?book=" + AppUtility.getBase64UrlParam({ ID: this.info.book.ID });

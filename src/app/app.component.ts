@@ -105,16 +105,17 @@ export class App {
 		this.setupEvents();
 
 		// run initialize process when ready
-		this.platform.ready().then(() => {
+		this.platform.ready().then(() => {			
 			// original URI for open the requested resources or do the activation
 			this.info.originalURI = this.platform.url();
-
-			// hide the splash screen
-			this.splashScreen.hide();
 			
 			// prepare the status bar
-			this.statusBar.styleDefault();
+			this.statusBar.styleLightContent();
+			this.statusBar.backgroundColorByName("black");
 			this.statusBar.overlaysWebView(false);
+			
+			// hide the splash screen
+			this.splashScreen.hide();
 			
 			// make sure the storage is ready
 			this.storage.ready().then(() => {

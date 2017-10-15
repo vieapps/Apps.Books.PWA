@@ -97,7 +97,6 @@ export class ProfilePage {
 			email: undefined,
 			url: undefined
 		},
-		appMode: AppData.Configuration.app.mode,
 		canSeeOthers: false,
 		isAppleOS: AppUtility.isAppleOS()
 	};
@@ -164,12 +163,7 @@ export class ProfilePage {
 	// page events
 	ionViewDidLoad() {
 		this.info.state.processing = false;
-		this.info.state.css = "text-input "
-			+ (AppUtility.isAppleOS()
-				? "text-input-ios"
-				: AppUtility.isWindowsPhoneOS()
-					? "text-input-wp"
-					: "text-input-md");
+		this.info.state.css = AppUtility.getTextInputCss();
 
 		AppEvents.on(
 			"AccountIsUpdated",
