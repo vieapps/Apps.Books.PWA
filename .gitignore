@@ -3,11 +3,7 @@
 .vscode/
 .sourcemaps/
 node_modules/
-platforms/*
-!platforms/platforms.json
-plugins/*
-!plugins/fetch.json
-!plugins/browser.json
-!plugins/ios.json
-!plugins/android.json
+platforms/
+plugins/
 www/
+package-lock.json

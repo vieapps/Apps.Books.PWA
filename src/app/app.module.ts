@@ -4,7 +4,6 @@ import { HttpModule } from "@angular/http";
 import { FormsModule } from "@angular/forms";
 
 import { IonicApp, IonicErrorHandler, IonicModule } from "ionic-angular";
-import { CloudSettings, CloudModule } from "@ionic/cloud-angular";
 import { Device } from "@ionic-native/device";
 import { StatusBar } from "@ionic-native/status-bar";
 import { SplashScreen } from "@ionic-native/splash-screen";
@@ -37,12 +36,6 @@ import { ReadBookPage } from "../pages/books/read/read";
 import { BookInfoPage } from "../pages/books/info/info";
 import { ReadingOptionsPage } from "../pages/books/options/options";
 
-const cloudSettings: CloudSettings = {
-	"core": {
-		"app_id": ""
-	}
-};
-
 @NgModule({
 	declarations: [
 		App,
@@ -63,7 +56,6 @@ const cloudSettings: CloudSettings = {
 		FormsModule,
 		IonicModule.forRoot(App),
 		IonicStorageModule.forRoot({ name: "vieappsDB" }),
-		CloudModule.forRoot(cloudSettings),
 		Ng2CompleterModule,
 		ImageCropperModule,
 		RatingModule,
