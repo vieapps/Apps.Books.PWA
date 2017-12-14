@@ -85,9 +85,9 @@ export class BookInfoPage {
 			? this.info.book.RatingPoints.getValue("General").Average
 			: 0.0;
 
-		this.info.uri = AppUtility.getUri() + "#?book=" + AppUtility.getBase64UrlParam({ ID: this.info.book.ID });
+		this.info.uri = AppUtility.getUri() + "#?ebook=" + AppUtility.getBase64UrlParam({ ID: this.info.book.ID });
 		this.info.qrcode = this.info.processByApp
-			? "vieapps-books://" + this.info.book.ID
+			? "vieapps-ebooks://" + this.info.book.ID
 			: this.info.uri;
 
 		if (AppUtility.isTrue(checkFiles) && AppUtility.isObject(this.info.book.Files, true)

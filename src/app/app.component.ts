@@ -460,9 +460,9 @@ export class App {
 			}
 
 			// navigate to the requested book
-			else if (AppUtility.isWebApp() && this.platform.getQueryParam("book") != undefined) {
+			else if (AppUtility.isWebApp() && this.platform.getQueryParam("ebook") != undefined) {
 				try {
-					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("book")));
+					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("ebook")));
 					AppUtility.isDebug() && console.info("<Startup>: Open the requested book", params);
 					this.navigate("ReadBookPage", ReadBookPage, params, true);
 				}
