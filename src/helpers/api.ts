@@ -4,9 +4,8 @@ import { BrowserXhr, ConnectionBackend, XHRBackend, XSRFStrategy, CookieXSRFStra
 import { BaseRequestOptions, RequestOptions, BaseResponseOptions, ResponseOptions } from "@angular/http";
 import { CompleterData, CompleterItem } from "ng2-completer";
 import { List } from "linqts";
-import * as Rx from "rxjs/Rx";
+import * as Rx from "rxjs";
 import "rxjs/add/operator/toPromise";
-import "rxjs/add/operator/map";
 
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";

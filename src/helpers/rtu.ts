@@ -1,5 +1,5 @@
 import { Response } from "@angular/http";
-import * as Rx from "rxjs/Rx";
+import * as Rx from "rxjs";
 
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";

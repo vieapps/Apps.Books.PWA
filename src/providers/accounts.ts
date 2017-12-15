@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { List } from "linqts";
-import "rxjs/add/operator/map";
 
 import { AppUtility } from "../helpers/utility";
 import { AppAPI } from "../helpers/api";

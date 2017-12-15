@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { Storage } from "@ionic/storage";
-import "rxjs/add/operator/toPromise";
 
 import { AppUtility } from "../helpers/utility";
 import { AppAPI } from "../helpers/api";
