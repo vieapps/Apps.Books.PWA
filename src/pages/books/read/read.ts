@@ -1,10 +1,11 @@
 import { Component, ViewChild } from "@angular/core";
-import { NavController, NavParams, ActionSheetController, Content, Loading, LoadingController, Platform, MenuController } from "ionic-angular";
+import { NavController, NavParams, ActionSheetController, AlertController, Content, Loading, LoadingController, Platform, MenuController } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts"; 
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppEvents } from "../../../helpers/events";
+import { AppRTU } from "../../../helpers/rtu";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
@@ -26,6 +27,7 @@ export class ReadBookPage {
 		public navParams: NavParams,
 		public menuCtrl: MenuController,
 		public actionSheetCtrl: ActionSheetController,
+  	public alertCtrl: AlertController,
 		public keyboard: Keyboard,
 		public platform: Platform,
 		public loadingCtrl: LoadingController,
@@ -289,6 +291,24 @@ export class ReadBookPage {
 		});
 
 		if (this.authSvc.isModerator("book")) {
+			actionSheet.addButton({
+				text: "Lấy lại dữ liệu",
+				icon: this.info.isAppleOS ? undefined : "build",
+				handler: () => {
+					AppRTU.call("books", "book", "GET", {
+						"object-identity": "recrawl",
+						"id": this.info.book.ID
+					});
+					this.alertCtrl.create({
+						title: "Hoàn thành",
+						message: "Đã gửi yêu cầu lấy lại dữ liệu!",
+						enableBackdropDismiss: true,
+						buttons: [{
+							text: "Đóng"
+						}]
+					}).present();
+				}
+			});
 			actionSheet.addButton({
 				text: "Cập nhật",
 				icon: this.info.isAppleOS ? undefined : "create",
