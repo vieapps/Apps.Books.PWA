@@ -14,14 +14,6 @@
 // for the .md, .ios, or .wp mode classes. The mode class is
 // automatically applied to the <body> element in the app.
 
-/* headers of progressive web app on iOS */
-ion-menu.ios-pwa ion-header.header-ios ion-toolbar.toolbar-ios.statusbar-padding,
-ion-menu.ios-pwa ion-header.header-ios ion-toolbar.toolbar-ios div.toolbar-content-ios ion-title.title-ios,
-ion-nav.ios-pwa .ion-page ion-header.header-ios ion-navbar.toolbar-ios.statusbar-padding,
-ion-nav.ios-pwa .ion-page ion-header.header-ios ion-navbar.toolbar-ios div.toolbar-content-ios ion-title.title-ios {
-	padding-top: 0 !important;
-}
-
 /* side menu */
 .split-pane.split-pane-visible ion-menu.split-pane-side {
 	max-width: 320px;

@@ -1,6 +1,6 @@
 <ion-split-pane when="lg">
   
-  <ion-menu side="left" [content]="nav" [class.ios-pwa]="info.iOSPWA">
+  <ion-menu side="left" [content]="nav">
 
     <ion-header>
       <ion-toolbar>
@@ -45,6 +45,6 @@
 
   </ion-menu>
 
-  <ion-nav #nav main swipeBackEnabled="false" [root]="info.nav.start" [class.ios-pwa]="info.iOSPWA"></ion-nav>
+  <ion-nav #nav main swipeBackEnabled="false" [root]="info.nav.start"></ion-nav>
 
 </ion-split-pane>

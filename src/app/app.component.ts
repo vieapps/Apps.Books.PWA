@@ -68,7 +68,6 @@ export class App {
 			title: "",
 			chapter: 0
 		},
-		iOSPWA: false,
 		originalURI: "",
 		attemps: 0
 	};
@@ -125,7 +124,6 @@ export class App {
 			// prepare environment
 			this.configSvc.prepare();
 			this.info.title.top = AppData.Configuration.app.name;
-			this.info.iOSPWA = AppUtility.isAppleOS() && AppData.Configuration.app.mode == "PWA";
 			
 			// build the listing of pages
 			this.buildPages();
