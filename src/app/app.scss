@@ -19,6 +19,18 @@
 	max-width: 320px;
 }
 
+/* toolbars at footer */
+ion-nav ion-footer ion-toolbar.toolbar {
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
+/* toolbars at footer with iPhone X */
+ion-nav.iPhoneX ion-footer ion-toolbar.toolbar.toolbar-ios {
+	padding-bottom: 10px;
+	padding-bottom: 18px;
+}
+
 /* avatar of side menu */
 ion-menu ion-header ion-avatar img {
 	float: left;

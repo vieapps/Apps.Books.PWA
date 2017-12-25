@@ -109,10 +109,18 @@ export class App {
 			// original URI for open the requested resources or do the activation
 			this.info.originalURI = this.platform.url();
 			
-			// prepare status bar & special padding (iPhone X)
+			// iPhone X: footers need special paddings
+			this.info.iPhoneX = this.device.platform != undefined && this.device.platform == "iOS"
+				&& this.device.model != undefined && this.device.model != null
+				&& AppUtility.indexOf(this.device.model, "iPhone1") == 0
+				&& parseInt(this.device.model.substr(this.device.model.length - 1)) > 2;
+
+			// prepare status bar
+			this.statusBar.styleDefault();
+			if (this.info.iPhoneX) {
+				this.statusBar.backgroundColorByHexString("f8f8f8");
+			}
 			this.statusBar.overlaysWebView(false);
-			this.info.iPhoneX = this.device.model != undefined && this.device.model != null
-				&& AppUtility.indexOf(this.device.model, "iPhone10,") == 0 && parseInt(this.device.model.substr(this.device.model.length - 1)) > 2;
 			
 			// hide the splash screen
 			this.splashScreen.hide();
