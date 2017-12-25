@@ -69,6 +69,7 @@ export class App {
 			chapter: 0
 		},
 		originalURI: "",
+		iPhoneX: false,
 		attemps: 0
 	};
 	pages: Array<{ name: string, component: any, title: string, icon: string, params?: any, doPush?: boolean, popIfContains?: string, noNestedStack?: boolean }> = [];
@@ -108,10 +109,10 @@ export class App {
 			// original URI for open the requested resources or do the activation
 			this.info.originalURI = this.platform.url();
 			
-			// prepare the status bar
-			this.statusBar.styleLightContent();
-			this.statusBar.backgroundColorByName("black");
+			// prepare status bar & special padding (iPhone X)
 			this.statusBar.overlaysWebView(false);
+			this.info.iPhoneX = this.device.model != undefined && this.device.model != null
+				&& AppUtility.indexOf(this.device.model, "iPhone10,") == 0 && parseInt(this.device.model.substr(this.device.model.length - 1)) > 2;
 			
 			// hide the splash screen
 			this.splashScreen.hide();
