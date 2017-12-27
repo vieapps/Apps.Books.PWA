@@ -28,6 +28,7 @@ import { SearchProfilesPage } from "../pages/accounts/search/search";
 import { SearchPage } from "../pages/search/search";
 import { SurfBooksPage } from "../pages/books/surf/surf";
 import { ReadBookPage } from "../pages/books/read/read";
+import { AppModels } from "../models/objects";
 
 declare var FB: any;
 
@@ -212,10 +213,17 @@ export class App {
 
 		// events to show chapters of a book
 		AppEvents.on("OpenBook", (info: any) => {
-			if (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true)) {
+			if (AppUtility.isObject(info, true) && AppUtility.isObject(info.args, true)) {
 				this.info.book.id = info.args.ID;
 				this.info.book.chapter = info.args.Chapter;
 				this.info.book.id == info.args.ID && this.showChapters();
+			}
+		});
+		AppEvents.on("BookIsUpdated", (info: any) => {
+			if (AppUtility.isObject(info, true) && AppUtility.isObject(info.args, true)
+			&& this.info.book.id != "" && this.info.book.id == info.args.ID
+			&& info.args.TOCs && info.args.TOCs.length > 0) {
+				this.displayChapters();
 			}
 		});
 	}
@@ -556,7 +564,11 @@ export class App {
 	showChapters() {
 		let book = AppData.Books.getValue(this.info.book.id);
 		this.info.book.title = book.Title;
+		this.displayChapters(book);
+	}
 
+	displayChapters(book?: AppModels.Book) {
+		book = book != undefined ? book : AppData.Books.getValue(this.info.book.id);
 		if (book.TotalChapters > 1) {
 			this.chapters = new List(book.TOCs)
 				.Select((toc, index) => {

@@ -6,7 +6,6 @@ import { Keyboard } from "@ionic-native/keyboard";
 import { CompleterService, CompleterData, CompleterCmp } from "ng2-completer";
 import { ImageCropperComponent, CropperSettings } from "ng2-img-cropper";
 import { List } from "linqts";
-import "rxjs/add/operator/map";
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppEvents } from "../../../helpers/events";

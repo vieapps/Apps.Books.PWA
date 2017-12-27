@@ -1,0 +1,78 @@
+<ion-header>
+	<ion-navbar hideBackButton="true">
+		<ion-buttons left>
+			<button ion-button clear [hidden]="info.state.processing" (click)="cancel()">
+				Huỷ
+			</button>
+		</ion-buttons>
+		<ion-buttons right>
+			<button ion-button clear [hidden]="info.state.processing" (click)="update(form)">
+				Cập nhật
+			</button>
+		</ion-buttons>
+		<ion-title>{{info.title}}</ion-title>
+	</ion-navbar>
+</ion-header>
+
+<ion-content padding>
+
+	<form #form="ngForm">
+		<ion-item [class.invalid]="!info.state.valid && isEmpty(info.book.Title)">
+			<ion-label floating>Tiêu đề</ion-label>
+			<ion-input #Title required name="Title" type="text" maxlength="250" [(ngModel)]="info.book.Title"></ion-input>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Nguyên tác</ion-label>
+			<ion-input #Original name="Original" type="text" maxlength="250" [(ngModel)]="info.book.Original"></ion-input>
+		</ion-item>
+		<ion-item [class.invalid]="!info.state.valid && isEmpty(info.book.Author)">
+			<ion-label floating>Tác giả</ion-label>
+			<ion-input #Author required name="Author" type="text" maxlength="250" [(ngModel)]="info.book.Author"></ion-input>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Dịch giả</ion-label>
+			<ion-input #Translator name="Translator" type="text" maxlength="250" [(ngModel)]="info.book.Translator"></ion-input>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Nhà xuất bản</ion-label>
+			<ion-input #Publisher name="Publisher" type="text" maxlength="250" [(ngModel)]="info.book.Publisher"></ion-input>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Đơn vị sản xuất</ion-label>
+			<ion-input #Producer name="Producer" type="text" maxlength="250" [(ngModel)]="info.book.Producer"></ion-input>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Thể loại</ion-label>
+			<ion-select #Category name="Category" [(ngModel)]="info.book.Category">
+					<ion-option *ngFor="let category of info.categories" [value]="category">{{category}}</ion-option>
+			</ion-select>
+		</ion-item>
+		<ion-item>
+			<ion-label floating>Mục lục</ion-label>
+			<ion-textarea #TOCs name="TOCs" id="TOCs" [(ngModel)]="info.book.TOCs"></ion-textarea>
+		</ion-item>
+	</form>
+
+	<ion-item>
+		<ion-label>Ảnh bìa</ion-label>
+	</ion-item>
+	
+	<div padding>
+		<input #Cover type="file" accept="image/*" (change)="selectCover($event)" />
+		<button right ion-button clear [hidden]="info.state.processing" (click)="removeCover()">
+			<ion-icon name="trash"></ion-icon>
+		</button>
+	</div>
+
+	<div padding class="cover">
+		<div *ngIf="info.cover.uri != ''">
+			<div>Hiện tại</div>
+			<img [src]="info.cover.uri" />
+		</div>
+		<div *ngIf="info.cover.image">
+			<div>Mới</div>
+			<img [src]="info.cover.image" />
+		</div>
+	</div>
+
+</ion-content>

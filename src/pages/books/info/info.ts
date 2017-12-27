@@ -1,5 +1,5 @@
 import { Component } from "@angular/core";
-import { NavController, NavParams, AlertController, ModalController } from "ionic-angular";
+import { NavController, NavParams, AlertController } from "ionic-angular";
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppAPI } from "../../../helpers/api";
@@ -19,7 +19,6 @@ export class BookInfoPage {
 		public navCtrl: NavController,
 		public navParams: NavParams,
 		public alertCtrl: AlertController,
-		public modalCtrl: ModalController,
 		public configSvc: ConfigurationService,
 		public booksSvc: BooksService
 	){

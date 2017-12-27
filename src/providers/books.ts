@@ -243,39 +243,39 @@ export class BooksService {
 
 	async updateAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.PutAsync("ebooks/" + AppCrypto.urlEncode(info.ID) + "/" + AppUtility.getBase64UrlParam({ ID: info.ID }), info);
+			let response = await AppAPI.PutAsync("books/book/" + info.ID, info);
 			let data = response.json();
 			if (data.Status == "OK") {
 				onNext != undefined && onNext(data);
 			}
 			else {
-				console.error("[Books]: Error occurred while updating an e-book");
+				console.error("[Books]: Error occurred while updating a book");
 				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
 				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while updating an e-book", e);
+			console.error("[Books]: Error occurred while updating a book", e);
 			onError != undefined && onError(e);
 		}
 	}
 
-	async deleteAsync(info, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+	async deleteAsync(id: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.DeleteAsync("ebooks/" + AppCrypto.urlEncode(info.BookID) + "/" + AppUtility.getBase64UrlParam({ ID: info.BookID }));
+			let response = await AppAPI.DeleteAsync("books/book/" + id);
 			let data = response.json();
 			if (data.Status == "OK") {
-				AppData.Books.remove(info.BookID);
+				AppData.Books.remove(id);
 				onNext != undefined && onNext(data);
 			}
 			else {
-				console.error("[Books]: Error occurred while deleting an e-book");
+				console.error("[Books]: Error occurred while deleting a book");
 				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
 				onError != undefined && onError(data);
 			}
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while deleting an e-book", e);
+			console.error("[Books]: Error occurred while deleting a book", e);
 			onError != undefined && onError(e);
 		}
 	}
@@ -293,6 +293,7 @@ export class BooksService {
 		// book information
 		if (info.ObjectName == "Book") {
 			AppModels.Book.update(message.Data);
+			AppEvents.broadcast("BookIsUpdated", message.Data);
 		}
 
 		// books' counters
@@ -316,7 +317,7 @@ export class BooksService {
 		// book is deleted
 		else if (info.ObjectName == "Book#Delete") {
 			AppData.Books.remove(message.Data.ID);
-			AppEvents.broadcast("BooksAreUpdated");
+			AppEvents.broadcast("BooksAreUpdated", message.Data);
 		}
 		
 		// bookmarks

@@ -1,0 +1,17 @@
+page-edit-book {
+	#TOCs > textarea {
+		min-height: 300px;
+	}
+	div.cover {
+		padding-top: 10px;
+	}
+	div.cover > div {
+		width: 300px;
+		float: left;
+		padding-right: 20px;
+	}
+	div.cover > div > div {
+		text-align: center;
+		padding-bottom: 10px;
+	}
+}

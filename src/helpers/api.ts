@@ -116,10 +116,6 @@ export namespace AppAPI {
 	/** Gets the headers for making requests to APIs */
 	export function getHeaders(additional?: any, addContentType?: boolean) {
 		let headers = new Headers();
-		if (addContentType) {
-			headers.append("content-type", "application/json");
-		}
-
 		let authHeaders = getAuthHeaders();
 		for (let name in authHeaders) {
 			headers.append(name, authHeaders[name]);
@@ -127,9 +123,9 @@ export namespace AppAPI {
 
 		if (additional != undefined) {
 			if (AppUtility.isArray(additional)) {
-				new List<any>(additional).ForEach(h => {
-					if (AppUtility.isObject(h, true) && AppUtility.isNotEmpty(h.name) && AppUtility.isNotEmpty(h.value)) {
-						headers.append(h.name as string, h.value as string);
+				new List<any>(additional).ForEach(header => {
+					if (AppUtility.isObject(header, true) && AppUtility.isNotEmpty(header.name) && AppUtility.isNotEmpty(header.value)) {
+						headers.append(header.name as string, header.value as string);
 					}
 				});
 			}
@@ -140,6 +136,10 @@ export namespace AppAPI {
 			}
 		}
 
+		if (addContentType) {
+			headers.append("content-type", "application/json");
+		}
+
 		return headers;
 	}
 
@@ -148,9 +148,9 @@ export namespace AppAPI {
 		var headers = {};
 
 		if (addToken
-			&& AppUtility.isObject(AppData.Configuration.session.jwt, true)
-			&& AppUtility.isObject(AppData.Configuration.session.keys, true)
-			&& AppUtility.isNotEmpty(AppData.Configuration.session.keys.jwt)) {
+		&& AppUtility.isObject(AppData.Configuration.session.jwt, true)
+		&& AppUtility.isObject(AppData.Configuration.session.keys, true)
+		&& AppUtility.isNotEmpty(AppData.Configuration.session.keys.jwt)) {
 			headers["x-app-token"] = AppCrypto.jwtEncode(AppData.Configuration.session.jwt, AppData.Configuration.session.keys.jwt);
 		}
 

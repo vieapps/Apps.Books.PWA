@@ -33,6 +33,7 @@ import { ProfilePage } from "../pages/accounts/profile/profile";
 import { SearchProfilesPage } from "../pages/accounts/search/search";
 import { SurfBooksPage } from "../pages/books/surf/surf";
 import { ReadBookPage } from "../pages/books/read/read";
+import { EditBookPage } from "../pages/books/edit/edit";
 import { BookInfoPage } from "../pages/books/info/info";
 import { ReadingOptionsPage } from "../pages/books/options/options";
 
@@ -47,6 +48,7 @@ import { ReadingOptionsPage } from "../pages/books/options/options";
 		SearchProfilesPage,
 		SurfBooksPage,
 		ReadBookPage,
+		EditBookPage,
 		BookInfoPage,
 		ReadingOptionsPage,
 	],
@@ -71,6 +73,7 @@ import { ReadingOptionsPage } from "../pages/books/options/options";
 		SearchProfilesPage,
 		SurfBooksPage,
 		ReadBookPage,
+		EditBookPage,
 		BookInfoPage,
 		ReadingOptionsPage,
 	],

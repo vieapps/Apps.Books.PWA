@@ -14,6 +14,7 @@ import { AuthenticationService } from "../../../providers/authentication";
 import { BooksService } from "../../../providers/books";
 
 import { SurfBooksPage } from "../surf/surf";
+import { EditBookPage } from "../edit/edit";
 import { BookInfoPage } from "../info/info";
 import { ReadingOptionsPage } from "../options/options";
 
@@ -74,6 +75,16 @@ export class ReadBookPage {
 		);
 
 		AppEvents.on(
+			"BookIsUpdated",
+			(info: any) => {
+				if (this.info.book.ID == info.args.ID) {
+					this.info.book = AppData.Books.getValue(info.args.ID);
+				}
+			},
+			"RefreshBookEventHandler"
+		);
+
+		AppEvents.on(
 			"OpenChapter",
 			(info: any) => {
 				if (this.info.book.ID == info.args.ID) {
@@ -96,6 +107,7 @@ export class ReadBookPage {
 	}
 
 	ionViewWillUnload() {
+		AppEvents.off("BookIsUpdated", "RefreshBookEventHandler");
 		AppEvents.off("OpenChapter", "OpenBookChapterEventHandler");
 		AppEvents.off("ReadingOptionsAreUpdated", "UpdateReadingOptionsEventHandler");
 		AppEvents.broadcast("CloseBook", { ID: this.info.book.ID });
@@ -295,32 +307,21 @@ export class ReadBookPage {
 				text: "Lấy lại dữ liệu",
 				icon: this.info.isAppleOS ? undefined : "build",
 				handler: () => {
-					AppRTU.call("books", "book", "GET", {
-						"object-identity": "recrawl",
-						"id": this.info.book.ID
-					});
-					this.alertCtrl.create({
-						title: "Hoàn thành",
-						message: "Đã gửi yêu cầu lấy lại dữ liệu!",
-						enableBackdropDismiss: true,
-						buttons: [{
-							text: "Đóng"
-						}]
-					}).present();
+					this.showRecrawl();
 				}
 			});
 			actionSheet.addButton({
 				text: "Cập nhật",
 				icon: this.info.isAppleOS ? undefined : "create",
 				handler: () => {
-
+					this.navCtrl.push(EditBookPage, { ID: this.info.book.ID });
 				}
 			});
 			actionSheet.addButton({
 				text: "Xoá",
 				icon: this.info.isAppleOS ? undefined : "trash",
 				handler: () => {
-
+					this.showDelete();
 				}
 			});
 		}
@@ -334,10 +335,119 @@ export class ReadBookPage {
 		actionSheet.present();
 	}
 
-	showLoading() {
+	showDelete() {
+		this.alertCtrl.create({
+			title: "Xoá",
+			message: "Chắc chắn muốn xoá?",
+			enableBackdropDismiss: true,
+			buttons: [{
+				text: "Huỷ",
+			},
+			{
+				text: "Đồng ý xoá",
+				handler: (data) => {
+					this.showLoading("Xoá dữ liệu....");
+					this.booksSvc.deleteAsync(
+						this.info.book.ID, 
+						() => {
+							this.hideLoading();
+							this.navCtrl.pop();
+						},
+						(data: any) => {
+							this.showError(data);
+						}
+					)
+				}
+			}]
+		}).present();
+	}
+
+	showRecrawl() {
+		let url = this.info.book.SourceUrl;
+
+		let confirm = this.alertCtrl.create({
+			title: "Recrawl",
+			enableBackdropDismiss: true,
+			inputs: [{
+				type: "radio",
+				label: "Lấy lại toàn bộ",
+				value: "full",
+				checked: url == ""
+			},
+			{
+				type: "radio",
+				label: "Chỉ lấy các chương thiếu",
+				value: "missing",
+				checked: url != ""
+			}],
+			buttons: [{
+				text: "Huỷ",
+			},
+			{
+				text: "Lấy dữ liệu",
+				handler: (data) => {
+					AppRTU.call("books", "book", "GET", {
+						"object-identity": "recrawl",
+						"id": this.info.book.ID,
+						"url": url,
+						"full": data == "full"
+					});
+					this.alertCtrl.create({
+						title: "Hoàn thành",
+						message: "Đã gửi yêu cầu lấy lại dữ liệu!",
+						enableBackdropDismiss: true,
+						buttons: [{
+							text: "Đóng"
+						}]
+					}).present();
+				}
+			}]
+		});
+
+		if (url == "") {
+			this.alertCtrl.create({
+				title: "Recrawl",
+				message: "Url nguồn dữ liệu",
+				enableBackdropDismiss: true,
+				inputs: [{
+					type: "text",
+					name: "SourceUrl",
+					placeholder: "Url nguồn dữ liệu",
+					value: url
+				}],
+				buttons: [{
+					text: "Huỷ",
+				},
+				{
+					text: "Tiếp tục",
+					handler: (data) => {
+						url = data.SourceUrl;
+						confirm.present();
+					}
+				}]
+			}).present();
+		}
+		else {
+			confirm.present();
+		}		
+	}
+
+	showError(data: any) {
+		this.hideLoading();
+		this.alertCtrl.create({
+			title: "Lỗi",
+			message: AppUtility.isObject(data.Error, true) ? data.Error.Message : "Đã xảy ra lỗi",
+			enableBackdropDismiss: false,
+			buttons: [{
+				text: "Đóng",
+			}]
+		}).present();
+	}
+
+	showLoading(message?: string) {
 		if (this.loading == undefined) {
 			this.loading = this.loadingCtrl.create({
-				content: "Tải dữ liệu...."
+				content: message != undefined ? message : "Tải dữ liệu...."
 			});
 			this.loading.present();
 		}

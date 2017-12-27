@@ -200,7 +200,7 @@
 			</ion-item>
 		</ion-list>
 		<div [hidden]="info.avatar.mode != 'Avatar'">
-			<input type="file" (change)="changeAvatar($event)" />
+			<input type="file" accept="image/*" (change)="changeAvatar($event)" />
 			<img-cropper #avatarcropper [image]="cropper.data" [settings]="cropper.settings"></img-cropper>
 		</div>
 		<div>

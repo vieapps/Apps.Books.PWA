@@ -5,6 +5,7 @@ import { List } from "linqts";
 
 import { AppUtility } from "../../../helpers/utility";
 import { AppEvents } from "../../../helpers/events";
+import { AppRTU } from "../../../helpers/rtu";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
@@ -89,6 +90,18 @@ export class SurfBooksPage {
 		this.info.title = this.info.filterBy.And.Category.Equals != ""
 			? "Thể loại: " + this.info.filterBy.And.Category.Equals
 			: "Tác giả: " + this.info.filterBy.And.Author.Equals;
+
+		AppEvents.on(
+			"BooksAreUpdated",
+			(info: any) => {
+				let rebuild = (this.info.filterBy.And.Category.Equals != "" && this.info.filterBy.And.Category.Equals == info.args.Category)
+					|| (this.info.filterBy.And.Author.Equals != "" && this.info.filterBy.And.Author.Equals == info.args.Author);
+				if (rebuild) {
+					this.build();
+				}
+			},
+			"SurfBooksEventHandler"
+		);
 	}
 	
 	// when the page has active
@@ -117,6 +130,10 @@ export class SurfBooksPage {
 				this.build();
 			}
 		}
+	}
+
+	ionViewWillUnload() {
+		AppEvents.off("BooksAreUpdated", "SurfBooksEventHandler");
 	}
 
 	// books
@@ -281,6 +298,16 @@ export class SurfBooksPage {
 			});
 		}
 
+		if (this.authSvc.isModerator("book")) {
+			actionSheet.addButton({
+				text: "Lấy dữ liệu",
+				icon: this.info.isAppleOS ? undefined : "build",
+				handler: () => {
+					this.showCrawl();
+				}
+			});
+		}
+
 		actionSheet.addButton({
 			text: "Huỷ bỏ",
 			icon: this.info.isAppleOS ? undefined : "close",
@@ -314,6 +341,39 @@ export class SurfBooksPage {
 
 		new List(this.sorts).ForEach(o => alert.addInput({ type: "radio", label: o.label, value: o.value, checked: this.info.sortBy == o.value}));
 		alert.present();
+	}
+
+	showCrawl() {
+		this.alertCtrl.create({
+			title: "Crawl",
+			message: "Url nguồn dữ liệu",
+			enableBackdropDismiss: true,
+			inputs: [{
+				type: "text",
+				name: "SourceUrl",
+				placeholder: "Url nguồn dữ liệu",
+				value: ""
+			}],
+			buttons: [{
+				text: "Huỷ",
+			},
+			{
+				text: "Lấy dữ liệu",
+				handler: (data) => {
+					AppRTU.call("books", "crawl", "GET", {
+						"url": data.SourceUrl
+					});
+					this.alertCtrl.create({
+						title: "Hoàn thành",
+						message: "Đã gửi yêu cầu lấy dữ liệu!",
+						enableBackdropDismiss: true,
+						buttons: [{
+							text: "Đóng"
+						}]
+					}).present();
+				}
+			}]
+		}).present();
 	}
 
 	// event handlers
