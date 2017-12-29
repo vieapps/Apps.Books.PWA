@@ -5,8 +5,6 @@ import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
 import { List } from "linqts";
 import * as Collections from "typescript-collections";
-import "rxjs/add/operator/toPromise";
-import "rxjs/add/operator/map";
 
 import { AppUtility } from "../helpers/utility";
 import { AppCrypto } from "../helpers/crypto";
@@ -116,6 +114,7 @@ export class ConfigurationService {
 						? AppData.Configuration.session.account
 						: this.getAccount(true);
 					AppEvents.broadcast(isAuthenticated ? "SessionIsRegistered" : "SessionIsInitialized", AppData.Configuration.session);
+					console.info("[Configuration]: The session is initialized");
 					onNext != undefined && onNext(data);
 				});
 			}
@@ -226,7 +225,7 @@ export class ConfigurationService {
 		AppData.Configuration.session.jwt = null;
 		AppData.Configuration.session.keys = null;
 		AppData.Configuration.session.account = this.getAccount(true);
-		await this.storage.remove("VIEApps-Session");
+		await this.storage.set("VIEApps-Session", JSON.stringify(AppUtility.clone(AppData.Configuration.session, ["captcha"])));
 		onCompleted != undefined && onCompleted();
 	}
 

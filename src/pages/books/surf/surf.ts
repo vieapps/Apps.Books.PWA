@@ -94,9 +94,8 @@ export class SurfBooksPage {
 		AppEvents.on(
 			"BooksAreUpdated",
 			(info: any) => {
-				let rebuild = (this.info.filterBy.And.Category.Equals != "" && this.info.filterBy.And.Category.Equals == info.args.Category)
-					|| (this.info.filterBy.And.Author.Equals != "" && this.info.filterBy.And.Author.Equals == info.args.Author);
-				if (rebuild) {
+				if ((this.info.filterBy.And.Category.Equals != "" && this.info.filterBy.And.Category.Equals == info.args.Category)
+				|| (this.info.filterBy.And.Author.Equals != "" && this.info.filterBy.And.Author.Equals == info.args.Author)) {
 					this.build();
 				}
 			},

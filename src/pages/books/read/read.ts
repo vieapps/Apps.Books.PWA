@@ -79,6 +79,7 @@ export class ReadBookPage {
 			(info: any) => {
 				if (this.info.book.ID == info.args.ID) {
 					this.info.book = AppData.Books.getValue(info.args.ID);
+					this.info.title = this.info.book.Title + " - " + this.info.book.Author;
 				}
 			},
 			"RefreshBookEventHandler"
