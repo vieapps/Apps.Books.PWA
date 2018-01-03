@@ -52,7 +52,7 @@ export namespace AppRTU {
 	*/
 	export function unregister(type: string, identity: string) {
 		if (AppUtility.isNotEmpty(type) && AppUtility.isNotEmpty(identity) && handlers[type]) {
-			let index = AppUtility.find<any>(handlers[type], h => h.identity == identity);
+			let index = AppUtility.find<any>(handlers[type], handler => identity == handler.identity);
 			if (index != -1) {
 				handlers[type].splice(index, 1);
 			}

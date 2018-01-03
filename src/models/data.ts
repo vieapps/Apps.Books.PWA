@@ -11,8 +11,6 @@ export namespace AppData {
 			uris: {
 				apis: "https://apis.vieapps.net/",
 				files: "https://afs.vieapps.net/",
-				// apis: "http://local-apis.vieapps.net/",
-				// files: "http://local-afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
 			debug: true,
@@ -23,7 +21,7 @@ export namespace AppData {
 			host: "",
 			tracking: {
 				google: "UA-3060572-8",
-				googleDomains: ["books.apps.prj.vn"],
+				googleDomains: ["books.vieapps.net", "books.prj.vn"],
 				facebook: ""
 			},
 			refer: {
