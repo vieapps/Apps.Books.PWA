@@ -3,14 +3,14 @@ import { NavController, NavParams, ActionSheetController, AlertController, Searc
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
-import { AppUtility } from "../../../helpers/utility";
-import { AppEvents } from "../../../helpers/events";
-import { AppRTU } from "../../../helpers/rtu";
+import { AppUtility } from "../../../components/utility";
+import { AppEvents } from "../../../components/events";
+import { AppRTU } from "../../../components/rtu";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
-import { AuthenticationService } from "../../../providers/authentication";
-import { BooksService } from "../../../providers/books";
+import { AuthenticationService } from "../../../services/authentication";
+import { BooksService } from "../../../services/books";
 
 import { SearchPage } from "../../search/search";
 import { ReadBookPage } from "../read/read";

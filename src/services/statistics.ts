@@ -4,10 +4,10 @@ import { Storage } from "@ionic/storage";
 import { List } from "linqts";
 import "rxjs/add/operator/toPromise";
 
-import { AppUtility } from "../helpers/utility";
-import { AppEvents } from "../helpers/events";
-import { AppRTU } from "../helpers/rtu";
-import { AppAPI } from "../helpers/api";
+import { AppUtility } from "../components/utility";
+import { AppEvents } from "../components/events";
+import { AppRTU } from "../components/rtu";
+import { AppAPI } from "../components/api";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
 

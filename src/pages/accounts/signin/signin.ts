@@ -3,11 +3,11 @@ import { NgForm } from "@angular/forms";
 import { NavController, NavParams, ViewController, AlertController, Loading, LoadingController } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
 
-import { AppUtility } from "../../../helpers/utility";
-import { AppEvents } from "../../../helpers/events";
+import { AppUtility } from "../../../components/utility";
+import { AppEvents } from "../../../components/events";
 import { AppData } from "../../../models/data";
 
-import { AuthenticationService } from "../../../providers/authentication";
+import { AuthenticationService } from "../../../services/authentication";
 
 @Component({
   selector: "page-signin",

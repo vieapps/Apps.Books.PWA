@@ -2,8 +2,8 @@ import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { List } from "linqts";
 
-import { AppUtility } from "../helpers/utility";
-import { AppAPI } from "../helpers/api";
+import { AppUtility } from "../components/utility";
+import { AppAPI } from "../components/api";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
 

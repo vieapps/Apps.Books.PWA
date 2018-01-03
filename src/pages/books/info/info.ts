@@ -1,14 +1,14 @@
 import { Component } from "@angular/core";
 import { NavController, NavParams, AlertController } from "ionic-angular";
 
-import { AppUtility } from "../../../helpers/utility";
-import { AppAPI } from "../../../helpers/api";
-import { AppEvents } from "../../../helpers/events";
+import { AppUtility } from "../../../components/utility";
+import { AppAPI } from "../../../components/api";
+import { AppEvents } from "../../../components/events";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
-import { ConfigurationService } from "../../../providers/configuration";
-import { BooksService } from "../../../providers/books";
+import { ConfigurationService } from "../../../services/configuration";
+import { BooksService } from "../../../services/books";
 
 @Component({
 	selector: "page-book-info",	

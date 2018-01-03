@@ -3,11 +3,11 @@ import { NavController, NavParams, Searchbar, InfiniteScroll } from "ionic-angul
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
-import { AppUtility } from "../../helpers/utility";
+import { AppUtility } from "../../components/utility";
 import { AppData } from "../../models/data";
 import { AppModels } from "../../models/objects";
 
-import { BooksService } from "../../providers/books";
+import { BooksService } from "../../services/books";
 import { ReadBookPage } from "../books/read/read";
 
 @Component({

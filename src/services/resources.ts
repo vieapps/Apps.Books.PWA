@@ -2,9 +2,9 @@ import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { Storage } from "@ionic/storage";
 
-import { AppUtility } from "../helpers/utility";
-import { AppAPI } from "../helpers/api";
-import { AppEvents } from "../helpers/events";
+import { AppUtility } from "../components/utility";
+import { AppAPI } from "../components/api";
+import { AppEvents } from "../components/events";
 
 import { AppData } from "../models/data";
 

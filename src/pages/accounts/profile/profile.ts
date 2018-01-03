@@ -7,14 +7,14 @@ import { CompleterService, CompleterData, CompleterCmp } from "ng2-completer";
 import { ImageCropperComponent, CropperSettings } from "ng2-img-cropper";
 import { List } from "linqts";
 
-import { AppUtility } from "../../../helpers/utility";
-import { AppEvents } from "../../../helpers/events";
-import { AppAPI } from "../../../helpers/api";
+import { AppUtility } from "../../../components/utility";
+import { AppEvents } from "../../../components/events";
+import { AppAPI } from "../../../components/api";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
-import { ConfigurationService } from "../../../providers/configuration";
-import { AuthenticationService } from "../../../providers/authentication";
+import { ConfigurationService } from "../../../services/configuration";
+import { AuthenticationService } from "../../../services/authentication";
 
 import { SignInPage } from "../signin/signin";
 import { HomePage } from "../../home/home";

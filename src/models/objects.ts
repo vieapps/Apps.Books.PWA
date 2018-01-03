@@ -1,7 +1,7 @@
 import * as Collections from "typescript-collections";
 import { List } from "linqts";
 
-import { AppUtility } from "../helpers/utility";
+import { AppUtility } from "../components/utility";
 import { AppData } from "./data";
 
 export namespace AppModels {

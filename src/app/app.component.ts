@@ -7,17 +7,17 @@ import { Device } from "@ionic-native/device";
 
 import { List } from "linqts";
 
-import { AppUtility } from "../helpers/utility";
-import { AppEvents } from "../helpers/events";
-import { AppRTU } from "../helpers/rtu";
-import { AppCrypto } from "../helpers/crypto";
+import { AppUtility } from "../components/utility";
+import { AppEvents } from "../components/events";
+import { AppRTU } from "../components/rtu";
+import { AppCrypto } from "../components/crypto";
 import { AppData } from "../models/data";
 
-import { ConfigurationService } from "../providers/configuration";
-import { AuthenticationService } from "../providers/authentication";
-import { BooksService } from "../providers/books";
-import { StatisticsService } from "../providers/statistics";
-import { ResourcesService } from "../providers/resources";
+import { ConfigurationService } from "../services/configuration";
+import { AuthenticationService } from "../services/authentication";
+import { BooksService } from "../services/books";
+import { StatisticsService } from "../services/statistics";
+import { ResourcesService } from "../services/resources";
 
 import { HomePage } from "../pages/home/home";
 

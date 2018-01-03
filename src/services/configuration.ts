@@ -6,11 +6,11 @@ import { Device } from "@ionic-native/device";
 import { List } from "linqts";
 import * as Collections from "typescript-collections";
 
-import { AppUtility } from "../helpers/utility";
-import { AppCrypto } from "../helpers/crypto";
-import { AppAPI } from "../helpers/api";
-import { AppEvents } from "../helpers/events";
-import { AppRTU } from "../helpers/rtu";
+import { AppUtility } from "../components/utility";
+import { AppCrypto } from "../components/crypto";
+import { AppAPI } from "../components/api";
+import { AppEvents } from "../components/events";
+import { AppRTU } from "../components/rtu";
 
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";

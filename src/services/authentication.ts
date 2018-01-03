@@ -6,11 +6,11 @@ import "rxjs/add/operator/map";
 
 declare var FB: any;
 
-import { AppUtility } from "../helpers/utility";
-import { AppCrypto } from "../helpers/crypto";
-import { AppAPI } from "../helpers/api";
-import { AppRTU } from "../helpers/rtu";
-import { AppEvents } from "../helpers/events";
+import { AppUtility } from "../components/utility";
+import { AppCrypto } from "../components/crypto";
+import { AppAPI } from "../components/api";
+import { AppRTU } from "../components/rtu";
+import { AppEvents } from "../components/events";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
 

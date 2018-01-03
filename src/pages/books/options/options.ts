@@ -1,11 +1,11 @@
 import { Component } from "@angular/core";
 import { NavController, NavParams } from "ionic-angular";
 
-import { AppEvents } from "../../../helpers/events";
-import { AppUtility } from "../../../helpers/utility";
+import { AppEvents } from "../../../components/events";
+import { AppUtility } from "../../../components/utility";
 import { AppData } from "../../../models/data";
 
-import { ConfigurationService } from "../../../providers/configuration";
+import { ConfigurationService } from "../../../services/configuration";
 
 @Component({
 	selector: "page-book-options",

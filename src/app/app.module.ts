@@ -17,14 +17,14 @@ import { RatingModule } from "ngx-rating";
 import { QRCodeModule } from "angular2-qrcode";
 
 import { App } from "./app.component";
-import { VinumberPipe } from "../helpers/utility";
+import { VinumberPipe } from "../components/utility";
 
-import { ConfigurationService } from "../providers/configuration";
-import { AuthenticationService } from "../providers/authentication";
-import { AccountsService } from "../providers/accounts";
-import { BooksService } from "../providers/books";
-import { StatisticsService } from "../providers/statistics";
-import { ResourcesService } from "../providers/resources";
+import { ConfigurationService } from "../services/configuration";
+import { AuthenticationService } from "../services/authentication";
+import { AccountsService } from "../services/accounts";
+import { BooksService } from "../services/books";
+import { StatisticsService } from "../services/statistics";
+import { ResourcesService } from "../services/resources";
 
 import { HomePage } from "../pages/home/home";
 import { SearchPage } from "../pages/search/search";

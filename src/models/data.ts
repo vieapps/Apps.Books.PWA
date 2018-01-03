@@ -1,6 +1,6 @@
 import * as Collections from "typescript-collections";
 
-import { AppUtility } from "../helpers/utility";
+import { AppUtility } from "../components/utility";
 import { AppModels } from "./objects";
 
 export namespace AppData {
@@ -9,10 +9,10 @@ export namespace AppData {
 	export var Configuration = {
 		app: {
 			uris: {
-				// apis: "https://apis.vieapps.net/",
-				// files: "https://afs.vieapps.net/",
-				apis: "http://local-apis.vieapps.net/",
-				files: "http://local-afs.vieapps.net/",
+				apis: "https://apis.vieapps.net/",
+				files: "https://afs.vieapps.net/",
+				// apis: "http://local-apis.vieapps.net/",
+				// files: "http://local-afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
 			debug: true,

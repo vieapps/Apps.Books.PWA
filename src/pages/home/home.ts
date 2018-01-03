@@ -2,14 +2,14 @@ import { Component } from "@angular/core";
 import { NavController, NavParams } from "ionic-angular";
 import { List } from "linqts";
 
-import { AppUtility } from "../../helpers/utility";
-import { AppEvents } from "../../helpers/events";
+import { AppUtility } from "../../components/utility";
+import { AppEvents } from "../../components/events";
 import { AppData } from "../../models/data";
 import { AppModels } from "../../models/objects";
 
-import { ConfigurationService } from "../../providers/configuration";
-import { ResourcesService } from "../../providers/resources";
-import { BooksService } from "../../providers/books";
+import { ConfigurationService } from "../../services/configuration";
+import { ResourcesService } from "../../services/resources";
+import { BooksService } from "../../services/books";
 
 import { ReadBookPage } from "../books/read/read";
 
