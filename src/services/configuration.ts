@@ -239,10 +239,19 @@ export class ConfigurationService {
 
 	/** Prepares account information */
 	prepareAccount(data: any) {
-		let account: { Roles: Array<string>, Privileges: Array<AppModels.Privilege>, Status: string } = {
+		let account: { 
+			Roles: Array<string>, 
+			Privileges: Array<AppModels.Privilege>, 
+			Status: string, 
+			TwoFactorsAuthentication: { Required: boolean, Providers: Array<{Label: string, Type: string, Time: Date, Info: string}> }
+		} = {
 			Roles: [],
 			Privileges: [],
-			Status: "Registered"
+			Status: "Registered",
+			TwoFactorsAuthentication: {
+				Required: false,
+				Providers: new Array<{Label: string, Type: string, Time: Date, Info: string}>()
+			}
 		};
 
 		if (data.Roles && AppUtility.isArray(data.Roles)) {
@@ -262,6 +271,22 @@ export class ConfigurationService {
 			account.Status = data.Status as string;
 		}
 
+		if (AppUtility.isObject(data.TwoFactorsAuthentication, true)) {
+			account.TwoFactorsAuthentication.Required = AppUtility.isTrue(data.TwoFactorsAuthentication.Required);
+			if (AppUtility.isArray(data.TwoFactorsAuthentication.Providers)) {
+				account.TwoFactorsAuthentication.Providers = new List<any>(data.TwoFactorsAuthentication.Providers)
+					.Select(p => {
+						return {
+							Label: p.Label,
+							Type: p.Type,
+							Time: new Date(p.Time),
+							Info: p.Info
+						};
+					})
+					.ToArray();
+			}
+		}
+
 		return account;
 	}
 
@@ -272,15 +297,13 @@ export class ConfigurationService {
 	 */
 	updateAccount(data: any, onCompleted?: () => void) {
 		let info = this.prepareAccount(data);
-		if (info.Roles) {
-			AppData.Configuration.session.account.roles = info.Roles;
-		}
-		if (info.Privileges) {
-			AppData.Configuration.session.account.privileges = info.Privileges;
-		}
-		if (info.Status) {
-			AppData.Configuration.session.account.status = info.Status;
-		}
+		AppData.Configuration.session.account.roles = info.Roles;
+		AppData.Configuration.session.account.privileges = info.Privileges;
+		AppData.Configuration.session.account.status = info.Status;
+		AppData.Configuration.session.account.twoFactors = {
+			required: info.TwoFactorsAuthentication.Required,
+			providers: info.TwoFactorsAuthentication.Providers
+		};
 		onCompleted != undefined && onCompleted();
 	}
 

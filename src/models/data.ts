@@ -70,6 +70,7 @@ export namespace AppData {
 		roles: Array<string> = null;
 		privileges: Array<AppModels.Privilege> = null;
 		status: string = null;
+		twoFactors: { required: boolean, providers: Array<{Label: string, Type: string, Time: Date, Info: string}> } = { required: false, providers: new Array<{Label: string, Type: string, Time: Date, Info: string}>() };
 		profile: AppModels.Account = null;
 		facebook = {
 			id: null as string,

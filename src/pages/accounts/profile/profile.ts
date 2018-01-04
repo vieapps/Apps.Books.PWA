@@ -91,6 +91,13 @@ export class ProfilePage {
 			Email: "",
 			ConfirmEmail: ""
 		},
+		otp: {
+			required: false,
+			providers: new Array<{Label: string, Type: string, Time: Date, Info: string}>(),
+			provisioning: "",
+			url: "",
+			value: ""
+		},
 		invitation: {
 			name: undefined,
 			email: undefined,
@@ -156,6 +163,8 @@ export class ProfilePage {
 	@ViewChild("guestemail") guestemailCtrl: TextInput;
 
 	@ViewChild("avatarcropper") cropperCtrl: ImageCropperComponent;
+
+	@ViewChild("otp") otpCtrl;
 
 	@ViewChild(Content) contentCtrl: Content;
 	
@@ -281,6 +290,13 @@ export class ProfilePage {
 					this.openChangeEmail();
 				}
 			});
+			actionSheet.addButton({
+				text: "Thiết đặt bảo mật",
+				icon: this.info.isAppleOS ? undefined : "unlock",
+				handler: () => {
+					this.openUpdateOTP();					
+				}
+			});
 		}
 		else if (this.authSvc.isAdministrator() && this.info.id != "" && this.info.id != AppData.Configuration.session.account.id) {
 			actionSheet.addButton({
@@ -336,10 +352,20 @@ export class ProfilePage {
 
 	openChangeEmail() {
 		this.setBackButton(false);
-		this.renewCaptcha();
 		this.info.state.mode = "ChangeEmail";
 		this.info.title = "Đổi email";
 		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
+	}
+
+	openUpdateOTP() {
+		this.setBackButton(false);
+		this.info.state.mode = "UpdateOTP";
+		this.info.title = "Thiết đặt bảo mật";
+		this.info.otp.required = AppData.Configuration.session.account.twoFactors.required;
+		this.info.otp.providers = AppData.Configuration.session.account.twoFactors.providers;
+		this.info.otp.provisioning = "";
+		this.info.otp.url = "";
+		this.info.otp.value = "";
 	}
 
 	getRole(objectName?: string) {
@@ -827,6 +853,65 @@ export class ProfilePage {
 				this.showError(error);
 			}
 		);
+	}
+
+	// otp
+	prepareOTP() {
+		this.authSvc.prepareOTPAsync(
+			(data: any) =>
+			{
+				this.info.otp.provisioning = data.Provisioning;
+				this.info.otp.url = data.Uri;
+				AppUtility.focus(this.otpCtrl, this.keyboard, 234);
+			},
+			(error: any) => {
+				this.showError(error);
+			}
+		);
+	}
+
+	updateOTP() {
+		if (AppUtility.isNotEmpty(this.info.otp.value)) {
+			var info = {
+				Provisioning: this.info.otp.provisioning,
+				OTP: this.info.otp.value
+			}
+			this.authSvc.updateOTPAsync(info,
+				(data: any) =>
+				{
+					this.openUpdateOTP();
+				},
+				(error: any) => {
+					AppUtility.focus(this.otpCtrl, this.keyboard, 234);					
+				}
+			);
+		}
+		else {
+			AppUtility.focus(this.otpCtrl, this.keyboard, 234);
+		}
+	}
+
+	deleteOTP(info: any) {
+		this.alertCtrl.create({
+			title: "Xoá",
+			message: "Chắc chắn muốn huỷ bỏ phương pháp xác thực hai lớp này (" + info.Type + ")?",
+			enableBackdropDismiss: false,
+			buttons: [{
+				text: "Đóng",
+				role: "cancel"
+			},
+			{
+				text: "Đồng ý xoá",
+				handler: () => {
+					this.authSvc.deleteOTPAsync(info.Type,
+						(data: any) =>
+						{
+							this.openUpdateOTP();
+						}
+					);
+				}
+			}]
+		}).present();
 	}
 
 	// sign-out

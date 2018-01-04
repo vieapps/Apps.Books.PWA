@@ -20,7 +20,7 @@
 
 <ion-content padding>
 	<form #form="ngForm">
-		<ion-item [class.invalid]="!info.state.valid && !isValidEmail(info.account.email)">
+		<ion-item [class.invalid]="!info.state.valid && !isValidEmail(info.account.email)" *ngIf="info.state.mode != 'OTP'">
 	    <ion-label floating>Email</ion-label>
 	    <ion-input #email required name="email" type="email" maxlength="150" [(ngModel)]="info.account.email"></ion-input>
 	  </ion-item>
@@ -28,21 +28,29 @@
 	    <ion-label floating>Mật khẩu</ion-label>
 	    <ion-input #password required name="password" type="password" maxlength="150" clearOnEdit="false" [(ngModel)]="info.account.password"></ion-input>
 	  </ion-item>
-	  <ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" *ngIf="info.state.mode != 'SignIn'">
+	  <ion-item class="captcha" [class.invalid]="!info.state.valid && !isNotEmpty(info.captcha.code)" [hidden]="info.state.mode != 'Password'">
 	    <img item-left [src]="info.captcha.uri"/>
-	    <button ion-button clear icon-only item-left (click)="renewCaptcha()">
+	    <button ion-button clear icon-only item-left (click)="renewCaptcha()" *ngIf="info.state.mode == 'Password'">
 	    	<ion-icon name="refresh"></ion-icon>
 	    </button>
 	    <ion-input #captcha name="captcha" type="text" placeholder="Mã xác thực" maxlength="4" [(ngModel)]="info.captcha.code"></ion-input>
 	  </ion-item>
+	  <ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.account.otp)" [hidden]="info.state.mode != 'OTP'">
+	    <ion-label floating>Mã xác thực</ion-label>
+	    <ion-input #otp name="otp" type="text" maxlength="6" clearOnEdit="true" [(ngModel)]="info.otp.value"></ion-input>
+	  </ion-item>
 		<div text-right style="padding-top:16px">
-			<button ion-button icon-left [hidden]="info.state.processing || info.state.mode != 'SignIn'" (click)="doSignIn(form)">
+			<button ion-button icon-left [hidden]="info.state.processing" (click)="doSignIn(form)" *ngIf="info.state.mode == 'SignIn'">
 				<ion-icon name="log-in"></ion-icon>
 				Đăng nhập
 			</button>		
-			<button ion-button icon-left [hidden]="info.state.processing || info.state.mode == 'SignIn'" (click)="doRenewPassword(form)">
+			<button ion-button icon-left [hidden]="info.state.processing" (click)="doRenewPassword(form)" *ngIf="info.state.mode == 'Password'">
 				<ion-icon name="key"></ion-icon>
 				Lấy mật khẩu mới
+			</button>
+			<button ion-button icon-left [hidden]="info.state.processing" (click)="doValidateOTP(form)" *ngIf="info.state.mode == 'OTP'">
+				<ion-icon name="key"></ion-icon>
+				Xác thực
 			</button>
 		</div>
 	</form>

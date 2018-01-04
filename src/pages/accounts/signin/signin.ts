@@ -35,11 +35,16 @@ export class SignInPage {
   	},
 	  account: {
 			email: "",
-			password: "",
+			password: ""
 	  },
 		captcha: {
 			code: "",
 			uri: ""
+		},
+		otp: {
+			id: "",
+			value: "",
+			providers: []
 		}
   };
 
@@ -47,6 +52,7 @@ export class SignInPage {
 	@ViewChild("email") emailCtrl;
 	@ViewChild("password") passwordCtrl;
 	@ViewChild("captcha") captchaCtrl;
+	@ViewChild("otp") otpCtrl;
 	loading: Loading = undefined;
 
   // page events
@@ -183,9 +189,16 @@ export class SignInPage {
 		if (this.info.state.valid) {
 			this.showLoading("Đăng nhập...");
 			this.info.state.processing = true;
-			this.authSvc.signInAsync(this.info.account.email, this.info.account.password,
-				() => {
-					this.exit();
+			this.authSvc.signInAsync(this.info.account.email, this.info.account.password, 
+				(data: any) => {
+					this.hideLoading();
+					this.info.state.processing = false;
+					if (data.Require2FA) {
+						this.openOTP(data);
+					}
+					else {
+						this.exit();
+					}
 				},
 				(error: any) => {
 					this.showError(error);
@@ -224,6 +237,36 @@ export class SignInPage {
 					this.showError(error);
 				}
 			);
+		}
+	}
+
+	// OTP
+	openOTP(data: any) {
+		this.info.account.password = "";		
+		this.info.otp.id = data.ID;
+		this.info.otp.providers = data.Providers;
+  	this.info.state.mode = "OTP";
+		this.info.state.title = "Xác thực lần hai";
+		AppUtility.focus(this.otpCtrl, this.keyboard, 234);
+	}
+
+	doValidateOTP(form: NgForm) {
+		this.info.state.valid = AppUtility.isNotEmpty(this.info.otp.value);
+		if (this.info.state.valid) {
+			this.showLoading("Xác thực...");
+			this.info.state.processing = true;
+			this.authSvc.validateOTPAsync(this.info.otp.id, this.info.otp.value, this.info.otp.providers[0].Info, 
+				(data: any) => {
+					this.hideLoading();
+					this.exit();
+				},
+				(error: any) => {
+					this.showError(error);
+				}
+			);
+		}
+		else {
+			AppUtility.focus(this.otpCtrl, this.keyboard, 234);
 		}
 	}
 

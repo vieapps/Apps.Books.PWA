@@ -131,22 +131,10 @@ export class AuthenticationService {
 			let response = await AppAPI.PostAsync("users/session", body);
 			let data = response.json();
 			if (data.Status == "OK") {
-				await this.configSvc.updateSessionAsync(data.Data);
-				if (AppData.Configuration.session.account == null) {
-					AppData.Configuration.session.account = this.configSvc.getAccount(true);
+				if (!data.Data.Require2FA) {
+					await this.updateSessionAsync(data.Data);
 				}
-				AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
-
-				console.info("[Authentication]: Sign-in successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-				AppEvents.broadcast("SessionIsRegistered");
-
-				this.patchSession(() => {
-					this.configSvc.patchAccount(() => {
-						this.getProfile();
-						this.configSvc.getBookmarks();
-					});
-				}, 123);
-				onNext != undefined && onNext(data);
+				onNext != undefined && onNext(data.Data);
 			}
 			else {
 				console.error("[Authentication]: Error occurred while signing-in");
@@ -185,6 +173,25 @@ export class AuthenticationService {
 			console.error("[Authentication]: Error occurred while signing-out", e);
 			onError != undefined && onError(e);
 		}
+	}
+
+	/** Update session when perform success */
+	async updateSessionAsync(data: any) {
+		await this.configSvc.updateSessionAsync(data);
+		if (AppData.Configuration.session.account == null) {
+			AppData.Configuration.session.account = this.configSvc.getAccount(true);
+		}
+		AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
+
+		console.info("[Authentication]: Authenticated session is registered", AppUtility.isDebug() ? AppData.Configuration.session : "");
+		AppEvents.broadcast("SessionIsRegistered");
+
+		this.patchSession(() => {
+			this.configSvc.patchAccount(() => {
+				this.getProfile();
+				this.configSvc.getBookmarks();
+			});
+		}, 123);
 	}
 
 	patchSession(onNext?: () => void, defer?: number): void {
@@ -577,6 +584,103 @@ export class AuthenticationService {
 		}
 		catch (e) {
 			console.error("[Authentication]: Error occurred while activating (" + mode + ")", e);
+			onError != undefined && onError(e);
+		}
+	}
+
+	async prepareOTPAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+		try {
+			let path = "users/otp"
+				+ "?related-service=books"
+				+ "&language=vi-VN"
+				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+			let response = await AppAPI.GetAsync(path);
+			let data = response.json();
+			if (data.Status == "OK") {
+				onNext != undefined && onNext(data.Data);
+			}
+			else {
+				console.error("[Authentication]: Error occurred while preparing OTP");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
+			}
+		}
+		catch (e) {
+			console.error("[Authentication]: Error occurred while preparing OTP");
+			onError != undefined && onError(e);
+		}
+	}
+
+	async updateOTPAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+		try {
+			let path = "users/otp"
+				+ "?related-service=books"
+				+ "&language=vi-VN"
+				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+			let response = await AppAPI.PutAsync(path, info);
+			let data = response.json();
+			if (data.Status == "OK") {
+				this.configSvc.updateAccount(data.Data);
+				onNext != undefined && onNext(data.Data);
+			}
+			else {
+				console.error("[Authentication]: Error occurred while updating OTP");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
+			}
+		}
+		catch (e) {
+			console.error("[Authentication]: Error occurred while updating OTP");
+			onError != undefined && onError(e);
+		}
+	}
+
+	async deleteOTPAsync(type: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+		try {
+			let path = "users/otp"
+				+ "?type=" + type
+				+ "&related-service=books"
+				+ "&language=vi-VN"
+				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+			let response = await AppAPI.DeleteAsync(path);
+			let data = response.json();
+			if (data.Status == "OK") {
+				this.configSvc.updateAccount(data.Data);
+				onNext != undefined && onNext(data.Data);
+			}
+			else {
+				console.error("[Authentication]: Error occurred while deleting OTP");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
+			}
+		}
+		catch (e) {
+			console.error("[Authentication]: Error occurred while deleting OTP");
+			onError != undefined && onError(e);
+		}
+	}
+
+	async validateOTPAsync(id: string, otp: string, info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+		try {
+			let body = {
+				ID: id,
+				OTP: otp,
+				Info: info
+			};
+			let response = await AppAPI.PutAsync("users/session", body);
+			let data = response.json();
+			if (data.Status == "OK") {
+				await this.updateSessionAsync(data.Data);
+				onNext != undefined && onNext(data.Data);
+			}
+			else {
+				console.error("[Authentication]: Error occurred while validating OTP");
+				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
+				onError != undefined && onError(data);
+			}
+		}
+		catch (e) {
+			console.error("[Authentication]: Error occurred while validating OTP", e);
 			onError != undefined && onError(e);
 		}
 	}

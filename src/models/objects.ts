@@ -30,6 +30,7 @@ export namespace AppModels {
 		PostalCode = "";
 		Email = "";
 		Mobile = "";
+		Language = "vi-VN";
 		Avatar = "";
 		Gravatar = "";
 		Alias = "";

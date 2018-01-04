@@ -1,6 +1,6 @@
 <ion-header>
 	<ion-navbar>
-		<ion-buttons left *ngIf="info.state.mode != 'Profile'">
+		<ion-buttons left *ngIf="info.state.mode != 'Profile' && info.state.mode != 'UpdateOTP'">
 			<button ion-button clear (click)="cancel()">
 				Huỷ
 			</button>
@@ -23,6 +23,9 @@
 			</button>
 			<button ion-button clear [hidden]="info.state.processing || info.state.mode != 'Invite'" (click)="sendInvitation()">
 				Gửi
+			</button>
+			<button ion-button clear (click)="cancel()" *ngIf="info.state.mode == 'UpdateOTP'">
+				Xong
 			</button>
 		</ion-buttons>
 		<ion-title>{{info.title}}</ion-title>
@@ -229,6 +232,57 @@
 		<ion-item [class.invalid]="(!info.state.valid || info.change.Email) && info.change.Email != info.change.ConfirmEmail" *ngIf="info.state.mode == 'ChangeEmail'">
 			<ion-label floating>Nhập lại email</ion-label>
 			<ion-input #confirmNewEmail required type="email" maxlength="250" [(ngModel)]="info.change.ConfirmEmail"></ion-input>
+		</ion-item>
+	</div>
+
+	<div *ngIf="info.state.mode == 'UpdateOTP'">
+		<ion-item>
+			Trạng thái xác thực hai lớp:
+			<b>
+				{{info.otp.required ? 'Bật' : info.otp.url == '' ? 'Tắt' : 'Đang thiết đặt'}}
+			</b>
+			<button ion-button icon-left item-right (click)="prepareOTP()" *ngIf="!info.otp.required && info.otp.url == ''">
+				<ion-icon name="power"></ion-icon>
+				Bật
+			</button>
+		</ion-item>
+		<div *ngIf="info.otp.required && info.otp.providers.length > 0">
+			<div padding>
+				Các phương thức xác thực hai lớp hiện tại
+			</div>
+			<ion-item *ngFor="let p of info.otp.providers">
+				<ion-label>
+					<span>{{p.Label}}</span>
+					<span style="float:right">{{p.Time | date:'dd/MM/yyyy hh:mm a'}}</span>
+				</ion-label>
+				<button ion-button clear icon-left item-right (click)="deleteOTP(p)">
+					<ion-icon name="trash"></ion-icon>
+					Xoá bỏ
+				</button>
+			</ion-item>
+		</div>
+		<ion-item text-wrap *ngIf="info.otp.url != ''">
+			<div>
+				Mã QR cho ứng dụng Authenticator
+			</div>
+			<div>
+				<img [src]="info.otp.url"/>
+			</div>
+			<span>
+				Mở ứng dụng Authenticator trên điện thoại, thêm một tài khoản bằng cách quét mã QR ở trên và nhập mã được sinh trong ứng dụng để xác thực đã hoàn thành quá trình cài đặt.
+				<br/>
+				Có thể sử dụng ứng dụng Google Authenticator hoặc Microsoft Authenticator có sẵn trên App Store (iOS) hoặc Play Store (Android).
+			</span>
+		</ion-item>
+		<ion-item [hidden]="info.otp.url == ''">
+			<ion-label floating>Mã OTP của ứng dụng Authenticator</ion-label>
+			<ion-input #otp type="number" maxlength="6" [(ngModel)]="info.otp.value"></ion-input>
+		</ion-item>
+		<ion-item *ngIf="info.otp.url != ''">
+			<button ion-button icon-left item-right (click)="updateOTP()">
+				<ion-icon name="done-all"></ion-icon>
+				Xác thực
+			</button>
 		</ion-item>
 	</div>
 
