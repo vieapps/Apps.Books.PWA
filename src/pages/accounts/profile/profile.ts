@@ -858,8 +858,7 @@ export class ProfilePage {
 	// otp
 	prepareOTP() {
 		this.authSvc.prepareOTPAsync(
-			(data: any) =>
-			{
+			(data: any) => {
 				this.info.otp.provisioning = data.Provisioning;
 				this.info.otp.url = data.Uri;
 				AppUtility.focus(this.otpCtrl, this.keyboard, 234);
@@ -877,8 +876,7 @@ export class ProfilePage {
 				OTP: this.info.otp.value
 			}
 			this.authSvc.updateOTPAsync(info,
-				(data: any) =>
-				{
+				(data: any) => {
 					this.openUpdateOTP();
 				},
 				(error: any) => {
@@ -891,10 +889,10 @@ export class ProfilePage {
 		}
 	}
 
-	deleteOTP(info: any) {
+	deleteOTP(otp: any) {
 		this.alertCtrl.create({
 			title: "Xoá",
-			message: "Chắc chắn muốn huỷ bỏ phương pháp xác thực hai lớp này (" + info.Type + ")?",
+			message: "Chắc chắn muốn huỷ bỏ phương pháp xác thực hai lớp này (" + otp.Type + ")?",
 			enableBackdropDismiss: false,
 			buttons: [{
 				text: "Đóng",
@@ -903,9 +901,8 @@ export class ProfilePage {
 			{
 				text: "Đồng ý xoá",
 				handler: () => {
-					this.authSvc.deleteOTPAsync(info.Type,
-						(data: any) =>
-						{
+					this.authSvc.deleteOTPAsync(otp.Info,
+						(data: any) => {
 							this.openUpdateOTP();
 						}
 					);

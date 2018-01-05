@@ -247,7 +247,7 @@ export class SignInPage {
 		this.info.otp.providers = data.Providers;
   	this.info.state.mode = "OTP";
 		this.info.state.title = "Xác thực lần hai";
-		AppUtility.focus(this.otpCtrl, this.keyboard, 234);
+		AppUtility.focus(this.otpCtrl, this.keyboard, 345);
 	}
 
 	doValidateOTP(form: NgForm) {

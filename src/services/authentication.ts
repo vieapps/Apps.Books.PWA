@@ -635,10 +635,10 @@ export class AuthenticationService {
 		}
 	}
 
-	async deleteOTPAsync(type: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+	async deleteOTPAsync(info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/otp"
-				+ "?type=" + type
+				+ "?info=" + info
 				+ "&related-service=books"
 				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
