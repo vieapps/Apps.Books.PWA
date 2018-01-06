@@ -871,16 +871,22 @@ export class ProfilePage {
 
 	updateOTP() {
 		if (AppUtility.isNotEmpty(this.info.otp.value)) {
-			var info = {
-				Provisioning: this.info.otp.provisioning,
-				OTP: this.info.otp.value
-			}
-			this.authSvc.updateOTPAsync(info,
+			this.authSvc.updateOTPAsync(
+				{
+					Provisioning: this.info.otp.provisioning,
+					OTP: this.info.otp.value
+				},
 				(data: any) => {
 					this.openUpdateOTP();
 				},
 				(error: any) => {
-					AppUtility.focus(this.otpCtrl, this.keyboard, 234);					
+					this.showAlert(
+						"Lỗi",
+						error.Error && error.Error.Type == "OTPLoginFailedException" ? "Mã xác thực OTP không đúng" : "Đã xảy ra lỗi",
+						() => {
+							AppUtility.focus(this.otpCtrl, this.keyboard, 234);					
+						}
+					);
 				}
 			);
 		}
