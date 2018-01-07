@@ -147,7 +147,7 @@ export class ReadBookPage {
 	setURI() {
 		this.info.name = this.info.book.ANSITitle.replace(/\s/g, "-");
 		AppUtility.resetUri({ "read-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.name, chapter: this.info.chapter });
-		AppUtility.trackPageView(this.info.title, "read-book/" + this.info.name);
+		AppUtility.trackPageView(this.info.book.Title + " - " + this.info.book.Author, "read-book/" + this.info.name);
 	}
 
 	// go to a specified chapter

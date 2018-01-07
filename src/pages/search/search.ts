@@ -130,7 +130,7 @@ export class SearchPage {
 				if (onCompleted != undefined) {
 					onCompleted();
 				}
-				AppUtility.trackPageView(this.info.title + ": " + this.info.filterBy.Query, "search-books", { query: this.info.filterBy.Query, page: this.info.pageNumber });
+				AppUtility.trackPageView(this.info.title, "search-books", { query: this.info.filterBy.Query, page: this.info.pageNumber });
 			}
 		);
 	}

@@ -73,7 +73,7 @@ export class BookInfoPage {
 		// uri & track
 		this.info.name = this.info.book.ANSITitle.replace(/\s/g, "-");
 		AppUtility.resetUri({ "info-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.name });
-		AppUtility.trackPageView(this.info.title + ": " + this.info.book.Title, "info-book/" + this.info.name);
+		AppUtility.trackPageView(this.info.book.Title, "info-book/" + this.info.name);
 	}
 
 	ionViewWillUnload() {

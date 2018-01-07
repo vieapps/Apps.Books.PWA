@@ -4,7 +4,8 @@ import { StatusBar } from "@ionic-native/status-bar";
 import { SplashScreen } from "@ionic-native/splash-screen";
 import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
-
+import { AppVersion } from "@ionic-native/app-version";
+import { GoogleAnalytics } from "@ionic-native/google-analytics";
 import { List } from "linqts";
 
 import { AppUtility } from "../components/utility";
@@ -28,8 +29,6 @@ import { SearchPage } from "../pages/search/search";
 import { SurfBooksPage } from "../pages/books/surf/surf";
 import { ReadBookPage } from "../pages/books/read/read";
 import { AppModels } from "../models/objects";
-
-declare var FB: any;
 
 @Component({
 	templateUrl: "app.html"
@@ -82,6 +81,8 @@ export class App {
 	constructor(
 		public platform: Platform,
 		public device: Device,
+		public appVersion: AppVersion,
+		public ga: GoogleAnalytics,
 		public menu: MenuController,
 		public statusBar: StatusBar,
 		public splashScreen: SplashScreen,
@@ -109,7 +110,7 @@ export class App {
 			this.info.iPhoneX = this.device.platform != undefined && this.device.platform == "iOS"
 				&& this.device.model != undefined && this.device.model != null
 				&& AppUtility.indexOf(this.device.model, "iPhone1") == 0
-				&& parseInt(this.device.model.substr(this.device.model.length - 1)) > 2;
+				&& AppUtility.toInt(this.device.model.substring(this.device.model.length - 1)) > 2;
 
 			// prepare status bar
 			this.statusBar.styleDefault();
@@ -394,64 +395,13 @@ export class App {
 
 	// prepare the app
 	prepare(onCompleted?: () => void) {
-		// special for PWA (Progressive Web Apps) only
+		// special environment of PWA (Progressive Web Apps)
 		if (AppUtility.isWebApp()) {
-			// Javascript libraries (only available when working in web browser)
-			if (window.location.href.indexOf("file://") < 0) {
-				// Facebook SDK
-				if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
-					let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
-					if (!window.document.getElementById("facebook-jssdk")) {
-						let js = window.document.createElement("script");
-						js.id = "facebook-jssdk";
-						js.async = true;
-						js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
-	
-						let ref = window.document.getElementsByTagName("script")[0];
-						ref.parentNode.insertBefore(js, ref);
-					}
-					window["fbAsyncInit"] = function () {
-						FB.init({
-							appId: AppData.Configuration.facebook.id,
-							channelUrl: "/assets/facebook.html",
-							status: true,
-							cookie: true,
-							xfbml: true,
-							version: fbVersion
-						});
-						this.auth.watchFacebookConnect();
-					};
-				}
-
-				// Google Analytics
-				if (AppData.Configuration.app.tracking.google != "") {
-					(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){
-						(i[r].q=i[r].q||[]).push(arguments)},i[r].l=new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-					})(window,window.document,"script","https://www.google-analytics.com/analytics.js","ga");
-					let ga = window["ga"];
-					if (AppData.Configuration.app.tracking.googleDomains.length) {
-						ga("create", AppData.Configuration.app.tracking.google, "auto", {"allowLinker": true});
-						ga("require", "linker");
-						for (let index = 0; index < AppData.Configuration.app.tracking.googleDomains.length; index ++) {
-							ga("linker:autoLink", [AppData.Configuration.app.tracking.googleDomains[index]]);
-						}
-					}
-					else {
-						ga("create", AppData.Configuration.app.tracking.google, "auto");
-					}
-				}
-			}
-
-			// scrollbars (on Windows & Linux)
-			if (/Windows/i.test(window.navigator.userAgent) || /Linux/i.test(window.navigator.userAgent)) {
-				let css = window.document.createElement("style");
-				css.type = "text/css";
-				css.innerText = "::-webkit-scrollbar{height:14px;width:10px;background:#eee;border-left:solid1px#ddd;}::-webkit-scrollbar-thumb{background:#ddd;border:solid1px#cfcfcf;}::-webkit-scrollbar-thumb:hover{background:#b2b2b2;border:solid1px#b2b2b2;}::-webkit-scrollbar-thumb:active{background:#b2b2b2;border:solid1px#b2b2b2;}";
-
-				let ref = window.document.getElementsByTagName("link")[0];
-				ref.parentNode.insertBefore(css, ref);
-			}
+			AppUtility.setPWAEnvironment();
 		}
+
+		// Google Analytics
+		AppUtility.setGoogleAnalytics(this.ga);
 
 		// start the real-time updater
 		AppRTU.start(() => {

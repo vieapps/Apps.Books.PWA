@@ -4,14 +4,17 @@ import { HttpModule } from "@angular/http";
 import { FormsModule } from "@angular/forms";
 
 import { IonicApp, IonicErrorHandler, IonicModule } from "ionic-angular";
+
 import { Device } from "@ionic-native/device";
 import { StatusBar } from "@ionic-native/status-bar";
 import { SplashScreen } from "@ionic-native/splash-screen";
 import { Keyboard } from "@ionic-native/keyboard";
-import { IonicStorageModule } from "@ionic/storage";
 import { FileTransfer } from "@ionic-native/file-transfer";
-import { ImageCropperModule } from "ng2-img-cropper";
+import { GoogleAnalytics } from "@ionic-native/google-analytics";
+import { AppVersion } from "@ionic-native/app-version";
 
+import { IonicStorageModule } from "@ionic/storage";
+import { ImageCropperModule } from "ng2-img-cropper";
 import { Ng2CompleterModule } from "ng2-completer";
 import { RatingModule } from "ngx-rating";
 import { QRCodeModule } from "angular2-qrcode";
@@ -89,6 +92,8 @@ import { ReadingOptionsPage } from "../pages/books/options/options";
 		Device,
 		Keyboard,
 		FileTransfer,
+		AppVersion,
+		GoogleAnalytics,
 		Ng2CompleterModule,
 		ImageCropperModule,
 		RatingModule,

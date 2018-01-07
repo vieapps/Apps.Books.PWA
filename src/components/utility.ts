@@ -2,10 +2,13 @@ import { ElementRef, Pipe } from "@angular/core";
 import { DecimalPipe } from "@angular/common";
 
 import { Keyboard } from "@ionic-native/keyboard";
+import { GoogleAnalytics } from "@ionic-native/google-analytics";
 import { List } from "linqts";
 
 import { AppCrypto } from "./crypto";
 import { AppData } from "../models/data";
+
+declare var FB: any;
 
 @Pipe({
   name: "vinumber"
@@ -520,6 +523,25 @@ export namespace AppUtility {
 		window.open("https://www.google.com/maps?q=" + encodeURIComponent(info));
 	}
 
+	var googleAnalytics: GoogleAnalytics = null;
+
+	/** Sets the object of Google Analytics */
+	export function setGoogleAnalytics(ga: GoogleAnalytics) {
+		if (AppData.Configuration.app.tracking.google != "") {
+			googleAnalytics = ga;
+			googleAnalytics.startTrackerWithId(AppData.Configuration.app.tracking.google)
+				.then(() => {
+					googleAnalytics.setAppVersion(AppData.Configuration.app.version);
+					isDebug() && console.info("Google Analytics is ready now...", googleAnalytics);
+				})
+				.catch((e) => {
+					console.error("Error occurred while starting Google Analytics", e);
+					googleAnalytics = null;
+				});
+		}
+	}
+
+	/** Tracks a page-view */
 	export function trackPageView(title?: string, path?: string, params?: any) {
 		// prepare url
 		let url = "";
@@ -532,13 +554,51 @@ export namespace AppUtility {
 		url = uri.path + (isNotEmpty(path) ? path + "/" : "") + (uri.hash != "" ? uri.hash + "&" : "#?") + url;
 
 		// Google Analytics
-		let ga = window["ga"];
-		if (ga) {
-			setTimeout(() => {
-				ga("send", "pageview", { title: title, page: url });
-			}, 123);
+		if (googleAnalytics) {
+			googleAnalytics.trackView(title || document.title, uri.protocol + uri.host + url);
 		}
 	}
+
+	/** Sets environments of the PWA */
+	export function setPWAEnvironment() {
+			// Javascript libraries (only available when working in web browser)
+			if (window.location.href.indexOf("file://") < 0) {
+				// Facebook SDK
+				if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
+					let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
+					if (!window.document.getElementById("facebook-jssdk")) {
+						let js = window.document.createElement("script");
+						js.id = "facebook-jssdk";
+						js.async = true;
+						js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
+	
+						let ref = window.document.getElementsByTagName("script")[0];
+						ref.parentNode.insertBefore(js, ref);
+					}
+					window["fbAsyncInit"] = function () {
+						FB.init({
+							appId: AppData.Configuration.facebook.id,
+							channelUrl: "/assets/facebook.html",
+							status: true,
+							cookie: true,
+							xfbml: true,
+							version: fbVersion
+						});
+						this.auth.watchFacebookConnect();
+					};
+				}
+			}
+
+			// scrollbars (on Windows & Linux)
+			if (/Windows/i.test(window.navigator.userAgent) || /Linux/i.test(window.navigator.userAgent)) {
+				let css = window.document.createElement("style");
+				css.type = "text/css";
+				css.innerText = "::-webkit-scrollbar{height:14px;width:10px;background:#eee;border-left:solid1px#ddd;}::-webkit-scrollbar-thumb{background:#ddd;border:solid1px#cfcfcf;}::-webkit-scrollbar-thumb:hover{background:#b2b2b2;border:solid1px#b2b2b2;}::-webkit-scrollbar-thumb:active{background:#b2b2b2;border:solid1px#b2b2b2;}";
+
+				let ref = window.document.getElementsByTagName("link")[0];
+				ref.parentNode.insertBefore(css, ref);
+			}
+		}
 
 	/** Normalizes the HTML content */
 	export function normalizeHtml(html?: string, removeTags?: boolean) {

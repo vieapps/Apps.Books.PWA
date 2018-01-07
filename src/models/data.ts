@@ -13,6 +13,7 @@ export namespace AppData {
 				files: "https://afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
+			version: "0.3",
 			debug: true,
 			offline: false,
 			mode: "",

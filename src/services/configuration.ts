@@ -3,6 +3,7 @@ import { Http } from "@angular/http";
 import { Platform } from "ionic-angular";
 import { Storage } from "@ionic/storage";
 import { Device } from "@ionic-native/device";
+import { AppVersion } from "@ionic-native/app-version";
 import { List } from "linqts";
 import * as Collections from "typescript-collections";
 
@@ -22,7 +23,8 @@ export class ConfigurationService {
 		public http: Http,
 		public platform: Platform,
 		public device: Device,
-		public storage: Storage
+		public storage: Storage,
+		public appVersion: AppVersion
 	){
 		AppAPI.setHttp(this.http);
 		AppRTU.register("Scheduler", (message: any) => this.sendBookmarks());
@@ -69,14 +71,26 @@ export class ConfigurationService {
 				AppData.Configuration.app.platform += " " + AppData.Configuration.app.mode;
 			}
 
+			// app version
+			this.appVersion.getVersionCode()
+				.then((version: any) => {
+					AppData.Configuration.app.version = version;
+				})
+				.catch((e) => {})
+
 			// refer
-			let refer = this.platform.getQueryParam("refer");
-			if (AppUtility.isNotEmpty(refer)) {
-				refer = AppUtility.getQueryParamJson(refer);
-				AppData.Configuration.app.refer = {
-					id: AppUtility.isNotEmpty(refer.id) ? refer.id : "",
-					section: AppUtility.isNotEmpty(refer.section) ? refer.section : ""
-				};
+			if (AppUtility.isWebApp()) {
+				let refer = this.platform.getQueryParam("refer");
+				if (AppUtility.isNotEmpty(refer)) {
+					try {
+						refer = AppUtility.getQueryParamJson(refer);
+						AppData.Configuration.app.refer = {
+							id: AppUtility.isNotEmpty(refer.id) ? refer.id : "",
+							section: AppUtility.isNotEmpty(refer.section) ? refer.section : ""
+						};
+					}
+					catch (e) {}
+				}
 			}
 		}
 
