@@ -103,9 +103,12 @@ export class BookInfoPage {
 
 	download(type: string) {
 		if (this.configSvc.isAuthenticated()) {
+			AppUtility.trackPageView("Download: " + this.info.book.Title, "download/success/" + this.info.name);
+			AppUtility.trackPageView("Download: " + this.info.book.Title, "download/" + type + "/" + this.info.name);
 			AppUtility.openUri(this.info.book.Files[type].Url + "?" + AppUtility.getQuery(AppAPI.getAuthHeaders()));
 		}
 		else {
+			AppUtility.trackPageView("Download: " + this.info.book.Title, "download/failed/" + this.info.name);
 			this.showAlert("Chú ý", "Cần đăng nhập để có thể tải được e-book!");
 		}
 	}
@@ -116,7 +119,7 @@ export class BookInfoPage {
 			message: message,
 			enableBackdropDismiss: true,
 			buttons: [{
-				text: button != undefined ? button : "Đóng",
+				text: button || "Đóng",
 				handler: () => {
 					func != undefined && func();
 				}
