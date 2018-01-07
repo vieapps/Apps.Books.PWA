@@ -107,7 +107,7 @@ export class SearchProfilesPage {
 			}
 		}
 		AppUtility.resetUri({ "search-profiles": undefined });
-		AppUtility.trackPageView();
+		AppUtility.trackPageView(this.info.title, "search-accounts");
 	}
 
 	// search & build the listing of account profiles

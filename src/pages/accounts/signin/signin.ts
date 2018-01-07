@@ -65,7 +65,7 @@ export class SignInPage {
 		this.navParams.get("mode") && this.openRenewPassword();
 		AppUtility.focus(this.emailCtrl, this.keyboard);
 		AppUtility.resetUri({ signin: undefined });
-		AppUtility.trackPageView();
+		AppUtility.trackPageView(this.info.state.title, "sign-in");
 	}
 
   ionViewWillUnload() {

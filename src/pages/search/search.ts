@@ -73,7 +73,6 @@ export class SearchPage {
 	ionViewDidEnter() {
 		AppUtility.focus(this.searchBarCtrl, this.keyboard);
 		AppUtility.resetUri({ "search-books": undefined });
-		AppUtility.trackPageView();
 	}
 
 	// event handlers
@@ -131,6 +130,7 @@ export class SearchPage {
 				if (onCompleted != undefined) {
 					onCompleted();
 				}
+				AppUtility.trackPageView(this.info.title + ": " + this.info.filterBy.Query, "search-books", { query: this.info.filterBy.Query, page: this.info.pageNumber });
 			}
 		);
 	}

@@ -54,7 +54,7 @@ export class HomePage {
 		else if (this.configSvc.isReady()) {
 			this.prepare();
 		}
-		AppUtility.trackPageView();
+		AppUtility.trackPageView(this.info.title, "home");
 	}
 
 	ionViewWillUnload() {

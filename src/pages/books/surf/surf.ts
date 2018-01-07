@@ -256,7 +256,7 @@ export class SurfBooksPage {
 
 		// post handler
 		onPostCompleted != undefined && onPostCompleted();
-		AppUtility.trackPageView({ page: this.info.pageNumber });
+		AppUtility.trackPageView(this.info.title, "surf-books/" + this.info.name.replace(":", "/"), { page: this.info.pageNumber });
 	}
 
 	// actions

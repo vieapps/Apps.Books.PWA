@@ -42,6 +42,7 @@ export class ReadBookPage {
 	info = {
 		book: new AppModels.Book(),
 		title: "Loading...",
+		name: "",
 		rating: 0.0,
 		chapter: 0,
 		offset: 0,
@@ -144,8 +145,9 @@ export class ReadBookPage {
 	}
 
 	setURI() {
-		AppUtility.resetUri({ "read-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.book.ANSITitle.replace(/\s/g, "-"), chapter: this.info.chapter });
-		AppUtility.trackPageView();
+		this.info.name = this.info.book.ANSITitle.replace(/\s/g, "-");
+		AppUtility.resetUri({ "read-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.name, chapter: this.info.chapter });
+		AppUtility.trackPageView(this.info.title, "read-book/" + this.info.name);
 	}
 
 	// go to a specified chapter
@@ -158,14 +160,14 @@ export class ReadBookPage {
 		}
 		else {
 			this.info.chapter = chapter;
-		}
-		this.setURI();
+		}		
 
 		if (this.info.chapter > 0) {
 			if (this.info.book.Chapters[this.info.chapter - 1] == "") {
 				this.showLoading();
 				this.booksSvc.getChapterAsync(this.info.book.ID, this.info.chapter, () => {
 					this.info.title = this.info.book.Title + " - " + this.info.book.TOCs[this.info.chapter - 1];
+					this.setURI();
 					AppUtility.setTimeout(async () => {
 						await this.scrollAsync(() => {
 							this.hideLoading();
@@ -177,6 +179,7 @@ export class ReadBookPage {
 			}
 			else {
 				this.info.title = this.info.book.Title + " - " + this.info.book.TOCs[this.info.chapter - 1];
+				this.setURI();
 				AppUtility.setTimeout(async () => {
 					await this.scrollAsync(() => {
 						this.hideLoading();
@@ -188,6 +191,7 @@ export class ReadBookPage {
 		}
 		else {
 			this.info.title = this.info.book.Title + " - " + this.info.book.Author;
+			this.setURI();
 			AppUtility.setTimeout(async () => {
 				await this.scrollAsync(() => {
 					AppEvents.broadcast("OpenBook", { ID: this.info.book.ID, Chapter: this.info.chapter });

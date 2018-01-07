@@ -31,6 +31,7 @@ export class EditBookPage {
 	// attributes
 	info = {
 		title: "Cập nhật",
+		name: "",
 		state: {
 			processing: false,
 			valid: true
@@ -68,8 +69,9 @@ export class EditBookPage {
 			.ToArray();
 		this.info.cover.uri = book.Cover;
 
-		AppUtility.resetUri({ "edit-book": AppUtility.getBase64UrlParam({ ID: book.ID }), name: book.ANSITitle.replace(/\s/g, "-") });
-		AppUtility.trackPageView();
+		this.info.name = book.ANSITitle.replace(/\s/g, "-");
+		AppUtility.resetUri({ "edit-book": AppUtility.getBase64UrlParam({ ID: book.ID }), name: this.info.name });
+		AppUtility.trackPageView(this.info.title + ": " + book.Title, "edit-book/" + this.info.name);
 	}
 
 	ionViewDidEnter() {

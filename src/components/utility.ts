@@ -520,18 +520,22 @@ export namespace AppUtility {
 		window.open("https://www.google.com/maps?q=" + encodeURIComponent(info));
 	}
 
-	export function trackPageView(params?: any) {
+	export function trackPageView(title?: string, path?: string, params?: any) {
+		// prepare url
+		let url = "";
+		if (isObject(params, true)) {
+			for (let param in params) {
+				url += (url != "" ? "&" : "") + param + "=" + params[param];
+			}
+		}
+		let uri = parseUri();
+		url = uri.path + (isNotEmpty(path) ? path + "/" : "") + (uri.hash != "" ? uri.hash + "&" : "#?") + url;
+
 		// Google Analytics
 		let ga = window["ga"];
 		if (ga) {
-			let url = window.location.href;
-			if (isObject(params, true)) {
-				for (let param in params) {
-					url += "&" + param + "=" + params[param];
-				}
-			}
 			setTimeout(() => {
-				ga("send", "pageview", { page: url });
+				ga("send", "pageview", { title: title, page: url });
 			}, 123);
 		}
 	}

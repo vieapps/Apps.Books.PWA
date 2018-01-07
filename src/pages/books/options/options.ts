@@ -124,7 +124,7 @@ export class ReadingOptionsPage {
 	ionViewDidLoad() {
 		this.info.uri = window.location.href;
 		AppUtility.resetUri({ "reading-options": undefined });
-		AppUtility.trackPageView();
+		AppUtility.trackPageView(this.info.title, "reading-options");
 	}
 
 	ionViewWillLeave() {

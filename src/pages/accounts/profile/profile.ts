@@ -201,16 +201,19 @@ export class ProfilePage {
 				AppUtility.focus(this.nameCtrl, this.keyboard);
 			});
 			AppUtility.resetUri({ register: undefined });
+			AppUtility.trackPageView(this.info.title, "register-account");
 		}
 		else {
 			if (this.info.id == "") {
 				AppUtility.resetUri({ myprofile: undefined });
+				AppUtility.trackPageView(this.info.title, "my-account");
 			}
 			else {
 				AppUtility.resetUri({ profile: AppUtility.getBase64UrlParam({ ID: this.info.id }) });
+				AppUtility.trackPageView(this.info.title, "user-account/" + this.info.id);
 			}
 		}
-		AppUtility.trackPageView();
+		
 	}
 
 	ionViewWillUnload() {
