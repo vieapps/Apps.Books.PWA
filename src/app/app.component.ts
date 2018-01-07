@@ -283,12 +283,15 @@ export class App {
 		};
 	}
 
-	// activate new account
+	// activate new account/password
 	activate() {
-		var mode = this.platform.getQueryParam("mode");
-		var code = this.platform.getQueryParam("code");
+		let uri = AppUtility.parseUri();
+		let mode = uri.hashParams["mode"];
+		let code = uri.hashParams["code"];
+		AppUtility.resetUri({ home: undefined });
 
 		if (AppUtility.isNotEmpty(mode) && AppUtility.isNotEmpty(code)) {
+			AppUtility.trackPageView("Kích hoạt", "activate-" + mode);
 			this.authSvc.activateAsync(mode, code,
 				(data: any) => {
 					this.initialize(() => {
@@ -323,10 +326,7 @@ export class App {
 			message: message,
 			enableBackdropDismiss: false,
 			buttons: [{
-				text: "Đóng",
-				handler: () => {
-					AppUtility.resetUri({ home: undefined });
-				}
+				text: "Đóng"
 			}]
 		}).present();
 	}
@@ -487,12 +487,8 @@ export class App {
 			// hide loading
 			this.loading.dismiss();
 			
-			// callback on completed
-			if (onCompleted != undefined) {
-				onCompleted();				
-			}
-			// do normal action
-			else if (AppUtility.isWebApp()) {
+			// last action
+			if (AppUtility.isWebApp()) {
 				let uri = AppUtility.parseUri(this.platform.url());
 				let params = uri.hashParams["ebook"] || uri.hashParams["read-book"];
 				// navigate to the requested book
@@ -506,7 +502,7 @@ export class App {
 					}
 					catch (e)
 					{
-						AppUtility.trackPageView("Trang nhất", "home");	
+						AppUtility.trackPageView("Trang nhất", "home");
 					}
 				}
 				// track page view
@@ -514,6 +510,9 @@ export class App {
 					AppUtility.trackPageView("Trang nhất", "home");
 				}
 			}
+
+			// callback on completed
+			onCompleted != undefined && onCompleted();
 		});
 	}
 
