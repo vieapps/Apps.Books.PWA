@@ -67,6 +67,9 @@ export class EditBookPage {
 			.Select(c => c.Name)
 			.ToArray();
 		this.info.cover.uri = book.Cover;
+
+		AppUtility.resetUri({ "edit-book": AppUtility.getBase64UrlParam({ ID: book.ID }), name: book.ANSITitle.replace(/\s/g, "-") });
+		AppUtility.trackPageView();
 	}
 
 	ionViewDidEnter() {

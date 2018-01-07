@@ -140,6 +140,12 @@ export class ReadBookPage {
 		else {
 			this.hideLoading();
 		}
+		this.setURI();
+	}
+
+	setURI() {
+		AppUtility.resetUri({ "read-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.book.ANSITitle.replace(/\s/g, "-"), chapter: this.info.chapter });
+		AppUtility.trackPageView();
 	}
 
 	// go to a specified chapter
@@ -153,6 +159,7 @@ export class ReadBookPage {
 		else {
 			this.info.chapter = chapter;
 		}
+		this.setURI();
 
 		if (this.info.chapter > 0) {
 			if (this.info.book.Chapters[this.info.chapter - 1] == "") {

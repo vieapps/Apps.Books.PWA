@@ -200,7 +200,17 @@ export class ProfilePage {
 			this.renewCaptcha(() => {
 				AppUtility.focus(this.nameCtrl, this.keyboard);
 			});
+			AppUtility.resetUri({ register: undefined });
 		}
+		else {
+			if (this.info.id == "") {
+				AppUtility.resetUri({ myprofile: undefined });
+			}
+			else {
+				AppUtility.resetUri({ profile: AppUtility.getBase64UrlParam({ ID: this.info.id }) });
+			}
+		}
+		AppUtility.trackPageView();
 	}
 
 	ionViewWillUnload() {

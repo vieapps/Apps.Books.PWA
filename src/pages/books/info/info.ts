@@ -68,6 +68,10 @@ export class BookInfoPage {
 			},
 			"EventHandlerToUpdateBookFiles"
 		);
+
+		// uri & track
+		AppUtility.resetUri({ "info-book": AppUtility.getBase64UrlParam({ ID: this.info.book.ID }), name: this.info.book.ANSITitle.replace(/\s/g, "-") });
+		AppUtility.trackPageView();
 	}
 
 	ionViewWillUnload() {

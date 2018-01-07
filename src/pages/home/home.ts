@@ -54,6 +54,7 @@ export class HomePage {
 		else if (this.configSvc.isReady()) {
 			this.prepare();
 		}
+		AppUtility.trackPageView();
 	}
 
 	ionViewWillUnload() {
@@ -111,7 +112,7 @@ export class HomePage {
 	}
 
 	openBook(book: AppModels.Book) {
-		this.navCtrl.push(ReadBookPage, { ID: book.ID });
+		this.navCtrl.push(ReadBookPage, { ID: book.ID, Ref: "HomePage" });
 	}
 
 }

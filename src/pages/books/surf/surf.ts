@@ -1,5 +1,5 @@
 import { Component, ViewChild } from "@angular/core";
-import { NavController, NavParams, ActionSheetController, AlertController, Searchbar, InfiniteScroll, Content } from "ionic-angular";
+import { App, NavController, NavParams, ActionSheetController, AlertController, Searchbar, InfiniteScroll, Content } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
@@ -21,6 +21,7 @@ import { ReadBookPage } from "../read/read";
 })
 export class SurfBooksPage {
 	constructor(
+		public app: App,
 		public navCtrl: NavController,
 		public navParams: NavParams,
 		public actionSheetCtrl: ActionSheetController,
@@ -47,6 +48,7 @@ export class SurfBooksPage {
 		sortBy: "",
 		pagination: AppData.Paginations.default(),
 		title: "Loading...",
+		name: "all",
 		processing: false,
 		filtering: false,
 		totalRecords: 0,
@@ -91,6 +93,12 @@ export class SurfBooksPage {
 			? "Thể loại: " + this.info.filterBy.And.Category.Equals
 			: "Tác giả: " + this.info.filterBy.And.Author.Equals;
 
+		this.info.name = this.info.filterBy.And.Category.Equals != ""
+			? "category:" + AppUtility.toANSI(this.info.filterBy.And.Category.Equals).replace(/\s/g, "-").toLowerCase()
+			: this.info.filterBy.And.Author.Equals != ""
+				? "author:" + AppUtility.toANSI(this.info.filterBy.And.Author.Equals).replace(/\s/g, "-").toLowerCase()
+				: "all";
+
 		AppEvents.on(
 			"BooksAreUpdated",
 			(info: any) => {
@@ -107,6 +115,8 @@ export class SurfBooksPage {
 	ionViewDidEnter() {
 		// set active page
 		AppEvents.broadcast("UpdateActiveNav", { name: "SurfBooksPage", component: SurfBooksPage, params: this.navParams.data });
+		AppUtility.resetUri({ "surf-books": AppUtility.getBase64UrlParam(this.info.filterBy), name: this.info.name });
+		this.app.setTitle(this.info.title);
 
 		// books
 		if (this.books.length < 1) {
@@ -246,6 +256,7 @@ export class SurfBooksPage {
 
 		// post handler
 		onPostCompleted != undefined && onPostCompleted();
+		AppUtility.trackPageView({ page: this.info.pageNumber });
 	}
 
 	// actions
@@ -254,7 +265,7 @@ export class SurfBooksPage {
 	}
 
 	openBook(book: AppModels.Book) {
-		this.navCtrl.push(ReadBookPage, { ID: book.ID });
+		this.navCtrl.push(ReadBookPage, { ID: book.ID, Refs: "Surf", FilterBy: this.info.filterBy });
 	}
 
 	showActions() {
@@ -518,7 +529,6 @@ export class SurfBooksPage {
 				infiniteScroll.complete();
 				this.info.processing = false;
 			}
-
 		}
 	}
 

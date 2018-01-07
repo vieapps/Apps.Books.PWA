@@ -108,11 +108,6 @@ export namespace AppUtility {
 		return AppData.Configuration.app.platform.indexOf("iOS") == 0;
 	}
 
-	/** Gets the state that determines the app is running on Apple Safari */
-	export function isAppleSafari() {
-		return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-	}
-
 	/** Gets the state that determines the app is running in debug mode */
 	export function isDebug() {
 		return AppData.Configuration.app.debug;
@@ -249,29 +244,6 @@ export namespace AppUtility {
 		}, defer || 0);
 	}
 
-	/** Splits the string into the array of strings */
-	export function toArray(obj: any, seperator?: string): Array<string> | Array<any> {
-		if (isArray(obj)) {
-			return obj as Array<any>;
-		}
-		else if (isNotEmpty(obj)) {
-			let array = indexOf(obj as string, seperator != undefined ? seperator : ",") > 0
-				? (obj as string).split(seperator != undefined ? seperator : ",")
-				: [obj as string];
-			return new List(array).Select(i => isNotEmpty(i) ? i.trim() : "").ToArray();
-		}
-		else if (isObject(obj, true)) {
-			let array = new Array<any>();
-			for (let i of obj) {
-				array.push(i);
-			}
-			return array;
-		}
-		else {
-			return [obj];
-		}
-	}
-
 	/** Gets the cover image of a book */
 	export function getCoverImage(cover?: string, noCover?: string) {
 		return isNotEmpty(cover)
@@ -351,19 +323,107 @@ export namespace AppUtility {
 		return host;
 	}
 
-	/** Gets the current uri */
-	export function getUri() {
-		return !isWebApp() || indexOf(window.location.href, "file://") > - 1
-			? AppData.Configuration.app.uris.activations
-			: indexOf(window.location.hostname, ".") < 0
-				? window.location.href
-				: window.location.protocol + "//" + window.location.hostname + "/";
-	}
-
 	/** Opens an uri by OS/In-App browser */
 	export function openUri(uri?: string) {
 		if (isNotEmpty(uri) && indexOf(uri, "http") == 0) {
 			window.open(uri);
+		}
+	}
+
+	/** Parses an uri */
+	export function parseUri(uri?: string) {
+		let parser = document.createElement("a");
+		parser.href = uri || window.location.href;
+
+		// convert query string to object
+		let searchParams = {}
+		if (parser.search != "") {
+			let queries = parser.search.replace(/^\?/, "").split("&");
+			for (let index = 0; index < queries.length; index++ ) {
+				let split = queries[index].split("=");
+				searchParams[split[0]] = split[1];
+			}
+		}
+
+		// convert hash string to object
+		let hashParams = {}
+		let hash = parser.hash;
+		while (hash.indexOf("#") == 0 || hash.indexOf("?") == 0) {
+			hash = hash.substring(1);
+		}
+		if (hash != "") {
+			let queries = hash.replace(/^\?/, "").split("&");
+			for (let index = 0; index < queries.length; index++ ) {
+				let split = queries[index].split("=");
+				hashParams[split[0]] = split[1];
+			}
+		}
+		
+		return {
+			protocol: parser.protocol,
+			host: parser.hostname,
+			port: parser.port,
+			path: parser.pathname,
+			search: parser.search,
+			searchParams: searchParams,
+			hash: parser.hash,
+			hashParams: hashParams
+		};
+	}
+
+	/** Normalizes and resets uri of current window location HREF */
+	export function resetUri(params?: any) {
+		// only available for web app (means PWA)
+		if (!isWebApp()) {
+			return;
+		}
+
+		// prepare included
+		let uri = parseUri(window.location.href);
+		let included = {};
+		if (isObject(params, true)) {
+			for (let param in params) {
+				if (param != "") {
+					included[param] = true
+				}
+			}
+		}
+		else {
+			for (let param in uri.hashParams) {
+				included[param] = true
+			}
+		}
+
+		// add params into url
+		let addedParams = {}
+		let url = (uri.protocol + "//" + uri.host + ":" + uri.port + uri.path + "#?").replace(":80", "").replace(":443", "");
+		if (isObject(params, true)) {
+			for (let param in params) {
+				if (included[param]) {
+					url += param + (params[param] != undefined ? "=" + params[param] : "") + "&";
+					addedParams[param] = true;
+				}
+			}
+		}
+		for (let param in uri.hashParams) {
+			if (included[param] && !addedParams[param]) {
+				url += param + (uri.hashParams[param] != undefined ? "=" + uri.hashParams[param] : "") + "&";
+				addedParams[param] = true;
+			}
+		}
+
+		// reset
+		window.location.href = url.substring(0, url.length - 1);
+	}
+
+	/** Gets the URI of current request */
+	export function getUri() {
+		if (!isWebApp() || indexOf(window.location.href, "file://") > - 1) {
+			return AppData.Configuration.app.uris.activations;
+		}
+		else {
+			let uri = parseUri();
+			return (uri.protocol + "//" + uri.host + ":" + uri.port + uri.path).replace(":80", "").replace(":443", "");
 		}
 	}
 
@@ -460,6 +520,22 @@ export namespace AppUtility {
 		window.open("https://www.google.com/maps?q=" + encodeURIComponent(info));
 	}
 
+	export function trackPageView(params?: any) {
+		// Google Analytics
+		let ga = window["ga"];
+		if (ga) {
+			let url = window.location.href;
+			if (isObject(params, true)) {
+				for (let param in params) {
+					url += "&" + param + "=" + params[param];
+				}
+			}
+			setTimeout(() => {
+				ga("send", "pageview", { page: url });
+			}, 123);
+		}
+	}
+
 	/** Normalizes the HTML content */
 	export function normalizeHtml(html?: string, removeTags?: boolean) {
 		var wellHtml = isNotEmpty(html)
@@ -486,6 +562,36 @@ export namespace AppUtility {
 			chars.push(String.fromCharCode(code));
 		}
 		return chars;
+	}
+
+	/** Splits the string into the array of strings */
+	export function toArray(obj: any, seperator?: string): Array<string> | Array<any> {
+		if (isArray(obj)) {
+			return obj as Array<any>;
+		}
+		else if (isNotEmpty(obj)) {
+			let array = indexOf(obj as string, seperator != undefined ? seperator : ",") > 0
+				? (obj as string).split(seperator != undefined ? seperator : ",")
+				: [obj as string];
+			return new List(array).Select(i => isNotEmpty(i) ? i.trim() : "").ToArray();
+		}
+		else if (isObject(obj, true)) {
+			let array = new Array<any>();
+			for (let i of obj) {
+				array.push(i);
+			}
+			return array;
+		}
+		else {
+			return [obj];
+		}
+	}
+
+	/** Converts object to integer */
+	export function toInt(string: string) {
+		return isNotEmpty(string)
+			? parseInt(string)
+			: 0;
 	}
 
 	/** Converts the Vietnamese string to ANSI string */

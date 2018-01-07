@@ -10,7 +10,6 @@ import { List } from "linqts";
 import { AppUtility } from "../components/utility";
 import { AppEvents } from "../components/events";
 import { AppRTU } from "../components/rtu";
-import { AppCrypto } from "../components/crypto";
 import { AppData } from "../models/data";
 
 import { ConfigurationService } from "../services/configuration";
@@ -69,7 +68,6 @@ export class App {
 			title: "",
 			chapter: 0
 		},
-		originalURI: "",
 		iPhoneX: false,
 		attemps: 0
 	};
@@ -107,9 +105,6 @@ export class App {
 
 		// run initialize process when ready
 		this.platform.ready().then(() => {			
-			// original URI for open the requested resources or do the activation
-			this.info.originalURI = this.platform.url();
-			
 			// iPhone X: footers need special paddings
 			this.info.iPhoneX = this.device.platform != undefined && this.device.platform == "iOS"
 				&& this.device.model != undefined && this.device.model != null
@@ -142,18 +137,11 @@ export class App {
 			this.statisticsSvc.loadStatisticsAsync();
 			
 			// run initialize process
-			let prego = AppUtility.isWebApp()
-				? this.platform.getQueryParam("prego")
-				: "";
-
-			switch (prego) {
-				case "activate":
-					this.activate();
-					break;
-
-				default:
-					this.initialize();
-					break;
+			if (AppUtility.isWebApp() && "activate" == AppUtility.parseUri(this.platform.url()).hashParams["prego"]) {
+				this.activate();
+			}
+			else {
+				this.initialize();
 			}
 		});
 	}
@@ -216,7 +204,9 @@ export class App {
 			if (AppUtility.isObject(info, true) && AppUtility.isObject(info.args, true)) {
 				this.info.book.id = info.args.ID;
 				this.info.book.chapter = info.args.Chapter;
-				this.info.book.id == info.args.ID && this.showChapters();
+				if (this.info.book.id == info.args.ID) {
+					this.showChapters();
+				}
 			}
 		});
 		AppEvents.on("BookIsUpdated", (info: any) => {
@@ -249,12 +239,16 @@ export class App {
 			this.updateActiveNav(name, component, params);
 			this.nav.setRoot(component, params);
 		}
+		if (name == "HomePage") {
+			AppUtility.resetUri({ home: undefined });
+		}
 	}
 
 	navigateToHomePage() {
 		this.updatePreviousNav(undefined, undefined);
 		this.updateActiveNav("HomePage", this.info.nav.start);
 		this.nav.setRoot(this.info.nav.start);
+		AppUtility.resetUri({ home: undefined });
 	}
 
 	navigateToPreviousPage() {
@@ -331,7 +325,7 @@ export class App {
 			buttons: [{
 				text: "Đóng",
 				handler: () => {
-					this.normalizeWindowHref(this.info.originalURI);
+					AppUtility.resetUri({ home: undefined });
 				}
 			}]
 		}).present();
@@ -402,29 +396,50 @@ export class App {
 	prepare(onCompleted?: () => void) {
 		// special for PWA (Progressive Web Apps) only
 		if (AppUtility.isWebApp()) {
-			// facebook
-			if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
-				let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
-				if (!window.document.getElementById("facebook-jssdk")) {
-					let js = window.document.createElement("script");
-					js.id = "facebook-jssdk";
-					js.async = true;
-					js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
-
-					let ref = window.document.getElementsByTagName("script")[0];
-					ref.parentNode.insertBefore(js, ref);
+			// Javascript libraries (only available when working in web browser)
+			if (window.location.href.indexOf("file://") < 0) {
+				// Facebook SDK
+				if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
+					let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
+					if (!window.document.getElementById("facebook-jssdk")) {
+						let js = window.document.createElement("script");
+						js.id = "facebook-jssdk";
+						js.async = true;
+						js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
+	
+						let ref = window.document.getElementsByTagName("script")[0];
+						ref.parentNode.insertBefore(js, ref);
+					}
+					window["fbAsyncInit"] = function () {
+						FB.init({
+							appId: AppData.Configuration.facebook.id,
+							channelUrl: "/assets/facebook.html",
+							status: true,
+							cookie: true,
+							xfbml: true,
+							version: fbVersion
+						});
+						this.auth.watchFacebookConnect();
+					};
 				}
-				window["fbAsyncInit"] = function () {
-					FB.init({
-						appId: AppData.Configuration.facebook.id,
-						channelUrl: "/assets/facebook.html",
-						status: true,
-						cookie: true,
-						xfbml: true,
-						version: fbVersion
-					});
-					this.auth.watchFacebookConnect();
-				};
+
+				// Google Analytics
+				if (AppData.Configuration.app.tracking.google != "") {
+					(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){
+						(i[r].q=i[r].q||[]).push(arguments)},i[r].l=new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+					})(window,window.document,"script","https://www.google-analytics.com/analytics.js","ga");
+					let ga = window["ga"];
+					if (AppData.Configuration.app.tracking.googleDomains.length) {
+						ga("create", AppData.Configuration.app.tracking.google, "auto", {"allowLinker": true});
+						ga("require", "linker");
+						for (let index = 0; index < AppData.Configuration.app.tracking.googleDomains.length; index ++) {
+							ga("linker:autoLink", [AppData.Configuration.app.tracking.googleDomains[index]]);
+						}
+					}
+					else {
+						ga("create", AppData.Configuration.app.tracking.google, "auto");
+					}
+				}
 			}
 
 			// scrollbars (on Windows & Linux)
@@ -442,9 +457,12 @@ export class App {
 		AppRTU.start(() => {
 			// get profile
 			if (this.configSvc.isAuthenticated()) {
-				this.configSvc.patchAccount(() => {
-					this.authSvc.getProfile();
-				}, 345);
+				this.configSvc.patchAccount(
+					() => {
+						this.authSvc.getProfile();
+					},
+					345
+				);
 			}
 			
 			// load & get/merge bookmarks
@@ -471,22 +489,22 @@ export class App {
 			
 			// callback on completed
 			if (onCompleted != undefined) {
-				onCompleted();
+				onCompleted();				
 			}
-
 			// navigate to the requested book
-			else if (AppUtility.isWebApp() && this.platform.getQueryParam("ebook") != undefined) {
-				try {
-					let params = JSON.parse(AppCrypto.urlDecode(this.platform.getQueryParam("ebook")));
-					AppUtility.isDebug() && console.info("<Startup>: Open the requested book", params);
-					this.navigate("ReadBookPage", ReadBookPage, params, true);
+			else if (AppUtility.isWebApp()) {
+				let uri = AppUtility.parseUri(this.platform.url());
+				let params = uri.hashParams["ebook"] || uri.hashParams["read-book"];
+				if (params) {
+					try {
+						params = AppUtility.getQueryParamJson(params);
+						params["Chapter"] = AppUtility.toInt(uri.hashParams["chapter"] || "0");
+						params["Refs"] = "PermanentLink";
+						AppUtility.isDebug() && console.info("<Startup>: Open the requested book", params);
+						this.navigate("ReadBookPage", ReadBookPage, params, true);
+					}
+					catch (e) { }
 				}
-				catch (e) { }
-			}
-
-			// normalize the window's href
-			if (AppUtility.isWebApp()) {
-				this.normalizeWindowHref(this.info.originalURI);
 			}
 		});
 	}
@@ -589,15 +607,6 @@ export class App {
 	openChapter(chapter: any) {
 		this.info.book.chapter = chapter.index + 1;
 		AppEvents.broadcast("OpenChapter", { ID: this.info.book.id, Chapter: this.info.book.chapter });
-	}
-
-	// normalize the window's HREF
-	normalizeWindowHref(uri?: string) {
-		uri = uri || window.location.href;
-		let pos = AppUtility.indexOf(uri, "#");
-		if (pos > 0) {
-			window.location.href = uri.substring(0, pos + 1);
-		}
 	}
 
 }

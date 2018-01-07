@@ -21,7 +21,8 @@ export class ReadingOptionsPage {
 
 	info = {
 		title: "Tuỳ chọn đọc",
-		options: AppData.Configuration.reading.options
+		options: AppData.Configuration.reading.options,
+		uri: ""
 	};
 	options = {
 		colors: [
@@ -120,7 +121,14 @@ export class ReadingOptionsPage {
 		]
 	};
 
+	ionViewDidLoad() {
+		this.info.uri = window.location.href;
+		AppUtility.resetUri({ "reading-options": undefined });
+		AppUtility.trackPageView();
+	}
+
 	ionViewWillLeave() {
+		window.location.href = this.info.uri;
 		AppUtility.setTimeout(async () => {
 			await this.configSvc.saveOptionsAsync(() => {
 				AppUtility.isDebug() && console.warn("<ReadingOptions>: The options are saved");

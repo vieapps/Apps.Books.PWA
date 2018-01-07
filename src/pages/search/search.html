@@ -3,12 +3,9 @@
 		<button ion-button menuToggle>
 			<ion-icon name="menu"></ion-icon>
 		</button>
-		<ion-title>{{info.title}}</ion-title>
+		<ion-searchbar placeholder="Cho vào ngoặc kép để tìm chính xác, không dấu cũng OK - vd: &quot;nhoc nicolas&quot;"
+			showCancelButton="false" debounce="345" [(ngModel)]="info.filterBy.Query" (ionInput)="onSearch($event)"></ion-searchbar>
 	</ion-navbar>
-	<ion-toolbar>
-		<ion-searchbar debounce="345" placeholder="Cho vào ngoặc kép để tìm chính xác, không dấu cũng OK - vd: &quot;nhoc nicolas&quot;"
-			showCancelButton="true" cancelButtonText="Đóng" [(ngModel)]="info.filterBy.Query" (ionInput)="onSearch($event)"></ion-searchbar>
-	</ion-toolbar>
 </ion-header>
 
 <ion-footer *ngIf="info.pagination && info.pagination.TotalRecords > 0">
@@ -25,7 +22,7 @@
 	</ion-toolbar>
 </ion-footer>
 
-<ion-content class="has-sub-header" [class.has-footer]="info.pagination && info.pagination.TotalRecords > 0">
+<ion-content [class.has-footer]="info.pagination && info.pagination.TotalRecords > 0">
 	<ion-list class="books">
 		<button ion-item detail-none *ngFor="let b of books; trackBy: trackBy" (click)="openBook(b)">
 			<ion-thumbnail item-left>

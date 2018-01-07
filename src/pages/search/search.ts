@@ -1,5 +1,5 @@
 import { Component, ViewChild } from "@angular/core";
-import { NavController, NavParams, Searchbar, InfiniteScroll } from "ionic-angular";
+import { App, NavController, NavParams, Searchbar, InfiniteScroll } from "ionic-angular";
 import { Keyboard } from "@ionic-native/keyboard";
 import { List } from "linqts";
 
@@ -16,6 +16,7 @@ import { ReadBookPage } from "../books/read/read";
 })
 export class SearchPage {
 	constructor(
+		public app: App,
 		public navCtrl: NavController,
 		public navParams: NavParams,
 		public keyboard: Keyboard,
@@ -50,7 +51,7 @@ export class SearchPage {
 
 	// page events
 	ionViewDidLoad() {
-		var filterBy = this.navParams.get("And");
+		let filterBy = this.navParams.get("And");
 		if (AppUtility.isObject(filterBy, true)) {
 			this.info.filterBy.And.Category.Equals = filterBy.Category.Equals;	
 			this.info.filterBy.And.Author.Equals = filterBy.Author.Equals;
@@ -65,10 +66,14 @@ export class SearchPage {
 				: this.info.filterBy.And.Author.Equals != ""
 					? " chỉ của [" + this.info.filterBy.And.Author.Equals + "]"
 					: "");
+
+		this.app.setTitle(this.info.title);
 	}
 
 	ionViewDidEnter() {
 		AppUtility.focus(this.searchBarCtrl, this.keyboard);
+		AppUtility.resetUri({ "search-books": undefined });
+		AppUtility.trackPageView();
 	}
 
 	// event handlers
@@ -186,7 +191,7 @@ export class SearchPage {
 	}
 
 	openBook(book: AppModels.Book) {
-		this.navCtrl.push(ReadBookPage, { ID: book.ID });
+		this.navCtrl.push(ReadBookPage, { ID: book.ID, Refs: "Search", FilterBy: this.info.filterBy });
 	}
 
 }
