@@ -259,6 +259,7 @@ export class SignInPage {
 			this.info.state.processing = true;
 			this.authSvc.validateOTPAsync(this.info.otp.id, this.info.otp.value, this.info.otp.providers[0].Info, 
 				(data: any) => {
+					AppUtility.trackPageView("Xác thực với OTP", "validate-otp");
 					this.hideLoading();
 					this.exit();
 				},

@@ -672,6 +672,7 @@ export class ProfilePage {
 						"Mời bạn",
 						"Email lời mời đã được gửi thành công!",
 						() => {
+							AppUtility.trackPageView("Gửi lời mời", "invitations");
 							this.cancelUpdate();
 						}
 					);
@@ -703,6 +704,7 @@ export class ProfilePage {
 					: "";
 				this.authSvc.saveProfileAsync(this.info.profile,
 					() => {
+						AppUtility.trackPageView("Cập nhật tài khoản", "update-account");
 						this.info.profile = AppUtility.clone(this.configSvc.getAccount().profile);						
 						this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
 						this.info.avatar.uploaded = "";
@@ -736,6 +738,7 @@ export class ProfilePage {
 						image: data.Uri,
 						original: undefined
 					};
+					AppUtility.trackPageView("Đổi avatar", "change-avatar");
 					onCompleted && onCompleted();
 				},
 				(error: any) => {
@@ -784,6 +787,7 @@ export class ProfilePage {
 						"Đổi mật khẩu",
 						"Mật khẩu đăng nhập mới đã được cập nhật thành công!",
 						() => {
+							AppUtility.trackPageView("Đổi mật khẩu đăng nhập", "change-password");
 							this.info.change.OldPassword = "";
 							this.info.change.Password = "";
 							this.info.change.ConfirmPassword = "";
@@ -824,6 +828,7 @@ export class ProfilePage {
 						"Đổi email",
 						"Email đăng nhập mới đã được cập nhật thành công!",
 						() => {
+							AppUtility.trackPageView("Đổi email đăng nhập", "change-email");
 							this.info.change.OldPassword = "";
 							this.info.change.Email = "";
 							this.info.change.ConfirmEmail = "";
@@ -859,6 +864,7 @@ export class ProfilePage {
 					})]
 			},
 			(data: any) => {
+				AppUtility.trackPageView("Đặt quyền truy cập", "privileges");
 				this.preparePrivileges(data);
 				this.cancelUpdate();
 			},
@@ -890,6 +896,7 @@ export class ProfilePage {
 					OTP: this.info.otp.value
 				},
 				(data: any) => {
+					AppUtility.trackPageView("Cập nhật thiết đặt bảo mật", "update-otp");
 					this.openUpdateOTP();
 				},
 				(error: any) => {
@@ -922,6 +929,7 @@ export class ProfilePage {
 				handler: () => {
 					this.authSvc.deleteOTPAsync(otp.Info,
 						(data: any) => {
+							AppUtility.trackPageView("Xoá thiết đặt bảo mật", "delete-otp");
 							this.openUpdateOTP();
 						}
 					);
@@ -946,6 +954,7 @@ export class ProfilePage {
 					handler: () => {
 						this.authSvc.signOutAsync(
 							() => {
+								AppUtility.trackPageView("Đăng xuất", "sign-out");
 								AppEvents.broadcast("OpenPage", {
 									name: "HomePage",
 									component: HomePage,
