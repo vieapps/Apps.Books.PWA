@@ -90,7 +90,7 @@ export class BookInfoPage {
 
 		this.info.uri = AppUtility.getUri() + "#?ebook=" + AppUtility.getBase64UrlParam({ ID: this.info.book.ID });
 		this.info.qrcode = this.info.processByApp
-			? "vieapps-ebooks://" + this.info.book.ID
+			? "vieapps://ebook/" + this.info.book.ID
 			: this.info.uri;
 
 		if (AppUtility.isTrue(checkFiles) && AppUtility.isObject(this.info.book.Files, true)

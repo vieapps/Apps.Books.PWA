@@ -360,7 +360,7 @@ export namespace AppUtility {
 		}
 		
 		return {
-			protocol: parser.protocol,
+			protocol: parser.protocol + "//",
 			host: parser.hostname,
 			port: parser.port,
 			path: parser.pathname,
@@ -396,10 +396,10 @@ export namespace AppUtility {
 
 		// add params into url
 		let addedParams = {}
-		let url = (uri.protocol + "//" + uri.host + ":" + uri.port + uri.path + "#?").replace(":80", "").replace(":443", "");
+		let url = uri.protocol + uri.host + (uri.port != "" ? ":" + uri.port : "") + uri.path + "#?";
 		if (isObject(params, true)) {
 			for (let param in params) {
-				if (included[param]) {
+				if (included[param] && !addedParams[param]) {
 					url += param + (params[param] != undefined ? "=" + params[param] : "") + "&";
 					addedParams[param] = true;
 				}
@@ -423,7 +423,7 @@ export namespace AppUtility {
 		}
 		else {
 			let uri = parseUri();
-			return (uri.protocol + "//" + uri.host + ":" + uri.port + uri.path).replace(":80", "").replace(":443", "");
+			return uri.protocol + uri.host + (uri.port != "" ? ":" + uri.port : "") + uri.path;
 		}
 	}
 
@@ -565,22 +565,31 @@ export namespace AppUtility {
 	}
 
 	/** Splits the string into the array of strings */
-	export function toArray(obj: any, seperator?: string): Array<string> | Array<any> {
+	export function toArray(obj: any, separator?: any): Array<string> | Array<any> | Array<{ name: string, value: any }> {
 		if (isArray(obj)) {
 			return obj as Array<any>;
 		}
 		else if (isNotEmpty(obj)) {
-			let array = indexOf(obj as string, seperator != undefined ? seperator : ",") > 0
-				? (obj as string).split(seperator != undefined ? seperator : ",")
+			let array = indexOf(obj as string, isNotEmpty(separator) ? separator : ",") > 0
+				? (obj as string).split(separator != undefined ? separator : ",")
 				: [obj as string];
-			return new List(array).Select(i => isNotEmpty(i) ? i.trim() : "").ToArray();
+			return new List(array).Select(element => isNotEmpty(element) ? element.trim() : "").ToArray();
 		}
 		else if (isObject(obj, true)) {
-			let array = new Array<any>();
-			for (let i of obj) {
-				array.push(i);
+			if (isTrue(separator)) {
+				let array = new Array<{ name: string, value: any}>();
+				for (let name in obj) {
+					array.push({ name: name, value: obj[name] });
+				}
+				return array;
 			}
-			return array;
+			else {
+				let array = new Array<any>();
+				for (let value of obj) {
+					array.push(value);
+				}
+				return array;
+			}
 		}
 		else {
 			return [obj];
