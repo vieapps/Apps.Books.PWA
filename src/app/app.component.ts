@@ -491,10 +491,11 @@ export class App {
 			if (onCompleted != undefined) {
 				onCompleted();				
 			}
-			// navigate to the requested book
+			// do normal action
 			else if (AppUtility.isWebApp()) {
 				let uri = AppUtility.parseUri(this.platform.url());
 				let params = uri.hashParams["ebook"] || uri.hashParams["read-book"];
+				// navigate to the requested book
 				if (params) {
 					try {
 						params = AppUtility.getQueryParamJson(params);
@@ -503,7 +504,14 @@ export class App {
 						AppUtility.isDebug() && console.info("<Startup>: Open the requested book", params);
 						this.navigate("ReadBookPage", ReadBookPage, params, true);
 					}
-					catch (e) { }
+					catch (e)
+					{
+						AppUtility.trackPageView("Trang nhất", "home");	
+					}
+				}
+				// track page view
+				else {
+					AppUtility.trackPageView("Trang nhất", "home");
 				}
 			}
 		});
