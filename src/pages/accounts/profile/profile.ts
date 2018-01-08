@@ -918,10 +918,10 @@ export class ProfilePage {
 	deleteOTP(otp: any) {
 		this.alertCtrl.create({
 			title: "Xoá",
-			message: "Chắc chắn muốn huỷ bỏ phương pháp xác thực hai lớp này (" + otp.Type + ")?",
+			message: "Chắc chắn muốn xoá bỏ phương thức xác thực hai lớp [" + otp.Label + "] này?",
 			enableBackdropDismiss: false,
 			buttons: [{
-				text: "Đóng",
+				text: "Không",
 				role: "cancel"
 			},
 			{

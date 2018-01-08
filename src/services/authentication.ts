@@ -100,7 +100,7 @@ export class AuthenticationService {
 
 			let path = "users/account"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 
@@ -269,7 +269,7 @@ export class AuthenticationService {
 			try {
 				let path = "users/profile" + (AppUtility.isNotEmpty(id) ? "/" + id : "")
 					+ "?related-service=books"
-					+ "&language=vi-VN";
+					+ "&language=" + AppData.Configuration.session.account.profile.Language;
 				let response = await AppAPI.GetAsync(path);
 				let data = response.json();
 				if (data.Status == "OK") {
@@ -320,7 +320,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/profile"
 				+ "?related-service=books"
-				+ "&language=vi-VN";
+				+ "&language=" + AppData.Configuration.session.account.profile.Language;
 			let response = await AppAPI.PutAsync(path, info);
 			let data = response.json();
 			if (data.Status == "OK") {
@@ -442,7 +442,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/account/invite"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 			let body = {
@@ -472,7 +472,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/account/reset"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 			let body = {
@@ -502,7 +502,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/account/password"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let body = {
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
@@ -530,7 +530,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/account/email"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let body = {
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
@@ -563,7 +563,7 @@ export class AuthenticationService {
 				+ "?mode=" + mode
 				+ "&code=" + code
 				+ "&related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
@@ -592,7 +592,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/otp"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
@@ -615,7 +615,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/otp"
 				+ "?related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.PutAsync(path, info);
 			let data = response.json();
@@ -640,7 +640,7 @@ export class AuthenticationService {
 			let path = "users/otp"
 				+ "?info=" + info
 				+ "&related-service=books"
-				+ "&language=vi-VN"
+				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.DeleteAsync(path);
 			let data = response.json();
@@ -663,9 +663,9 @@ export class AuthenticationService {
 	async validateOTPAsync(id: string, otp: string, info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let body = {
-				ID: id,
-				OTP: otp,
-				Info: info
+				ID: AppCrypto.rsaEncrypt(id),
+				OTP: AppCrypto.rsaEncrypt(otp),
+				Info: AppCrypto.rsaEncrypt(info)
 			};
 			let response = await AppAPI.PutAsync("users/session", body);
 			let data = response.json();

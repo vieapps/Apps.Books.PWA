@@ -34,7 +34,7 @@ export class AccountsService {
 		let path = "users/profile/search"
 			+ "?x-request=" + AppUtility.getBase64UrlParam(request)
 			+ "&related-service=books"
-			+ "&language=vi-VN";
+			+ "&language=" + AppData.Configuration.session.account.profile.Language;
 		let searcher = AppAPI.Get(path);
 		
 		if (!onNext) {
@@ -75,7 +75,7 @@ export class AccountsService {
 			let path = "users/profile/fetch"
 				+ "?x-request=" + AppUtility.getBase64UrlParam({ IDs: ids })
 				+ "&related-service=books"
-				+ "&language=vi-VN";
+				+ "&language=" + AppData.Configuration.session.account.profile.Language;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
 			if (data.Status == "OK") {
