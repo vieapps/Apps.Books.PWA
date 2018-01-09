@@ -241,7 +241,7 @@
 			<b>
 				{{info.otp.required ? 'Bật' : info.otp.url == '' ? 'Tắt' : 'Đang thiết đặt'}}
 			</b>
-			<button ion-button icon-left item-right (click)="prepareOTP()" *ngIf="!info.otp.required && info.otp.url == ''">
+			<button ion-button icon-left item-right [hidden]="info.state.processing" (click)="prepareOTP()" *ngIf="!info.otp.required && info.otp.url == ''">
 				<ion-icon name="power"></ion-icon>
 				Bật
 			</button>
@@ -255,7 +255,7 @@
 					<span>{{p.Label}}</span>
 					<span style="float:right">{{p.Time | date:'dd/MM/yyyy hh:mm a'}}</span>
 				</ion-label>
-				<button ion-button clear icon-left item-right (click)="deleteOTP(p)">
+				<button ion-button clear icon-left item-right [hidden]="info.state.processing" (click)="deleteOTP(p)">
 					<ion-icon name="trash"></ion-icon>
 					Xoá bỏ
 				</button>
@@ -279,7 +279,7 @@
 			<ion-input #otp type="number" maxlength="6" [(ngModel)]="info.otp.value"></ion-input>
 		</ion-item>
 		<ion-item *ngIf="info.otp.url != ''">
-			<button ion-button icon-left item-right (click)="updateOTP()">
+			<button ion-button icon-left item-right [hidden]="info.state.processing" (click)="updateOTP()">
 				<ion-icon name="done-all"></ion-icon>
 				Xác thực
 			</button>

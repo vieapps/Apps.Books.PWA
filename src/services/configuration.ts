@@ -243,6 +243,28 @@ export class ConfigurationService {
 		onCompleted != undefined && onCompleted();
 	}
 
+	/** Send request to patch the session */
+	patchSession(onNext?: () => void, defer?: number): void {
+		AppUtility.setTimeout(() => {
+			AppRTU.send(
+				{
+					ServiceName: "users",
+					ObjectName: "session",
+					Verb: "PATCH",
+					Extra: {
+						"x-session": AppData.Configuration.session.id
+					}
+				},
+				() => {
+					onNext != undefined && onNext();
+				},
+				() => {
+					onNext != undefined && onNext();
+				}
+			);
+		}, defer || 456);
+	}
+
 	/** Gets the information of the current/default account */
 	getAccount(getDefault?: boolean) {
 		let account = AppUtility.isTrue(getDefault) || AppData.Configuration.session.account == null
@@ -321,11 +343,7 @@ export class ConfigurationService {
 		onCompleted != undefined && onCompleted();
 	}
 
-	/**
-	 * Call the service to patch information of the account
-	 * @param onNext 
-	 * @param defer 
-	 */
+	/** Send request to patch information of the account */
 	patchAccount(onNext?: () => void, defer?: number) {
 		AppUtility.setTimeout(() => {
 			AppRTU.send(

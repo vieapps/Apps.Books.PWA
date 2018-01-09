@@ -159,7 +159,7 @@ export class AuthenticationService {
 
 				await this.configSvc.registerSessionAsync(() => {
 					console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-					this.patchSession();
+					this.configSvc.patchSession();
 					onNext != undefined && onNext(AppData.Configuration.session);
 				}, onError);
 			}
@@ -186,33 +186,12 @@ export class AuthenticationService {
 		console.info("[Authentication]: Authenticated session is registered", AppUtility.isDebug() ? AppData.Configuration.session : "");
 		AppEvents.broadcast("SessionIsRegistered");
 
-		this.patchSession(() => {
+		this.configSvc.patchSession(() => {
 			this.configSvc.patchAccount(() => {
 				this.getProfile();
 				this.configSvc.getBookmarks();
 			});
 		}, 123);
-	}
-
-	patchSession(onNext?: () => void, defer?: number): void {
-		AppUtility.setTimeout(() => {
-			AppRTU.send(
-				{
-					ServiceName: "users",
-					ObjectName: "session",
-					Verb: "PATCH",
-					Extra: {
-						"x-session": AppData.Configuration.session.id
-					}
-				},
-				() => {
-					onNext != undefined && onNext();
-				},
-				() => {
-					onNext != undefined && onNext();
-				}
-			);
-		}, defer || 456);
 	}
 	
 	/** Get profile information */
@@ -710,7 +689,7 @@ export class AuthenticationService {
 			this.configSvc.updateSessionAsync(message.Data, () => {
 				AppUtility.isDebug() && console.warn("[Authentication]: Update session with the new token", AppData.Configuration.session);
 				this.configSvc.patchAccount();
-				this.patchSession();
+				this.configSvc.patchSession();
 			});
 		}
 

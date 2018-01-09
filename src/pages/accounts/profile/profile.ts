@@ -876,13 +876,16 @@ export class ProfilePage {
 
 	// otp
 	prepareOTP() {
+		this.info.state.processing = true;
 		this.authSvc.prepareOTPAsync(
 			(data: any) => {
 				this.info.otp.provisioning = data.Provisioning;
 				this.info.otp.url = data.Uri;
+				this.info.state.processing = false;
 				AppUtility.focus(this.otpCtrl, this.keyboard, 234);
 			},
 			(error: any) => {
+				this.info.state.processing = false;
 				this.showError(error);
 			}
 		);
@@ -890,16 +893,19 @@ export class ProfilePage {
 
 	updateOTP() {
 		if (AppUtility.isNotEmpty(this.info.otp.value)) {
+			this.info.state.processing = true;
 			this.authSvc.updateOTPAsync(
 				{
 					Provisioning: this.info.otp.provisioning,
 					OTP: this.info.otp.value
 				},
 				(data: any) => {
-					AppUtility.trackPageView("Cập nhật thiết đặt bảo mật", "update-otp");
+					this.info.state.processing = false;
 					this.openUpdateOTP();
+					AppUtility.trackPageView("Cập nhật thiết đặt bảo mật", "update-otp");
 				},
 				(error: any) => {
+					this.info.state.processing = false;
 					this.showAlert(
 						"Lỗi",
 						error.Error && error.Error.Type == "OTPLoginFailedException" ? "Mã xác thực OTP không đúng" : "Đã xảy ra lỗi",
@@ -927,10 +933,19 @@ export class ProfilePage {
 			{
 				text: "Đồng ý xoá",
 				handler: () => {
+					this.info.state.processing = true;
 					this.authSvc.deleteOTPAsync(otp.Info,
 						(data: any) => {
-							AppUtility.trackPageView("Xoá thiết đặt bảo mật", "delete-otp");
+							this.info.state.processing = false;
 							this.openUpdateOTP();
+							AppUtility.trackPageView("Xoá thiết đặt bảo mật", "delete-otp");
+						},
+						(error: any) => {
+							this.info.state.processing = false;
+							this.showAlert(
+								"Lỗi",
+								error.Error ? error.Error.Message : "Đã xảy ra lỗi"
+							);
 						}
 					);
 				}
