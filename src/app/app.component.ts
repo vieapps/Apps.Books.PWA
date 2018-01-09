@@ -320,7 +320,7 @@ export class App {
 			? data.Mode == "account"
 				? "Tài khoản đã được kích hoạt thành công"
 				: "Mật khẩu đã được kích hoạt thành công"
-			: data.Error.Message;
+			: "Đã xảy ra lỗi" + (data.Error ? ": " + data.Error.Message : "");
 
 		this.alertCtrl.create({
 			title: title,

@@ -451,7 +451,7 @@ export class AuthenticationService {
 		try {
 			let path = "users/account/reset"
 				+ "?related-service=books"
-				+ "&language=" + AppData.Configuration.session.account.profile.Language
+				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 			let body = {
@@ -542,7 +542,7 @@ export class AuthenticationService {
 				+ "?mode=" + mode
 				+ "&code=" + code
 				+ "&related-service=books"
-				+ "&language=" + AppData.Configuration.session.account.profile.Language
+				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
