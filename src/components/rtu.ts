@@ -8,10 +8,9 @@ import { AppData } from "../models/data";
 
 export namespace AppRTU {
 
-	var status: { receiver: string, sender: string } = { receiver: "initializing", sender: "initializing" };
+	var status = "initializing";
 	var uri: string = null;
-	var receiver: any = null;
-	var sender: any = null;
+	var processor: any = null;
 	var handlers: any = {};
 
 	var subject = new Rx.Subject<{ type: string, message: any }>();
@@ -65,47 +64,47 @@ export namespace AppRTU {
 		if (typeof WebSocket === undefined) {
 			console.warn("[RTU]: Your browser is outdated, its requires a modern browser that supports WebSocket (like Chrome, Safari, Firefox, Microsoft Edge/IE 10/11, ...)");
 			onCompleted != undefined && AppUtility.setTimeout(() => {
-				onCompleted({ r: receiver, s: sender });
-			}, status == null || status.receiver == "ready" ? 13 : 567);
+				onCompleted(processor);
+			}, status == null || status == "ready" ? 13 : 567);
 			return;
 		}
-		else if (receiver != null) {
+		else if (processor != null) {
 			onCompleted != undefined && AppUtility.setTimeout(() => {
-				onCompleted({ r: receiver, s: sender });
-			}, status == null || status.receiver == "ready" ? 13 : 567);
+				onCompleted(processor);
+			}, status == null || status == "ready" ? 13 : 567);
 			return;
 		}
 
 		// initialize
-		status = { receiver: "initializing", sender: "initializing" };
+		status = "initializing";
 		uri = AppData.Configuration.app.uris.apis.replace("http://", "ws://").replace("https://", "wss://")
 			+ "rtu/" + AppCrypto.urlEncode(Math.random() + "").toLowerCase()
 			+ "?x-request=" + AppUtility.getBase64UrlParam(AppAPI.getAuthHeaders())
 			+ (AppUtility.isTrue(isRestart) ? "&x-restart=" : "");
 
 		// receiver
-		receiver = new WebSocket(uri);
+		processor = new WebSocket(uri);
 
-		receiver.onopen = (event) => {
-			status.receiver = "ready";
-			AppUtility.isDebug() && console.info("[RTU]: Receiver is opened...");
+		processor.onopen = (event) => {
+			status = "ready";
+			AppUtility.isDebug() && console.info("[RTU]: Updater is opened...");
 		};
 
-		receiver.onclose = (event) => {
-			status.receiver = "close";
-			AppUtility.isDebug() && console.info("[RTU]: Receiver is closed...");
+		processor.onclose = (event) => {
+			status = "close";
+			AppUtility.isDebug() && console.info("[RTU]: Updater is closed...");
 			AppUtility.isNotEmpty(uri) && restart();
 		};
 
-		receiver.onerror = (event) => {
-			status.receiver = "error";
-			AppUtility.isDebug() && console.warn("[RTU]: Receiver got an error", event);
+		processor.onerror = (event) => {
+			status = "error";
+			AppUtility.isDebug() && console.warn("[RTU]: Updater got an error", event);
 		};
 
-		receiver.onmessage = (event) => {
+		processor.onmessage = (event) => {
 			let message = JSON.parse(event.data);
 			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
-				console.info("[RTU]: Stop when receiver got a security issue");
+				console.info("[RTU]: Stop when updater got a security issue");
 				stop();
 			}
 			else {
@@ -113,59 +112,27 @@ export namespace AppRTU {
 			}
 		};
 
-		// sender
-		sender = new WebSocket(uri + "&x-receiver=" + AppData.Configuration.session.id);
-
-		sender.onopen = (event) => {
-			status.sender = "ready";
-			AppUtility.isDebug() && console.info("[RTU]: Sender is opened...");
-		};
-
-		sender.onclose = (event) => {
-			status.sender = "close";
-			AppUtility.isDebug() && console.info("[RTU]: Sender is closed...");
-		};
-
-		sender.onerror = (event) => {
-			status.sender = "error";
-			AppUtility.isDebug() && console.warn("[RTU]: Sender got an error", event);
-		};
-
-		sender.onmessage = (event) => {
-			let message = JSON.parse(event.data);
-			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
-				console.info("[RTU]: Stop when sender got a security issue");
-				stop();
-			}
-		};
-
 		// callback when done
 		onCompleted != undefined && AppUtility.setTimeout(() => {
-			onCompleted({ r: receiver, s: sender });
-		}, status.receiver == "ready" && status.sender == "ready" ? 13 : 567);
+			onCompleted(processor);
+		}, status == "ready" && status == "ready" ? 13 : 567);
 	}
 
 	/** Restarts */
 	export function restart(reason?: string, defer?: number) {
-		status.receiver = "restarting";
-		status.sender = "restarting";
+		status = "restarting";
 		console.warn("[RTU]: " + (reason || "Re-start because the WebSocket connection is broken"));
 
 		window.setTimeout(() => {
 			console.info("[RTU]: Re-starting...");
 
-			if (receiver != null) {
-				receiver.close();
-				receiver = null;
-			}
-
-			if (sender != null) {
-				sender.close();
-				sender = null;
+			if (processor != null) {
+				processor.close();
+				processor = null;
 			}
 
 			start(() => {
-				console.info("[RTU]: The updater is re-started successful...", AppUtility.isDebug() ? { r: receiver, s: sender } : "");
+				console.info("[RTU]: The updater is re-started successful...", AppUtility.isDebug() ? processor : "");
 			}, true);
 		}, defer || 123);
 	}
@@ -174,24 +141,18 @@ export namespace AppRTU {
 	export function stop(onCompleted?: (data?: any) => void) {
 		uri = null;
 
-		status.receiver = "closed";
-		if (receiver != null) {
-			receiver.close();
-			receiver = null;
+		status = "closed";
+		if (processor != null) {
+			processor.close();
+			processor = null;
 		}
 
-		status.sender = "closed";
-		if (sender != null) {
-			sender.close();
-			sender = null;
-		}
-
-		onCompleted != undefined && onCompleted({ r: receiver, s: sender });
+		onCompleted != undefined && onCompleted(processor);
 	}
 
 	/** Gets the ready state */
 	export function isReady() {
-		return receiver != null && status.receiver == "ready" && sender != null && status.sender == "ready";
+		return processor != null && status == "ready";
 	}
 
 	/** Sends the request to a service */
@@ -200,7 +161,7 @@ export namespace AppRTU {
 			return;
 		}
 		else if (isReady()) {
-			sender.send(JSON.stringify(request));
+			processor.send(JSON.stringify(request));
 			rtuNext != undefined && rtuNext();
 		}
 		else {
@@ -252,33 +213,20 @@ export namespace AppRTU {
 		};
 	}
 
-	function ping() {
-		send({
-				ServiceName: "rtu",
-				ObjectName: "session",
-				Verb: "ping"
-			},
-			() => {
-				AppUtility.setTimeout(() => {
-					ping();
-				}, 60000 * 5);
-			}
-		);
-	}
-
 	function process(message: any) {
 		let info = parse(message.Type);
 		AppUtility.isDebug() && console.info("[RTU]: Got a message " + (info.ObjectName != "" ? "(" + info.ObjectName + ")" : ""), message);
 		
 		if (info.ServiceName == "Pong") {
-			
+			AppUtility.isDebug() && console.log("[RTU]: Got a heartbeat");
 		}
 		else if (info.ServiceName == "Knock") {
 			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
 		}
 		else if (info.ServiceName == "OnlineStatus") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update status & run scheduler");
-			call("users", "status");
+			call("users", "status", "GET");
+			call("rtu", "session", "PING")
 			if (handlers["Scheduler"]) {
 				subject.next({ "type": "Scheduler", "message": message });
 			}
