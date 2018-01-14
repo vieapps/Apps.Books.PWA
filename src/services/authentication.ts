@@ -100,7 +100,7 @@ export class AuthenticationService {
 
 			let path = "users/account"
 				+ "?related-service=books"
-				+ "&language=" + AppData.Configuration.session.account.profile.Language
+				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 
@@ -682,15 +682,32 @@ export class AuthenticationService {
 			}
 		}
 
-		// got new access token, then need to update session
+		// update session
 		else if ((info.ObjectName == "Session")
 		&& AppData.Configuration.session.id == message.Data.ID
 		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
-			this.configSvc.updateSessionAsync(message.Data, () => {
-				AppUtility.isDebug() && console.warn("[Authentication]: Update session with the new token", AppData.Configuration.session);
-				this.configSvc.patchAccount();
-				this.configSvc.patchSession();
-			});
+			// update session with new access token
+			if (message.Data.Mode == "Update") {
+				this.configSvc.updateSessionAsync(message.Data, () => {
+					AppUtility.isDebug() && console.warn("[Authentication]: Update session with the new token", AppUtility.isDebug() ? AppData.Configuration.session : "");
+					this.configSvc.patchAccount();
+					this.configSvc.patchSession();
+				});
+			}
+
+			// revoke current session
+			else if (message.Data.Mode == "Revoke") {
+				this.configSvc.deleteSessionAsync(() => {
+					AppEvents.broadcast("AccountIsUpdated");
+					this.configSvc.initializeAsync(() => {
+						this.configSvc.registerSessionAsync(() => {
+							console.info("[Authentication]: Revoke session successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
+							AppEvents.broadcast("OpenHomePage");
+							this.configSvc.patchSession();
+						});
+					})
+				});
+			}
 		}
 
 		// update profile
