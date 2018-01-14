@@ -138,7 +138,7 @@ export namespace AppRTU {
 				stop();
 			}
 		};
-		
+
 		// callback when done
 		onCompleted != undefined && AppUtility.setTimeout(() => {
 			onCompleted({ r: receiver, s: sender });
@@ -252,12 +252,28 @@ export namespace AppRTU {
 		};
 	}
 
-	/** Process the message */
+	function ping() {
+		send({
+				ServiceName: "rtu",
+				ObjectName: "session",
+				Verb: "ping"
+			},
+			() => {
+				AppUtility.setTimeout(() => {
+					ping();
+				}, 60000 * 5);
+			}
+		);
+	}
+
 	function process(message: any) {
 		let info = parse(message.Type);
 		AppUtility.isDebug() && console.info("[RTU]: Got a message " + (info.ObjectName != "" ? "(" + info.ObjectName + ")" : ""), message);
 		
-		if (info.ServiceName == "Knock") {
+		if (info.ServiceName == "Pong") {
+			
+		}
+		else if (info.ServiceName == "Knock") {
 			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
 		}
 		else if (info.ServiceName == "OnlineStatus") {
