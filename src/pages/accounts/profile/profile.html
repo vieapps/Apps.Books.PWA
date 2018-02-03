@@ -168,7 +168,7 @@
 		</ion-item>
 		<ion-item class="item-label-floating completer-container" [class.invalid]="!info.state.valid && !info.address.current" *ngIf="info.state.mode == 'Update'">
 			<ng2-completer #addresses name="addresses" inputClass="{{info.state.css}}" placeholder="Quận/Huyện, Thành phố/Tỉnh"
-				textSearching="tìm kiếm..." [(ngModel)]="info.address.search" [datasource]="completerData" [initialValue]="info.address.current"
+				textSearching="tìm kiếm..." [datasource]="completerData" [initialValue]="info.address.current"
 				[minSearchLength]="2" (selected)="selectAddress($event)"></ng2-completer>
 		</ion-item>
 		<ion-item [class.invalid]="!info.state.valid && !isNotEmpty(info.profile.Mobile)" *ngIf="info.state.mode == 'Update'">

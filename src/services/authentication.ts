@@ -1,8 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { List } from "linqts";
-import "rxjs/add/operator/toPromise";
-import "rxjs/add/operator/map";
 
 declare var FB: any;
 
@@ -21,7 +19,7 @@ export class AuthenticationService {
 
 	constructor(public http: Http, public configSvc: ConfigurationService) {
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Users", (message: any) => this.processRTU(message));
+		AppRTU.registerAsServiceScopeProcessor("Users", (message: any) => this.processRTU(message));
 	}
 			
 	/** Checks to see the account is has a specific role of the app */
@@ -45,7 +43,13 @@ export class AuthenticationService {
 	/** Checks to see the account is service administrator or not */
 	isServiceAdministrator(account?: AppData.Account) {
 		account = account || this.configSvc.getAccount();
-		return this.isInAppRole("", "Administrator", account.privileges);
+		return this.isInAppRole("", "Administrator", account.privileges) || this.isSystemAdministrator(account);
+	}
+
+	/** Checks to see the account is service moderator or not */
+	isServiceModerator(account?: AppData.Account) {
+		account = account || this.configSvc.getAccount();
+		return this.isInAppRole("", "Moderator", account.privileges) || this.isServiceAdministrator(account);
 	}
 
 	/** Checks to see the account is administrator (means system administrator or service administrator) or not */
@@ -96,7 +100,6 @@ export class AuthenticationService {
 			body.ReferSection = AppData.Configuration.app.refer.section;
 			body.Email = AppCrypto.rsaEncrypt(body.Email);
 			body.Password = AppCrypto.rsaEncrypt(body.Password);
-			body.Captcha = AppCrypto.aesEncrypt(JSON.stringify({ Registered: AppData.Configuration.session.captcha.code, Input: captcha }));
 
 			let path = "users/account"
 				+ "?related-service=books"
@@ -104,7 +107,7 @@ export class AuthenticationService {
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 
-			let response = await AppAPI.PostAsync(path, body);
+			let response = await AppAPI.PostAsync(path, body, AppAPI.getCaptchaHeaders(captcha));
 			let data = response.json();
 			if (data.Status == "OK") {
 				onNext != undefined && onNext(data);
@@ -454,11 +457,12 @@ export class AuthenticationService {
 				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
+
 			let body = {
-				Email: AppCrypto.rsaEncrypt(email),
-				Captcha: AppCrypto.aesEncrypt(JSON.stringify({ Registered: AppData.Configuration.session.captcha.code, Input: captcha }))
+				Email: AppCrypto.rsaEncrypt(email)
 			};
-			let response = await AppAPI.PutAsync(path, body);
+			
+			let response = await AppAPI.PutAsync(path, body, AppAPI.getCaptchaHeaders(captcha));
 			let data = response.json();
 			if (data.Status == "OK") {
 				console.info("[Authentication]: Send the request to reset password successful");
@@ -676,14 +680,14 @@ export class AuthenticationService {
 		var info = AppRTU.parse(message.Type);
 
 		// update account
-		if (info.ObjectName == "Account") {
+		if (info.Object == "Account") {
 			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
 				this.configSvc.updateAccount(message.Data);
 			}
 		}
 
 		// update session
-		else if ((info.ObjectName == "Session")
+		else if (info.Object == "Session"
 		&& AppData.Configuration.session.id == message.Data.ID
 		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
 			// update session with new access token
@@ -711,7 +715,7 @@ export class AuthenticationService {
 		}
 
 		// update profile
-		else if (info.ObjectName == "Profile") {
+		else if (info.Object == "Profile") {
 			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
 				this.updateProfileAsync(message.Data);
 			}
@@ -721,7 +725,7 @@ export class AuthenticationService {
 		}
 
 		// update status
-		else if (info.ObjectName == "Status") {
+		else if (info.Object == "Status") {
 			let account = AppData.Accounts.getValue(message.Data.UserID);
 			if (account != undefined) {
 				account.IsOnline = message.Data.IsOnline;

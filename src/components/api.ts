@@ -5,7 +5,6 @@ import { BaseRequestOptions, RequestOptions, BaseResponseOptions, ResponseOption
 import { CompleterData, CompleterItem } from "ng2-completer";
 import { List } from "linqts";
 import * as Rx from "rxjs";
-import "rxjs/add/operator/toPromise";
 
 import { AppUtility } from "./utility";
 import { AppCrypto } from "./crypto";
@@ -164,6 +163,15 @@ export namespace AppAPI {
 		}
 
 		return headers;
+	}
+
+	/** Gets the captcha headers (JSON) for making requests to APIs */
+	export function getCaptchaHeaders(captcha: string): any {
+		return {
+			"x-captcha": "true",
+			"x-captcha-registered": AppCrypto.aesEncrypt(AppData.Configuration.session.captcha.code),
+			"x-captcha-input": AppCrypto.aesEncrypt(captcha)
+		};
 	}
 
 	/** Completer custom searching services */

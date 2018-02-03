@@ -27,7 +27,12 @@ export class ConfigurationService {
 		public appVersion: AppVersion
 	){
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Scheduler", (message: any) => this.sendBookmarks());
+		AppRTU.registerAsServiceScopeProcessor("Scheduler", (message: any) => this.sendBookmarks());
+		AppRTU.registerAsObjectScopeProcessor("Books", "Bookmarks", (message: any) => {
+			if (this.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
+				this.syncBookmarks(message.Data);
+			}
+		});
 	}
 
 	/** Prepare the working environments of the app */

@@ -22,7 +22,8 @@ export class BooksService {
 		public statisticsSvc: StatisticsService
 	){
 		AppAPI.setHttp(this.http);
-		AppRTU.register("Books", (message: any) => this.processRTU(message));
+		AppRTU.registerAsServiceScopeProcessor("Books", (message: any) => {});
+		AppRTU.registerAsObjectScopeProcessor("Books", "Book", (message: any) => this.processRTU(message));
 	}
 
 	search(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
@@ -290,46 +291,34 @@ export class BooksService {
 		// parse
 		var info = AppRTU.parse(message.Type);
 
-		// book information
-		if (info.ObjectName == "Book") {
-			AppModels.Book.update(message.Data);
-			AppEvents.broadcast("BookIsUpdated", message.Data);
-		}
-
-		// books' counters
-		else if (info.ObjectName == "Book#Counters") {
+		// counters
+		if (info.Event == "Counters") {
 			this.setCounters(message.Data);
 		}
 
-		// book's chapter
-		else if (info.ObjectName == "Book#Chapter") {
+		// chapter
+		else if (info.Event == "Chapter") {
 			let book = AppData.Books.getValue(message.Data.ID);
 			if (book != undefined) {
 				book.Chapters[message.Data.Chapter - 1] = message.Data.Content;
 			}
 		}
 
-		// books' files
-		else if (info.ObjectName == "Book#Files") {
+		// files
+		else if (info.Event == "Files") {
 			this.updateFiles(message.Data);
 		}
 
 		// book is deleted
-		else if (info.ObjectName == "Book#Delete") {
+		else if (info.Event == "Delete") {
 			AppData.Books.remove(message.Data.ID);
 			AppEvents.broadcast("BooksAreUpdated", message.Data);
 		}
-		
-		// bookmarks
-		else if (info.ObjectName == "Bookmarks") {
-			if (this.configSvc.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
-				this.configSvc.syncBookmarks(message.Data);
-			}
-		}
-		
-		// statistics
-		else if (AppUtility.indexOf(info.ObjectName, "Statistic#") == 0) {
-			this.statisticsSvc.processRTU(message);
+
+		// other events
+		else {
+			AppModels.Book.update(message.Data);
+			AppEvents.broadcast("BookIsUpdated", message.Data);
 		}
 	}
 

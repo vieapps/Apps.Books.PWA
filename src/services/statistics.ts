@@ -22,6 +22,7 @@ export class StatisticsService {
 		public configSvc: ConfigurationService
 	){
 		AppAPI.setHttp(this.http);
+		AppRTU.registerAsObjectScopeProcessor("Books", "Statistic", (message: any) => this.processRTU(message));
 	}
 
 	// working with status
@@ -257,17 +258,17 @@ export class StatisticsService {
 		var info = AppRTU.parse(message.Type);
 
 		// status
-		if (info.ObjectName == "Statistic#Status") {
+		if (info.Object == "Status") {
 			this.updateStatusAsync(message.Data.Objects);
 		}
 		
 		// categories
-		else if (info.ObjectName == "Statistic#Categories") {
+		else if (info.Object == "Categories") {
 			this.updateCategoriesAsync(message.Data.Objects);
 		}
 
 		// authors
-		else if (info.ObjectName == "Statistic#Authors") {
+		else if (info.Object == "Authors") {
 			this.updateAuthorsAsync(message.Data.Char, message.Data.Objects);
 		}
 	}

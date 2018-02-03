@@ -15,7 +15,7 @@ export namespace AppData {
 				// files: "http://local-afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
-			version: "0.3",
+			version: "0.4",
 			debug: true,
 			offline: false,
 			mode: "",

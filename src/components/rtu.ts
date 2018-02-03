@@ -11,19 +11,38 @@ export namespace AppRTU {
 	var status = "initializing";
 	var uri: string = null;
 	var processor: any = null;
-	var handlers: any = {};
 
-	var subject = new Rx.Subject<{ type: string, message: any }>();
-	var observable = Rx.Observable.from(subject);
-	observable.subscribe(
-		({ type, message }) => {
-			if (handlers[type]) {
-				for (let handler of handlers[type]) {
+	var serviceScopeHandlers: any = {};
+	var objectScopeHandlers: any = {};
+
+	var serviceScopeSubject = new Rx.Subject<{ service: string, message: any }>();
+	Rx.Observable.from(serviceScopeSubject).subscribe(
+		({ service, message }) => {
+			if (serviceScopeHandlers[service]) {
+				for (let handler of serviceScopeHandlers[service]) {
 					handler.func(message);
 				}
 			}
 			else {
-				AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found", "<" + type + ">", message);
+				AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (service scope)", "<" + service + ">", message);
+			}
+		},
+		(error: any) => {
+			console.error("[RTU]: Got an error", error);
+		}
+	);
+
+	var objectScopeSubject = new Rx.Subject<{ service: string, object: string, message: any }>();
+	Rx.Observable.from(objectScopeSubject).subscribe(
+		({ service, object, message }) => {
+			let type = service + "#" + object;
+			if (serviceScopeHandlers[type]) {
+				for (let handler of serviceScopeHandlers[type]) {
+					handler.func(message);
+				}
+			}
+			else {
+				AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (object scope)", "<" + type + ">", message);
 			}
 		},
 		(error: any) => {
@@ -32,28 +51,55 @@ export namespace AppRTU {
 	);
 
 	/**
-	  * Registers a handler for processing when got a message from APIs
-	  * @param type The string that presents type of a message
+	  * Registers a handler for processing RTU messages at scope of a service
+	  * @param service The string that presents name of a service
 	  * @param handler The function for processing when got a message from APIs
 	  * @param identity The string that presents identity of the handler for unregistering later
 	*/
-	export function register(type: string, handler: (message: any) => void, identity?: string) {
-		if (AppUtility.isNotEmpty(type) && handler != undefined) {
-			handlers[type] = handlers[type] || [];
-			handlers[type].push({ func: handler, identity: AppUtility.isNotEmpty(identity) ? identity : "" });
+	export function registerAsServiceScopeProcessor(service: string, handler: (message: any) => void, identity?: string) {
+		if (AppUtility.isNotEmpty(service) && handler != undefined) {
+			serviceScopeHandlers[service] = serviceScopeHandlers[service] || [];
+			serviceScopeHandlers[service].push({ func: handler, identity: AppUtility.isNotEmpty(identity) ? identity : "" });
+		}
+	}
+
+	/**
+	  * Registers a handler for processing RTU messages at scope of a service
+	  * @param service The string that presents name of a service
+	  * @param object The string that presents name of an object in the service
+	  * @param handler The function for processing when got a message from APIs
+	  * @param identity The string that presents identity of the handler for unregistering later
+	*/
+	export function registerAsObjectScopeProcessor(service: string, object: string, handler: (message: any) => void, identity?: string) {
+		if (AppUtility.isNotEmpty(service) && handler != undefined) {
+			let type = service + "#" + (object || "");
+			serviceScopeHandlers[type] = serviceScopeHandlers[type] || [];
+			serviceScopeHandlers[type].push({ func: handler, identity: AppUtility.isNotEmpty(identity) ? identity : "" });
 		}
 	}
 
 	/**
 	  * Unregisters a handler
-	  * @param type The string that presents type of a message
 	  * @param identity The string that presents identity of the handler for unregistering
+	  * @param service The string that presents type of a message
+	  * @param object The string that presents name of an object in the service
 	*/
-	export function unregister(type: string, identity: string) {
-		if (AppUtility.isNotEmpty(type) && AppUtility.isNotEmpty(identity) && handlers[type]) {
-			let index = AppUtility.find<any>(handlers[type], handler => identity == handler.identity);
-			if (index != -1) {
-				handlers[type].splice(index, 1);
+	export function unregister(identity: string, service: string, object?: string) {		
+		if (AppUtility.isNotEmpty(identity) && AppUtility.isNotEmpty(service)) {
+			if (serviceScopeHandlers[service]) {
+				let index = AppUtility.find<any>(serviceScopeHandlers[service], handler => identity == handler.identity);
+				if (index != -1) {
+					serviceScopeHandlers[service].splice(index, 1);
+				}
+			}
+			if (AppUtility.isNotEmpty(object)) {
+				let type = service + "#" + object;
+				if (serviceScopeHandlers[type]) {
+					let index = AppUtility.find<any>(objectScopeHandlers[type], handler => identity == handler.identity);
+					if (index != -1) {
+						objectScopeHandlers[type].splice(index, 1);
+					}
+				}
 			}
 		}
 	}
@@ -205,37 +251,49 @@ export namespace AppRTU {
 	}
 		
 	/** Parses the type of the message */
-	export function parse(type: string): { ServiceName: string, ObjectName: string } {
-		var pos = AppUtility.indexOf(type, "#");
+	export function parse(type: string): { Service: string, Object: string, Event: string } {
+		let pos = AppUtility.indexOf(type, "#");
+		let service = pos > 0 ? type.substring(0, pos) : type;
+		let object = "", event = "";
+		if (pos > 0) {
+			object = type.substring(pos + 1);
+			pos = AppUtility.indexOf(object, "#");
+			if (pos > 0) {
+				event = object.substring(pos + 1);
+				object = object.substring(0, pos);
+			}
+		}
 		return {
-			ServiceName: pos > 0 ? type.substring(0, pos) : type,
-			ObjectName:  pos > 0 ? type.substring(pos + 1) : ""
+			Service: service,
+			Object:  object,
+			Event: event
 		};
 	}
 
 	function process(message: any) {
 		let info = parse(message.Type);
-		AppUtility.isDebug() && console.info("[RTU]: Got a message " + (info.ObjectName != "" ? "(" + info.ObjectName + ")" : ""), message);
+		AppUtility.isDebug() && console.info("[RTU]: Got a message", message);
 		
-		if (info.ServiceName == "Pong") {
+		if (info.Service == "Pong") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a heartbeat");
 		}
-		else if (info.ServiceName == "Knock") {
+		else if (info.Service == "Knock") {
 			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
 		}
-		else if (info.ServiceName == "OnlineStatus") {
+		else if (info.Service == "OnlineStatus") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update status & run scheduler");
 			call("users", "status", "GET");
 			call("rtu", "session", "PING")
-			if (handlers["Scheduler"]) {
-				subject.next({ "type": "Scheduler", "message": message });
+			if (serviceScopeHandlers["Scheduler"]) {
+				serviceScopeSubject.next({ "service": "Scheduler", "message": message });
 			}
 		}
 		else if (AppUtility.isNotEmpty(message.ExcludedDeviceID) && message.ExcludedDeviceID == AppData.Configuration.session.device) {
 			AppUtility.isDebug() && console.warn("[RTU]: The device is excluded", AppData.Configuration.session.device);
 		}
 		else {
-			subject.next({ "type": info.ServiceName, "message": message });
+			serviceScopeSubject.next({ "service": info.Service, "message": message });
+			objectScopeSubject.next({ "service": info.Service, "object": info.Object, "message": message });
 		}
 	}
 
