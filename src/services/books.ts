@@ -164,7 +164,12 @@ export class BooksService {
 					"chapter": chapter
 				}, undefined, undefined, undefined, () => {
 					AppUtility.setTimeout(() => {
-						this.updateCounters(id, "View", onCompleted);
+						if (book.Chapters[chapter - 1] == "") {
+							this.getChapterAsync(id, chapter, onCompleted);
+						}
+						else {
+							this.updateCounters(id, "View", onCompleted);
+						}
 					}, 123);
 				});
 			}
@@ -178,14 +183,34 @@ export class BooksService {
 	}
 
 	updateCounters(id: string, action?: string, onCompleted?: () => void) {
-		AppData.Books.getValue(id) != undefined
-		&& AppRTU.isReady()
-		&& AppRTU.call("books", "book", "GET", {
-			"object-identity": "counters",
-			"id": id,
-			"action": action || "View"
-		});
-		onCompleted != undefined && onCompleted();
+		if (AppData.Books.getValue(id) != undefined) {
+			if (AppRTU.isReady()) {
+				AppRTU.call("books", "book", "GET", {
+					"object-identity": "counters",
+					"id": id,
+					"action": action || "View"
+				});
+				onCompleted != undefined && onCompleted();
+			}
+			else {
+				let path = "books/book/counters"
+					+ "?id=" + id
+					+ "&action=" + (action || "View");
+				AppAPI.Get(path).map(response => response.json()).subscribe(
+					(data: any) => {
+						if (data.Status == "OK") {
+							onCompleted != undefined && onCompleted();
+						}
+						else {
+							console.error("[Books]: Error occurred while updating counters", data);
+						}
+					},
+					(error: any) => {
+						console.error("[Books]: Error occurred while updating counters", error);
+					}
+				);
+			}
+		}
 	}
 
 	setCounters(info: any, onCompleted?: () => void) {
