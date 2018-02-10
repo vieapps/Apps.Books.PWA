@@ -561,44 +561,56 @@ export namespace AppUtility {
 
 	/** Sets environments of the PWA */
 	export function setPWAEnvironment() {
-			// Javascript libraries (only available when working in web browser)
-			if (window.location.href.indexOf("file://") < 0) {
-				// Facebook SDK
-				if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
-					let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
-					if (!window.document.getElementById("facebook-jssdk")) {
-						let js = window.document.createElement("script");
-						js.id = "facebook-jssdk";
-						js.async = true;
-						js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
-	
-						let ref = window.document.getElementsByTagName("script")[0];
-						ref.parentNode.insertBefore(js, ref);
-					}
-					window["fbAsyncInit"] = function () {
-						FB.init({
-							appId: AppData.Configuration.facebook.id,
-							channelUrl: "/assets/facebook.html",
-							status: true,
-							cookie: true,
-							xfbml: true,
-							version: fbVersion
-						});
-						this.auth.watchFacebookConnect();
-					};
+		// Javascript libraries (only available when working in web browser)
+		if (window.location.href.indexOf("file://") < 0) {
+			// Facebook SDK
+			if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
+				let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
+				if (!window.document.getElementById("facebook-jssdk")) {
+					let js = window.document.createElement("script");
+					js.id = "facebook-jssdk";
+					js.async = true;
+					js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
+
+					let ref = window.document.getElementsByTagName("script")[0];
+					ref.parentNode.insertBefore(js, ref);
 				}
-			}
-
-			// scrollbars (on Windows & Linux)
-			if (/Windows/i.test(window.navigator.userAgent) || /Linux/i.test(window.navigator.userAgent)) {
-				let css = window.document.createElement("style");
-				css.type = "text/css";
-				css.innerText = "::-webkit-scrollbar{height:14px;width:10px;background:#eee;border-left:solid1px#ddd;}::-webkit-scrollbar-thumb{background:#ddd;border:solid1px#cfcfcf;}::-webkit-scrollbar-thumb:hover{background:#b2b2b2;border:solid1px#b2b2b2;}::-webkit-scrollbar-thumb:active{background:#b2b2b2;border:solid1px#b2b2b2;}";
-
-				let ref = window.document.getElementsByTagName("link")[0];
-				ref.parentNode.insertBefore(css, ref);
+				window["fbAsyncInit"] = function () {
+					FB.init({
+						appId: AppData.Configuration.facebook.id,
+						channelUrl: "/assets/facebook.html",
+						status: true,
+						cookie: true,
+						xfbml: true,
+						version: fbVersion
+					});
+					this.auth.watchFacebookConnect();
+				};
 			}
 		}
+
+		// scrollbars (on Windows & Linux)
+		if (/Windows/i.test(window.navigator.userAgent) || /Linux/i.test(window.navigator.userAgent)) {
+			let css = window.document.createElement("style");
+			css.type = "text/css";
+			css.innerText = "::-webkit-scrollbar{height:14px;width:10px;background:#eee;border-left:solid1px#ddd;}::-webkit-scrollbar-thumb{background:#ddd;border:solid1px#cfcfcf;}::-webkit-scrollbar-thumb:hover{background:#b2b2b2;border:solid1px#b2b2b2;}::-webkit-scrollbar-thumb:active{background:#b2b2b2;border:solid1px#b2b2b2;}";
+
+			let ref = window.document.getElementsByTagName("link")[0];
+			ref.parentNode.insertBefore(css, ref);
+		}
+	}
+
+	/** Show error to console and run next action */
+	export function showError(message: string, error: any, next?: (error?: any) => void) {
+		if (error && error.Type && error.Message) {
+			console.error(message + " => [" + error.Type + "]: " + error.Message);
+			next != undefined && next(error);
+		}
+		else {
+			console.error(message, error);
+			next != undefined && next(error);
+		}
+	}
 
 	/** Normalizes the HTML content */
 	export function normalizeHtml(html?: string, removeTags?: boolean) {

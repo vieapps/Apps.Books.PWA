@@ -271,6 +271,12 @@ export namespace AppRTU {
 	}
 
 	function process(message: any) {
+		// stop on error message
+		if (message.Type == "Error") {
+			console.warn("[RTU]: got an error message", message);
+			return;
+		}
+
 		let info = parse(message.Type);
 		AppUtility.isDebug() && console.info("[RTU]: Got a message", message);
 		

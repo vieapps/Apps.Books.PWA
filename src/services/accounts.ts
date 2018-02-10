@@ -43,23 +43,12 @@ export class AccountsService {
 
 		searcher.map(response => response.json()).subscribe(
 			(data: any) => {
-				if (!AppUtility.isObject(data, true)) {
-					onError != undefined && onError(data);
-				}
-				else if (data.Status == "OK") {
-					AppData.Paginations.set(data.Data, "A");
-					new List<any>(data.Data.Objects).ForEach(a => AppModels.Account.update(a));
-					onNext(data);
-				}
-				else {
-					console.error("[Accounts]: Error occurred while searching accounts");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-					onError != undefined && onError(data);
-				}
+				AppData.Paginations.set(data, "A");
+				new List<any>(data.Objects).ForEach(a => AppModels.Account.update(a));
+				onNext(data);
 			},
 			(error: any) => {
-				console.error("[Accounts]: Error occurred while searching accounts", error);
-				onError != undefined && onError(error);
+				AppUtility.showError("[Accounts]: Error occurred while searching accounts", error.json(), onError);
 			}
 		);
 	}
@@ -78,19 +67,11 @@ export class AccountsService {
 				+ "&language=" + AppData.Configuration.session.account.profile.Language;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				new List<any>(data.Data.Objects).ForEach(a => AppModels.Account.update(a));
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Accounts]: Error occurred while searching accounts");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
+			new List<any>(data.Objects).ForEach(a => AppModels.Account.update(a));
+			onNext != undefined && onNext(data);
 		}
-		}
-		catch (e) {
-			console.error("[Accounts]: Error occurred while searching accounts", e);
-			onError != undefined && onError(e);
+		catch (error) {
+			AppUtility.showError("[Accounts]: Error occurred while searching accounts", error.json(), onError);
 		}
 	}
 

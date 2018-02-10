@@ -9,7 +9,6 @@ import { AppRTU } from "../../../components/rtu";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
-import { ConfigurationService } from "../../../services/configuration";
 import { AuthenticationService } from "../../../services/authentication";
 import { BooksService } from "../../../services/books";
 
@@ -32,7 +31,6 @@ export class ReadBookPage {
 		public keyboard: Keyboard,
 		public platform: Platform,
 		public loadingCtrl: LoadingController,
-		public configSvc: ConfigurationService,
 		public authSvc: AuthenticationService,
 		public booksSvc: BooksService
 	){
@@ -271,7 +269,7 @@ export class ReadBookPage {
 
 	onEndScroll() {
 		(this.info.book.TotalChapters > 1 || this.info.book.Body != "")  && AppUtility.setTimeout(async () => {
-			await this.configSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
+			await this.booksSvc.updateBookmarksAsync(this.info.book.ID, this.info.chapter, this.contentCtrl.scrollTop);
 		});
 	}
 

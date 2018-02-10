@@ -75,18 +75,11 @@ export class StatisticsService {
 			try {
 				let response = await AppAPI.GetAsync("books/statistic/status");
 				let data = response.json();
-				if (data.Status == "OK") {
-					await this.updateStatusAsync(data.Data.Objects);
-					onNext != undefined && onNext(data);
-				}
-				else {
-					console.error("[Statistics]: Error occurred while fetching status");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-					onError != undefined && onError(data);
-				}
+				await this.updateStatusAsync(data.Objects);
+				onNext != undefined && onNext(data);
 			}
 			catch (e) {
-				onError != undefined && onError(e);
+				AppUtility.showError("[Statistics]: Error occurred while fetching status", e.json(), onError);
 			}
 		}
 	}
@@ -126,18 +119,11 @@ export class StatisticsService {
 			try {
 				let response = await AppAPI.GetAsync("books/statistic/categories");
 				let data = response.json();
-				if (data.Status == "OK") {
-					await this.updateCategoriesAsync(data.Data.Objects);
-					onNext != undefined && onNext(data);
-				}
-				else {
-					console.error("[Statistics]: Error occurred while fetching categories");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-					onError != undefined && onError(data);
-				}
+				await this.updateCategoriesAsync(data.Objects);
+				onNext != undefined && onNext(data);
 			}
 			catch (e) {
-				onError != undefined && onError(e);
+				AppUtility.showError("[Statistics]: Error occurred while fetching categories", e.json(), onError);
 			}
 		}
 	}
@@ -196,21 +182,13 @@ export class StatisticsService {
 				let path = "books/statistic/authors"
 					+ "?char=" + this.Authors.Chars[this.Authors.Index]
 				let response = await AppAPI.GetAsync(path);
-				let data = response.json();
-				if (data.Status == "OK") {
-					await this.updateAuthorsAsync(this.Authors.Chars[this.Authors.Index], data.Data.Objects);
-				}
-				else {
-					console.error("[Statistics]: Error occurred while fetching authors [" + this.Authors.Chars[this.Authors.Index] + "]");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-
+				await this.updateAuthorsAsync(this.Authors.Chars[this.Authors.Index], response.json().Objects);
 				window.setTimeout(() => {
 					this.fetchAuthorsAsync(onCompleted);
 				}, 13);
 			}
 			catch (e) {
-				console.error("[Statistics]: Error occurred while fetching authors [" + this.Authors.Chars[this.Authors.Index] + "]", e);
+				AppUtility.showError("[Statistics]: Error occurred while fetching authors [" + this.Authors.Chars[this.Authors.Index] + "]", e.json());
 			}
 		}
 		else {

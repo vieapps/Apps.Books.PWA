@@ -5,7 +5,7 @@ import { AppEvents } from "../../../components/events";
 import { AppUtility } from "../../../components/utility";
 import { AppData } from "../../../models/data";
 
-import { ConfigurationService } from "../../../services/configuration";
+import { BooksService } from "../../../services/books";
 
 @Component({
 	selector: "page-book-options",
@@ -15,7 +15,7 @@ export class ReadingOptionsPage {
 	constructor(
 		public navCtrl: NavController,
 		public navParams: NavParams,
-		public configSvc: ConfigurationService
+		public booksSvc: BooksService
 	){
 	}
 
@@ -130,7 +130,7 @@ export class ReadingOptionsPage {
 	ionViewWillLeave() {
 		window.location.href = this.info.uri;
 		AppUtility.setTimeout(async () => {
-			await this.configSvc.saveOptionsAsync(() => {
+			await this.booksSvc.saveOptionsAsync(() => {
 				AppUtility.isDebug() && console.warn("<ReadingOptions>: The options are saved");
 				AppEvents.broadcast("ReadingOptionsAreUpdated");
 			});

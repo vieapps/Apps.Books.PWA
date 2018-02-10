@@ -154,7 +154,7 @@ export class SearchPage {
 
 		// initialize
 		var books = AppUtility.isNotEmpty(this.info.filterBy.Query) && results != undefined
-			? new List<any>(results.Data.Objects).Select(b => AppData.Books.containsKey(b.ID) ? AppData.Books.getValue(b.ID) : AppModels.Book.deserialize(b))
+			? new List<any>(results.Objects).Select(b => AppData.Books.containsKey(b.ID) ? AppData.Books.getValue(b.ID) : AppModels.Book.deserialize(b))
 			: new List(AppData.Books.values());
 
 		// filter

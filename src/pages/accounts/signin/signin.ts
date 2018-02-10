@@ -8,6 +8,7 @@ import { AppEvents } from "../../../components/events";
 import { AppData } from "../../../models/data";
 
 import { AuthenticationService } from "../../../services/authentication";
+import { BooksService } from "../../../services/books";
 
 @Component({
   selector: "page-signin",
@@ -21,7 +22,8 @@ export class SignInPage {
   	public alertCtrl: AlertController,
 		public loadingCtrl: LoadingController,
   	public keyboard: Keyboard,
-    public authSvc: AuthenticationService
+    public authSvc: AuthenticationService,
+    public booksSvc: BooksService
   ){
   }
 
@@ -148,15 +150,15 @@ export class SignInPage {
 
 	showError(data: any) {
 		var message = "", ctrl = null;
-		if (AppUtility.isGotWrongAccountOrPasswordException(data.Error)) {
+		if (AppUtility.isGotWrongAccountOrPasswordException(data)) {
 			message = "Email hoặc mật khẩu không đúng!";
 			ctrl = this.emailCtrl;
 		}
 		else {
-			if (AppUtility.isGotCaptchaException(data.Error)) {
+			if (AppUtility.isGotCaptchaException(data)) {
 				message = "Mã xác thực không đúng";
 			}
-			else if (AppUtility.isObject(data.Error, true)) {
+			else if (AppUtility.isObject(data, true)) {
 				message = data.Error.Message;
 			}
 			else {
@@ -199,6 +201,7 @@ export class SignInPage {
 						this.openOTP(data);
 					}
 					else {
+						this.booksSvc.getBookmarks();
 						this.exit();
 					}
 				},
@@ -260,7 +263,7 @@ export class SignInPage {
 			this.authSvc.validateOTPAsync(this.info.otp.id, this.info.otp.value, this.info.otp.providers[0].Info, 
 				(data: any) => {
 					AppUtility.trackPageView("Xác thực với OTP", "validate-otp");
-					this.hideLoading();
+					this.booksSvc.getBookmarks();
 					this.exit();
 				},
 				(error: any) => {

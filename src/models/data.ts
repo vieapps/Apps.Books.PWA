@@ -9,10 +9,10 @@ export namespace AppData {
 	export var Configuration = {
 		app: {
 			uris: {
-				apis: "https://apis.vieapps.net/",
-				files: "https://afs.vieapps.net/",
-				// apis: "http://local-apis.vieapps.net/",
-				// files: "http://local-afs.vieapps.net/",
+				// apis: "https://apis.vieapps.net/",
+				// files: "https://afs.vieapps.net/",
+				apis: "https://apis.prj.vn/",
+				files: "https://afs.prj.vn/",
 				activations: "http://viebooks.net/"
 			},
 			version: "0.4",
@@ -30,7 +30,8 @@ export namespace AppData {
 			refer: {
 				id: null,
 				section: null
-			}
+			},
+			registrable: true
 		},
 		session: {
 			id: null as string,

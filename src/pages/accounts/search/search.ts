@@ -128,7 +128,7 @@ export class SearchProfilesPage {
 					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
 				}
 
-				this.doBuild(this.info.state.searching && data != undefined ? data.Data.Objects : undefined);
+				this.doBuild(this.info.state.searching && data != undefined ? data.Objects : undefined);
 				onCompleted != undefined && onCompleted();
 			}
 		);

@@ -2,12 +2,9 @@ import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
 import { List } from "linqts";
 
-declare var FB: any;
-
 import { AppUtility } from "../components/utility";
 import { AppCrypto } from "../components/crypto";
 import { AppAPI } from "../components/api";
-import { AppRTU } from "../components/rtu";
 import { AppEvents } from "../components/events";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
@@ -17,9 +14,10 @@ import { ConfigurationService } from "./configuration";
 @Injectable()
 export class AuthenticationService {
 
-	constructor(public http: Http, public configSvc: ConfigurationService) {
-		AppAPI.setHttp(this.http);
-		AppRTU.registerAsServiceScopeProcessor("Users", (message: any) => this.processRTU(message));
+	constructor(
+		public http: Http,
+		public configSvc: ConfigurationService
+	){
 	}
 			
 	/** Checks to see the account is has a specific role of the app */
@@ -70,22 +68,14 @@ export class AuthenticationService {
 				+ "?register=" + AppData.Configuration.session.id;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				AppData.Configuration.session.captcha = {
-					code: data.Data.Code,
-					uri: data.Data.Uri
-				};
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while registering a captcha");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			AppData.Configuration.session.captcha = {
+				code: data.Code,
+				uri: data.Uri
+			};
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while registering a session captcha", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while registering a session captcha", e.json(), onError);
 		}
 	}
 
@@ -108,19 +98,10 @@ export class AuthenticationService {
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
 
 			let response = await AppAPI.PostAsync(path, body, AppAPI.getCaptchaHeaders(captcha));
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while registering an account");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while registering new account", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while registering new account", e.json(), onError);
 		}
 	}
 
@@ -133,21 +114,15 @@ export class AuthenticationService {
 			};
 			let response = await AppAPI.PostAsync("users/session", body);
 			let data = response.json();
-			if (data.Status == "OK") {
-				if (!data.Data.Require2FA) {
-					await this.updateSessionAsync(data.Data);
-				}
-				onNext != undefined && onNext(data.Data);
+			if (!data.Require2FA) {
+				await this.updateSessionAsync(data, onNext);
 			}
 			else {
-				console.error("[Authentication]: Error occurred while signing-in");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
+				onNext != undefined && onNext(data);
 			}
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while signing-in", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while signing-in", e.json(), onError);
 		}
 	}
 
@@ -156,221 +131,17 @@ export class AuthenticationService {
 		try {
 			let response = await AppAPI.DeleteAsync("users/session");
 			let data = response.json();
-			if (data.Status == "OK") {
-				await this.configSvc.updateSessionAsync(data.Data);
-				AppEvents.broadcast("AccountIsUpdated");
+			await this.configSvc.updateSessionAsync(data);
+			AppEvents.broadcast("AccountIsUpdated");
 
-				await this.configSvc.registerSessionAsync(() => {
-					console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-					this.configSvc.patchSession();
-					onNext != undefined && onNext(AppData.Configuration.session);
-				}, onError);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while signing-out");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			await this.configSvc.registerSessionAsync(() => {
+				console.info("[Authentication]: Sign-out successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
+				this.configSvc.patchSession();
+				onNext != undefined && onNext(AppData.Configuration.session);
+			}, onError);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while signing-out", e);
-			onError != undefined && onError(e);
-		}
-	}
-
-	/** Update session when perform success */
-	async updateSessionAsync(data: any) {
-		await this.configSvc.updateSessionAsync(data);
-		if (AppData.Configuration.session.account == null) {
-			AppData.Configuration.session.account = this.configSvc.getAccount(true);
-		}
-		AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
-
-		console.info("[Authentication]: Authenticated session is registered", AppUtility.isDebug() ? AppData.Configuration.session : "");
-		AppEvents.broadcast("SessionIsRegistered");
-
-		this.configSvc.patchSession(() => {
-			this.configSvc.patchAccount(() => {
-				this.getProfile();
-				this.configSvc.getBookmarks();
-			});
-		}, 123);
-	}
-	
-	/** Get profile information */
-	getProfile(id?: string, onCompleted?: (data?: any) => void) {
-		var request = {
-			ServiceName: "users",
-			ObjectName: "profile",
-			Verb: "GET",
-			Query: {
-				"related-service": "books",
-				"language": "vi-VN",
-				"host": (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
-			}
-		};
-		if (AppUtility.isNotEmpty(id)) {
-			request.Query["object-identity"] = id;
-		}
-
-		AppRTU.send(request,
-			() => {
-				onCompleted != undefined && onCompleted();
-			},
-			(observable) => {
-				observable.map(response => response.json()).subscribe(
-					(data: any) => {
-						if (data.Status == "OK") {
-							this.updateProfileAsync(data.Data, onCompleted);
-						}
-						else {
-							console.error("[Authentication]: Error occurred while fetching account profile");
-							AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-						}
-					},
-					(error: any) => {
-						console.error("[Authentication]: Error occurred while fetching a profile", error);
-					}
-				);
-			}
-		);
-	}
-
-	/** Get profile information of an account */
-	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (data?: any) => void) {
-		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isReady();
-		if (useRTU) {
-			this.getProfile(id, onCompleted);
-			AppUtility.setTimeout(() => {
-				AppData.Configuration.session.account != null
-				&& (AppData.Configuration.session.account.profile == null || !(AppData.Configuration.session.account.profile instanceof AppModels.Account))
-				&& this.getProfileAsync(true, id, onCompleted);
-			}, 1234);
-		}
-		else {
-			try {
-				let path = "users/profile" + (AppUtility.isNotEmpty(id) ? "/" + id : "")
-					+ "?related-service=books"
-					+ "&language=" + AppData.Configuration.session.account.profile.Language;
-				let response = await AppAPI.GetAsync(path);
-				let data = response.json();
-				if (data.Status == "OK") {
-					this.updateProfileAsync(data.Data, onCompleted);
-				}
-				else {
-					console.error("[Authentication]: Error occurred while fetching account profile");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				}
-			}
-			catch (e) {
-				console.error("[Authentication]: Error occurred while fetching account profile", e);
-			}
-		}
-	}
-
-	/** Update the information of an account profile */
-	async updateProfileAsync(profile: any, onCompleted?: (data?: any) => void) {
-		// update profile into collection of accounts
-		AppModels.Account.update(profile);
-
-		// update profile of current user
-		if (AppData.Configuration.session.jwt != null && AppData.Configuration.session.jwt.uid == profile.ID) {
-			AppData.Configuration.session.account.id = profile.ID;
-			AppData.Configuration.session.account.profile = AppData.Accounts.getValue(profile.ID);
-			await this.storeProfileAsync(() => {
-				AppUtility.isDebug() && console.info("[Authentication]: Account profile is updated", AppData.Configuration.session.account);
-				onCompleted != undefined && onCompleted(AppData.Configuration.session.account);
-			});
-			AppData.Configuration.facebook.token != null && AppData.Configuration.facebook.id != null && this.getFacebookProfile();
-		}
-
-		// callback when the profile is not profile of current user account
-		else {
-			onCompleted != undefined && onCompleted(profile);
-		}
-	}
-
-	/** Store the information of current account profile into storage */
-	async storeProfileAsync(onCompleted?: (data?: any) => void) {
-		await this.configSvc.saveSessionAsync();
-		AppEvents.broadcast("AccountIsUpdated");
-		onCompleted != undefined && onCompleted(AppData.Configuration.session);
-	}
-
-	/** Perform save profile information (with REST API) */
-	async saveProfileAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
-		try {
-			let path = "users/profile"
-				+ "?related-service=books"
-				+ "&language=" + AppData.Configuration.session.account.profile.Language;
-			let response = await AppAPI.PutAsync(path, info);
-			let data = response.json();
-			if (data.Status == "OK") {
-				await this.updateProfileAsync(data.Data, onNext);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while updating account profile");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
-		}
-		catch (e) {
-			console.error("[Authentication]: Error occurred while updating account profile", e);
-			onError != undefined && onError(e);
-		}
-	}
-
-	/** Watch the connection of Facebook */
-	watchFacebookConnect() {
-		FB.Event.subscribe("auth.authResponseChange",
-			(response: any) => {
-				if (response.status === "connected") {
-					AppData.Configuration.facebook.token = response.authResponse.accessToken;
-					AppData.Configuration.facebook.id = response.authResponse.userID;
-					console.info("[Authentication]: Facebook is connected", !AppUtility.isDebug() ? "" : AppData.Configuration.facebook);
-
-					if (AppData.Configuration.session.account.facebook != null) {
-						this.getFacebookProfile();
-					}
-				}
-				else {
-					AppData.Configuration.facebook.token = null;
-				}
-			}
-		);
-	}
-
-	/** Get the information of Facebook profile */
-	getFacebookProfile() {
-		FB.api("/" + AppData.Configuration.facebook.version + "/me?fields=id,name,picture&access_token=" + AppData.Configuration.facebook.token,
-			(response: any) => {
-				AppData.Configuration.session.account.facebook = {
-					id: response.id,
-					name: response.name,
-					profileUrl: "https://www.facebook.com/app_scoped_user_id/" + response.id,
-					pictureUrl: undefined
-				};
-
-				this.storeProfileAsync(() => {
-					console.info("[Authentication]: Account profile is updated with information of Facebook profile", !AppUtility.isDebug() ? "" : AppData.Configuration.session.account);
-				});
-
-				this.getFacebookAvatar();
-			});
-	}
-
-	/** Get the avatar picture (large picture) of Facebook profile */
-	getFacebookAvatar() {
-		if (AppData.Configuration.session.account.facebook != null && AppData.Configuration.session.account.facebook.id != null && AppData.Configuration.session.jwt != null && AppData.Configuration.session.jwt.oauths != null
-			&& AppData.Configuration.session.jwt.oauths["facebook"] && AppData.Configuration.session.jwt.oauths["facebook"] == AppData.Configuration.session.account.facebook.id) {
-			FB.api("/" + AppData.Configuration.facebook.version + "/" + AppData.Configuration.session.account.facebook.id + "/picture?type=large&redirect=false&access_token=" + AppData.Configuration.facebook.token,
-				(response: any) => {
-					AppData.Configuration.session.account.facebook.pictureUrl = response.data.url;
-					this.storeProfileAsync(() => {
-						console.info("[Authentication]: Account is updated with information of Facebook profile (large profile picture)", !AppUtility.isDebug() ? "" : response);
-					});
-				}
-			);
+			AppUtility.showError("[Authentication]: Error occurred while signing-out", e.json(), onError);
 		}
 	}
 
@@ -381,19 +152,10 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&languague=vi-VN"
 			let response = await AppAPI.GetAsync(path);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while fetching privileges of an user");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while fetching privileges of an user", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while fetching privileges of an user", e.json(), onError);
 		}
 	}
 
@@ -403,19 +165,10 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&languague=vi-VN"
 			let response = await AppAPI.PutAsync(path, privileges);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while updating privileges of an user");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while updating privileges of an user", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while updating privileges of an user", e.json(), onError);
 		}
 	}
 
@@ -427,25 +180,18 @@ export class AuthenticationService {
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
 				+ "&uri=" + AppCrypto.urlEncode(AppUtility.getUri() + "#?prego=activate&mode={mode}&code={code}");
+
 			let body = {
 				Name: name,
 				Email: AppCrypto.rsaEncrypt(email),
 				Campaign: "Books-Email-Invitation"
 			};
+
 			let response = await AppAPI.PostAsync(path, body);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while sending an invitation");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while sending an invitation", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while sending an invitation", e.json(), onError);
 		}
 	}
 
@@ -463,20 +209,11 @@ export class AuthenticationService {
 			};
 			
 			let response = await AppAPI.PutAsync(path, body, AppAPI.getCaptchaHeaders(captcha));
-			let data = response.json();
-			if (data.Status == "OK") {
-				console.info("[Authentication]: Send the request to reset password successful");
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while sending a request to reset password");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			console.info("[Authentication]: Send the request to reset password successful");
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while sending a request to reset password", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while sending a request to reset password", e.json(), onError);
 		}
 	}
 
@@ -487,24 +224,17 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let body = {
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
 				Password: AppCrypto.rsaEncrypt(password)
 			};
+
 			let response = await AppAPI.PutAsync(path, body);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while updating password");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while updating password", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while updating password", e.json(), onError);
 		}
 	}
 
@@ -515,24 +245,17 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let body = {
 				OldPassword: AppCrypto.rsaEncrypt(oldPassword),
 				Email: AppCrypto.rsaEncrypt(email)
-			};		
+			};
+			 
 			let response = await AppAPI.PutAsync(path, body);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while updating email");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while updating email", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while updating email", e.json(), onError);
 		}
 	}
 
@@ -548,26 +271,19 @@ export class AuthenticationService {
 				+ "&related-service=books"
 				+ "&language=vi-VN"
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				AppData.Configuration.session.account = this.configSvc.getAccount(true);
-				await this.configSvc.updateSessionAsync(data.Data, () => {
-					AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
-					this.configSvc.saveSessionAsync();
-					console.info("Activated...", AppUtility.isDebug() ? AppData.Configuration.session : "");
-				});
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while activating (" + mode + ")");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			AppData.Configuration.session.account = this.configSvc.getAccount(true);
+			await this.configSvc.updateSessionAsync(data, () => {
+				AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
+				this.configSvc.saveSessionAsync();
+				console.info("Activated...", AppUtility.isDebug() ? AppData.Configuration.session : "");
+			});
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while activating (" + mode + ")", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while activating (" + mode + ")", e.json(), onError);
 		}
 	}
 
@@ -577,20 +293,12 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let response = await AppAPI.GetAsync(path);
-			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data.Data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while preparing OTP");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(response.json());
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while preparing OTP");
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while preparing OTP", e.json(), onError);
 		}
 	}
 
@@ -600,21 +308,14 @@ export class AuthenticationService {
 				+ "?related-service=books"
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let response = await AppAPI.PutAsync(path, info);
 			let data = response.json();
-			if (data.Status == "OK") {
-				this.configSvc.updateAccount(data.Data);
-				onNext != undefined && onNext(data.Data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while updating OTP");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			this.configSvc.updateAccount(data);
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while updating OTP");
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while updating OTP", e.json(), onError);
 		}
 	}
 
@@ -627,116 +328,52 @@ export class AuthenticationService {
 				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
 			let response = await AppAPI.DeleteAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				this.configSvc.updateAccount(data.Data);
-				onNext != undefined && onNext(data.Data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while deleting OTP");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			this.configSvc.updateAccount(data);
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while deleting OTP");
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while deleting OTP", e.json(), onError);
 		}
 	}
 
 	async validateOTPAsync(id: string, otp: string, info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
+			let path = "users/session"
+				+ "?related-service=books"
+				+ "&language=vi-VN"
+				+ "&host=" + (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name);
+
 			let body = {
 				ID: AppCrypto.rsaEncrypt(id),
 				OTP: AppCrypto.rsaEncrypt(otp),
 				Info: AppCrypto.rsaEncrypt(info)
 			};
-			let response = await AppAPI.PutAsync("users/session", body);
-			let data = response.json();
-			if (data.Status == "OK") {
-				await this.updateSessionAsync(data.Data);
-				onNext != undefined && onNext(data.Data);
-			}
-			else {
-				console.error("[Authentication]: Error occurred while validating OTP");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+
+			let response = await AppAPI.PutAsync(path, body);
+			await this.updateSessionAsync(response.json(), onNext);
 		}
 		catch (e) {
-			console.error("[Authentication]: Error occurred while validating OTP", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Authentication]: Error occurred while validating OTP", e.json(), onError);
 		}
 	}
 
-	// process RTU message
-	processRTU(message: any) {
-		// check status
-		if (message.Type == "Error") {
-			console.warn("[Authentication]: got an error message from RTU", message);
-			return;
+	/** Update session when perform success */
+	async updateSessionAsync(data: any, onCompleted?: (data?: any) => void) {
+		await this.configSvc.updateSessionAsync(data);
+		if (AppData.Configuration.session.account == null) {
+			AppData.Configuration.session.account = this.configSvc.getAccount(true);
 		}
+		AppData.Configuration.session.account.id = AppData.Configuration.session.jwt.uid;
 
-		// parse
-		var info = AppRTU.parse(message.Type);
+		console.info("[Authentication]: Authenticated session is registered", AppUtility.isDebug() ? AppData.Configuration.session : "");
+		AppEvents.broadcast("SessionIsRegistered");
 
-		// update account
-		if (info.Object == "Account") {
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
-				this.configSvc.updateAccount(message.Data);
-			}
-		}
-
-		// update session
-		else if (info.Object == "Session"
-		&& AppData.Configuration.session.id == message.Data.ID
-		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
-			// update session with new access token
-			if (message.Data.Mode == "Update") {
-				this.configSvc.updateSessionAsync(message.Data, () => {
-					AppUtility.isDebug() && console.warn("[Authentication]: Update session with the new token", AppUtility.isDebug() ? AppData.Configuration.session : "");
-					this.configSvc.patchAccount();
-					this.configSvc.patchSession();
-				});
-			}
-
-			// revoke current session
-			else if (message.Data.Mode == "Revoke") {
-				this.configSvc.deleteSessionAsync(() => {
-					AppEvents.broadcast("AccountIsUpdated");
-					this.configSvc.initializeAsync(() => {
-						this.configSvc.registerSessionAsync(() => {
-							console.info("[Authentication]: Revoke session successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
-							AppEvents.broadcast("OpenHomePage");
-							this.configSvc.patchSession();
-						});
-					})
-				});
-			}
-		}
-
-		// update profile
-		else if (info.Object == "Profile") {
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
-				this.updateProfileAsync(message.Data);
-			}
-			else {
-				AppModels.Account.update(message.Data);
-			}
-		}
-
-		// update status
-		else if (info.Object == "Status") {
-			let account = AppData.Accounts.getValue(message.Data.UserID);
-			if (account != undefined) {
-				account.IsOnline = message.Data.IsOnline;
-				account.LastAccess = new Date();
-			}
-			if (AppData.Configuration.session.account != null
-				&& AppData.Configuration.session.account.id == message.Data.UserID
-				&& AppData.Configuration.session.account.profile != null) {
-				AppData.Configuration.session.account.profile.LastAccess = new Date();
-			}
-		}
+		this.configSvc.patchSession(() => {
+			this.configSvc.patchAccount(() => {
+				this.configSvc.getProfile();
+				onCompleted != undefined && onCompleted(data);
+			});
+		}, 123);
 	}
 
 }

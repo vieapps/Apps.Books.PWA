@@ -11,8 +11,10 @@ import { AppData } from "../models/data";
 @Injectable()
 export class ResourcesService {
 
-	constructor(public http: Http, public storage: Storage) {
-		AppAPI.setHttp(this.http);
+	constructor(
+		public http: Http,
+		public storage: Storage
+	){
 	}
 
 	// working with remote resources
@@ -24,8 +26,7 @@ export class ResourcesService {
 			onNext != undefined && onNext();
 		}
 		catch (e) {
-			console.error("[Resources]: Error occurred while fetching the remote resource", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Resources]: Error occurred while fetching the remote resource", e.json(), onError);
 		}
 	}
 

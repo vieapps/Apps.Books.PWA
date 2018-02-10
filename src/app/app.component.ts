@@ -335,7 +335,7 @@ export class App {
 	// initialize
 	initialize(onCompleted?: () => void, noInitializeSession?: boolean) {
 		this.configSvc.initializeAsync(
-			(d: any) => {
+			(data?: any) => {
 				// got valid sessions, then run next step
 				if (this.configSvc.isReady() && this.configSvc.isAuthenticated()) {
 					console.info("<Startup>: The session is initialized & registered (user)");
@@ -352,9 +352,9 @@ export class App {
 							this.prepare(onCompleted);
 							delete this.info.attemps;
 						},
-						(e: any) => {
+						(error?: any) => {
 							this.info.attemps++;
-							if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
+							if (AppUtility.isGotSecurityException(error) && this.info.attemps < 13) {
 								console.warn("<Startup>: Cannot register, the session is need to be re-initialized (anonymous)");
 								AppUtility.setTimeout(async () => {
 									await this.configSvc.deleteSessionAsync(() => {
@@ -365,16 +365,16 @@ export class App {
 								});
 							}
 							else {
-								console.error("<Startup>: Got an error while initializing", e);
+								console.error("<Startup>: Got an error while initializing", error);
 								delete this.info.attemps;
 							}
 						}
 					);
 				}
 			},
-			(e: any) => {
+			(error?: any) => {
 				this.info.attemps++;
-				if (AppUtility.isGotSecurityException(e.Error) && this.info.attemps < 13) {
+				if (AppUtility.isGotSecurityException(error) && this.info.attemps < 13) {
 					console.warn("<Startup>: Cannot initialize, the session is need to be re-initialized (anonymous)");
 					AppUtility.setTimeout(async () => {
 						await this.configSvc.deleteSessionAsync(() => {
@@ -385,7 +385,7 @@ export class App {
 					});
 				}
 				else {
-					console.error("<Startup>: Got an error while initializing", e);
+					console.error("<Startup>: Got an error while initializing", error);
 					delete this.info.attemps;
 				}
 			},
@@ -409,20 +409,20 @@ export class App {
 			if (this.configSvc.isAuthenticated()) {
 				this.configSvc.patchAccount(
 					() => {
-						this.authSvc.getProfile();
+						this.configSvc.getProfile();
 					},
 					345
 				);
 			}
 			
 			// load & get/merge bookmarks
-			this.configSvc.loadBookmarksAsync();
+			this.booksSvc.loadBookmarksAsync();
 			if (this.configSvc.isAuthenticated()) {
-				this.configSvc.getBookmarks();
+				this.booksSvc.getBookmarks();
 			}
 
 			// load reading options
-			this.configSvc.loadOptionsAsync();
+			this.booksSvc.loadOptionsAsync();
 			
 			// load geo-meta
 			this.resourcesSvc.loadGeoMetaAsync();
@@ -491,10 +491,10 @@ export class App {
 			}
 		}
 		else {
-			this.pages = this.pages.concat([
-				{ name: "SignInPage", component: SignInPage, title: "Đăng nhập", icon: "log-in", doPush: true, popIfContains: "ProfilePage", noNestedStack: true },
-				{ name: "ProfilePage", component: ProfilePage, title: "Đăng ký tài khoản", icon: "person-add", params: { Register: true }, doPush: true, popIfContains: "SignInPage", noNestedStack: true }
-			]);
+			this.pages.push({ name: "SignInPage", component: SignInPage, title: "Đăng nhập", icon: "log-in", doPush: true, popIfContains: "ProfilePage", noNestedStack: true });
+			if (AppData.Configuration.app.registrable) {
+				this.pages.push({ name: "ProfilePage", component: ProfilePage, title: "Đăng ký tài khoản", icon: "person-add", params: { Register: true }, doPush: true, popIfContains: "SignInPage", noNestedStack: true });
+			}
 		}
 
 		this.pages.push({ name: "SearchPage", component: SearchPage, title: "Tìm kiếm", icon: "search" });

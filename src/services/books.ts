@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Http } from "@angular/http";
+import { Storage } from "@ionic/storage";
 import { List } from "linqts";
+import * as Collections from "typescript-collections";
 
 import { AppUtility } from "../components/utility";
 import { AppAPI } from "../components/api";
@@ -18,12 +20,19 @@ export class BooksService {
 
 	constructor(
 		public http: Http,
+		public storage: Storage,
 		public configSvc: ConfigurationService,
 		public statisticsSvc: StatisticsService
 	){
 		AppAPI.setHttp(this.http);
-		AppRTU.registerAsServiceScopeProcessor("Books", (message: any) => {});
 		AppRTU.registerAsObjectScopeProcessor("Books", "Book", (message: any) => this.processRTU(message));
+		AppRTU.registerAsObjectScopeProcessor("Books", "Bookmarks", (message: any) => {
+			if (this.configSvc.isAuthenticated() && AppData.Configuration.session.account.id == message.Data.ID) {
+				this.syncBookmarks(message.Data);
+			}
+		});
+		AppRTU.registerAsServiceScopeProcessor("Books", (message: any) => {});
+		AppRTU.registerAsServiceScopeProcessor("Scheduler", (message: any) => this.sendBookmarks());
 	}
 
 	search(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
@@ -38,20 +47,12 @@ export class BooksService {
 
 		searcher.map(response => response.json()).subscribe(
 			(data: any) => {
-				if (data.Status == "OK") {
-					new List<any>(data.Data.Objects).ForEach(b => AppModels.Book.update(b));
-					!AppUtility.isNotEmpty(request.FilterBy.Query) && AppData.Paginations.set(data.Data, "B");
-					onNext(data);
-				}
-				else {
-					console.error("[Books]: Error occurred while searching books");
-					AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-					onError != undefined && onError(data);
-				}
+				new List<any>(data.Objects).ForEach(b => AppModels.Book.update(b));
+				!AppUtility.isNotEmpty(request.FilterBy.Query) && AppData.Paginations.set(data, "B");
+				onNext(data);
 			},
 			(error: any) => {
-				console.error("[Books]: Error occurred while searching books", error);
-				onError != undefined && onError(error);
+				AppUtility.showError("[Books]: Error occurred while searching books", error, onError);
 			}
 		);
 	}
@@ -69,20 +70,12 @@ export class BooksService {
 				+ "?x-request=" + AppUtility.getBase64UrlParam(request);
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				new List<any>(data.Data.Objects).ForEach(b => AppModels.Book.update(b));
-				AppData.Paginations.set(data.Data, "B");
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Books]: Error occurred while fetching books");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			new List<any>(data.Objects).ForEach(b => AppModels.Book.update(b));
+			AppData.Paginations.set(data, "B");
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while fetching books", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Books]: Error occurred while fetching books", e.json(), onError);
 		}
 	}
 
@@ -99,22 +92,14 @@ export class BooksService {
 		try {
 			let response = await AppAPI.GetAsync("books/book/" + id);
 			let data = response.json();
-			if (data.Status == "OK") {
-				AppModels.Book.update(data.Data);
-				if (!AppUtility.isTrue(dontUpdateCounter)) {
-					this.updateCounters(id);
-				}
-				onNext != undefined && onNext(data);
+			AppModels.Book.update(data);
+			if (!AppUtility.isTrue(dontUpdateCounter)) {
+				this.updateCounters(id);
 			}
-			else {
-				console.error("[Books]: Error occurred while getting a book");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while getting a book", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Books]: Error occurred while fetching a book", e.json(), onError);
 		}
 	}
 
@@ -134,19 +119,12 @@ export class BooksService {
 				+ "?chapter=" + chapter;
 			let response = await AppAPI.GetAsync(path);
 			let data = response.json();
-			if (data.Status == "OK") {
-				book.Chapters[chapter - 1] = data.Data.Content;
-				this.updateCounters(id);
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Books]: Error occurred while fetching chapter of a book");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			book.Chapters[chapter - 1] = data.Content;
+			this.updateCounters(id);
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while fetching a chapter of a book", e);
+			AppUtility.showError("[Books]: Error occurred while fetching a book's chapter", e.json(), onError);
 			onError != undefined && onError(e);
 		}
 	}
@@ -198,15 +176,10 @@ export class BooksService {
 					+ "&action=" + (action || "View");
 				AppAPI.Get(path).map(response => response.json()).subscribe(
 					(data: any) => {
-						if (data.Status == "OK") {
-							onCompleted != undefined && onCompleted();
-						}
-						else {
-							console.error("[Books]: Error occurred while updating counters", data);
-						}
+						onCompleted != undefined && onCompleted();
 					},
 					(error: any) => {
-						console.error("[Books]: Error occurred while updating counters", error);
+						AppUtility.showError("[Books]: Error occurred while fetching counters", error);
 					}
 				);
 			}
@@ -252,18 +225,10 @@ export class BooksService {
 		try {
 			let response = await AppAPI.PostAsync("books/book/" + AppCrypto.urlEncode(info.ID) + "/" + AppUtility.getBase64UrlParam({ ID: info.ID }), info);
 			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Books]: Error occurred while sending request to update an e-book");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while sending request to update an e-book", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Books]: Error occurred while sending a request to update an e-book", e.json(), onError);
 		}
 	}
 
@@ -271,18 +236,10 @@ export class BooksService {
 		try {
 			let response = await AppAPI.PutAsync("books/book/" + info.ID, info);
 			let data = response.json();
-			if (data.Status == "OK") {
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Books]: Error occurred while updating a book");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while updating a book", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Books]: Error occurred while updating an e-book", e.json(), onError);
 		}
 	}
 
@@ -290,29 +247,166 @@ export class BooksService {
 		try {
 			let response = await AppAPI.DeleteAsync("books/book/" + id);
 			let data = response.json();
-			if (data.Status == "OK") {
-				AppData.Books.remove(id);
-				onNext != undefined && onNext(data);
-			}
-			else {
-				console.error("[Books]: Error occurred while deleting a book");
-				AppUtility.isObject(data.Error, true) && console.log("[" + data.Error.Type + "]: " + data.Error.Message);
-				onError != undefined && onError(data);
-			}
+			AppData.Books.remove(id);
+			onNext != undefined && onNext(data);
 		}
 		catch (e) {
-			console.error("[Books]: Error occurred while deleting a book", e);
-			onError != undefined && onError(e);
+			AppUtility.showError("[Books]: Error occurred while deleting an e-book", e.json(), onError);
 		}
 	}
 
-	processRTU(message: any) {
-		// stop on error message
-		if (message.Type == "Error") {
-			console.warn("[Books]: got an error message from RTU", message);
-			return;
+	async loadOptionsAsync(onCompleted?: (data?: any) => void) {
+		try {
+			let data = await this.storage.get("VIEApps-Reading-Options");
+			if (AppUtility.isNotEmpty(data) && data != "{}") {
+				AppData.Configuration.reading.options = JSON.parse(data as string);
+			}
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while loading the reading options", e);
+		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
+	}
+
+	/** Saves the reading options into storage */
+	async saveOptionsAsync(onCompleted?: (data?: any) => void) {
+		try {
+			await this.storage.set("VIEApps-Reading-Options", JSON.stringify(AppData.Configuration.reading.options));
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while saving the reading options into storage", e);
+		}
+		onCompleted != undefined && onCompleted(AppData.Configuration.reading.options);
+	}
+
+	/** Loads the bookmarks from storage */
+	async loadBookmarksAsync(onCompleted?: () => void) {
+		AppData.Configuration.reading.bookmarks = new Collections.Dictionary<string, AppModels.Bookmark>();
+		try {
+			let data = await this.storage.get("VIEApps-Bookmarks");
+			if (AppUtility.isNotEmpty(data) && data != "{}" && data != "[]") {
+				new List<any>(JSON.parse(data as string)).ForEach(b => {
+					let bookmark = AppModels.Bookmark.deserialize(b);
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				});
+				onCompleted != undefined && onCompleted();
+			}
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while loading the bookmarks", e);
+		}
+	}
+
+	/** Saves the bookmarks into storage */
+	async saveBookmarksAsync(onCompleted?: () => void) {
+		try {
+			let bookmarks = new List(AppData.Configuration.reading.bookmarks.values())
+				.OrderByDescending(b => b.Time)
+				.Take(30)
+				.ToArray();
+			await this.storage.set("VIEApps-Bookmarks", JSON.stringify(bookmarks));
+			onCompleted != undefined && onCompleted();
+		}
+		catch (e) {
+			console.error("[Books]: Error occurred while saving the bookmarks into storage", e);
+		}
+	}
+
+	/** Updates a bookmark */
+	async updateBookmarksAsync(id: string, chapter: number, offset: number, onCompleted?: () => void) {
+		var bookmark = new AppModels.Bookmark();
+		bookmark.ID = id;
+		bookmark.Chapter = chapter;
+		bookmark.Position = offset;
+
+		AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+		await this.saveBookmarksAsync(onCompleted);
+	}
+
+	/** Sends the request to get bookmarks from APIs */
+	getBookmarks(onCompleted?: () => void) {
+		AppRTU.send({
+			ServiceName: "books",
+			ObjectName: "bookmarks",
+			Verb: "GET"
+		});
+		onCompleted != undefined && onCompleted();
+	}
+
+	/** Syncs the bookmarks with APIs */
+	sendBookmarks(onCompleted?: () => void) {
+		if (this.configSvc.isAuthenticated()) {
+			AppRTU.send({
+				ServiceName: "books",
+				ObjectName: "bookmarks",
+				Verb: "POST",
+				Body: JSON.stringify(new List(AppData.Configuration.reading.bookmarks.values())
+					.OrderByDescending(b => b.Time)
+					.Take(30)
+					.ToArray())
+			});
+			onCompleted != undefined && onCompleted();
+		}
+	}
+
+	/** Merges the bookmarks with APIs */
+	syncBookmarks(data: any, onCompleted?: () => void) {
+		if (AppData.Configuration.session.account && AppData.Configuration.session.account.profile) {
+			AppData.Configuration.session.account.profile.LastSync = new Date();
+		}
+		
+		if (AppUtility.isTrue(data.Sync)) {
+			AppData.Configuration.reading.bookmarks.clear();
 		}
 
+		new List<any>(data.Objects)
+			.ForEach(b => {
+				let bookmark = AppModels.Bookmark.deserialize(b);
+				if (!AppData.Configuration.reading.bookmarks.containsKey(bookmark.ID)) {
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				}
+				else if (bookmark.Time > AppData.Configuration.reading.bookmarks.getValue(bookmark.ID).Time) {
+					AppData.Configuration.reading.bookmarks.setValue(bookmark.ID, bookmark);
+				}
+			});
+
+		new List(AppData.Configuration.reading.bookmarks.values())
+			.ForEach((b, i)  => {
+				AppUtility.setTimeout(() => {
+					if (!AppData.Books.getValue(b.ID)) {
+						AppRTU.send({
+							ServiceName: "books",
+							ObjectName: "book",
+							Verb: "GET",
+							Query: {
+								"object-identity": b.ID
+							}
+						});
+					}
+				}, 456 + (i * 10));
+			});
+
+		AppUtility.setTimeout(async () => {
+			AppEvents.broadcast("BookmarksAreUpdated");
+			await this.saveBookmarksAsync(onCompleted);
+		});
+	}
+
+	/** Sends the request to delete a bookmark from APIs */
+	deleteBookmark(id: string, onCompleted?: () => void) {
+		AppRTU.send({
+			ServiceName: "books",
+			ObjectName: "bookmarks",
+			Verb: "DELETE",
+			Query: {
+				"object-identity": id
+			}
+		});
+		AppData.Configuration.reading.bookmarks.remove(id);
+		onCompleted != undefined && onCompleted();
+	}
+
+	processRTU(message: any) {
 		// parse
 		var info = AppRTU.parse(message.Type);
 

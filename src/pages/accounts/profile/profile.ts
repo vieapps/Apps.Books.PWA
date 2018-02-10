@@ -15,6 +15,7 @@ import { AppModels } from "../../../models/objects";
 
 import { ConfigurationService } from "../../../services/configuration";
 import { AuthenticationService } from "../../../services/authentication";
+import { BooksService } from "../../../services/books";
 
 import { SignInPage } from "../signin/signin";
 import { HomePage } from "../../home/home";
@@ -36,7 +37,8 @@ export class ProfilePage {
 		public completerSvc: CompleterService,
 		public keyboard: Keyboard,
 		public configSvc: ConfigurationService,
-		public authSvc: AuthenticationService
+		public authSvc: AuthenticationService,
+		public booksSvc: BooksService
 	){
 		// initialize
 		this.info.state.mode = !this.configSvc.isAuthenticated() && AppUtility.isTrue(this.navParams.get("Register"))
@@ -702,7 +704,7 @@ export class ProfilePage {
 						? this.info.avatar.uploaded
 						: this.info.profile.Avatar
 					: "";
-				this.authSvc.saveProfileAsync(this.info.profile,
+				this.configSvc.saveProfileAsync(this.info.profile,
 					() => {
 						AppUtility.trackPageView("Cập nhật tài khoản", "update-account");
 						this.info.profile = AppUtility.clone(this.configSvc.getAccount().profile);						
@@ -1013,7 +1015,7 @@ export class ProfilePage {
 	}
 	
 	deleteBookmark(id: string) {
-		this.configSvc.deleteBookmark(id, () => {
+		this.booksSvc.deleteBookmark(id, () => {
 			this.buildBookmakrs();
 		});
 	}
