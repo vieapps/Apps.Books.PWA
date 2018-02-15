@@ -64,7 +64,7 @@ export namespace AppData {
 			id: null,
 			token: null,
 			url: null,
-			version: "v2.10",
+			version: "v2.12",
 		}
 	};
 

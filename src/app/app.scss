@@ -40,7 +40,7 @@ ion-menu ion-header ion-avatar img {
 
 /* active item of side menu */
 ion-menu ion-content ion-list button.active {
-	background-color: #ddd;
+	background-color: map-get($colors, light);
 }
 
 /* buttons at footer of side menu */

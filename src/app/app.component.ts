@@ -486,7 +486,7 @@ export class App {
 
 		if (this.configSvc.isAuthenticated()) {
 			this.pages.push({ name: "ProfilePage", component: ProfilePage, title: "Thông tin tài khoản", icon: "person", doPush: true, noNestedStack: true });
-			if (this.authSvc.isAdministrator()) {
+			if (this.authSvc.isSystemAdministrator()) {
 				this.pages.push({ name: "ProfileListPage", component: SearchProfilesPage, title: "Tài khoản người dùng", icon: "people" });
 			}
 		}
