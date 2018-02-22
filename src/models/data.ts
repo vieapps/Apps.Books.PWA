@@ -1,6 +1,7 @@
 import * as Collections from "typescript-collections";
 
 import { AppUtility } from "../components/utility";
+import { AppCrypto } from "../components/crypto";
 import { AppModels } from "./objects";
 
 export namespace AppData {
@@ -13,6 +14,8 @@ export namespace AppData {
 				files: "https://afs.vieapps.net/",
 				// apis: "https://apis.prj.vn/",
 				// files: "https://afs.prj.vn/",
+				// apis: "http://local-apis.vieapps.net/",
+				// files: "http://local-afs.vieapps.net/",
 				activations: "http://viebooks.net/"
 			},
 			version: "0.5",
@@ -117,62 +120,14 @@ export namespace AppData {
 		},
 
 		getKey: (info?: any, prefix?: string) => {
-			if (Paginations.getQuery(info) != null) {
+			if (Paginations.getQuery(info)) {
 				return undefined;
 			}
 
-			prefix = AppUtility.isNotEmpty(prefix) ? prefix : "B";
-			
-			var filterby = Paginations.getFilterBy(info);
-
-			var sortby = Paginations.getSortBy(info);
-			if (!AppUtility.isObject(sortby, true)) {
-				sortby = "Descending";
-			}
-			else {
-				if (prefix == "B") {
-					sortby = AppUtility.isNotEmpty(sortby.LastUpdated)
-						? sortby.LastUpdated as string
-						: "Descending"
-				}
-				else if (prefix == "A") {
-					sortby = AppUtility.isNotEmpty(sortby.Name)
-						? sortby.Name as string
-						: "Ascending"
-				}
-				else {
-					sortby = "Descending";
-				}
-			}
-
-			var key: string = undefined;
-
-			// books
-			if (prefix == "B") {
-				key = "Descending" != sortby 
-					? null
-					: filterby && filterby.And && filterby.And.Category && AppUtility.isNotEmpty(filterby.And.Category.Equals)
-						? prefix + "CAT-" + filterby.And.Category.Equals
-						: filterby && filterby.And && filterby.And.Author && AppUtility.isNotEmpty(filterby.And.Author.Equals)
-							? prefix + "AUT-" + filterby.And.Author.Equals
-							: prefix;
-			}
-
-			// accounts
-			else if (prefix == "A") {
-				key = "Ascending" != sortby 
-					? null
-					: filterby && filterby.And && filterby.And.Province && AppUtility.isNotEmpty(filterby.And.Province.Equals)
-						? prefix + "PRO-" + filterby.And.Province.Equals
-						: prefix;
-			}
-
-			// others
-			else {
-				key = prefix;
-			}
-
-			return key;
+			prefix = AppUtility.isNotEmpty(prefix) ? prefix : "O";
+			let filterby = AppUtility.clean(Paginations.getFilterBy(info) || {});
+			let sortby = AppUtility.clean(Paginations.getSortBy(info) || {});
+			return prefix + ":" + AppCrypto.md5((JSON.stringify(filterby) + JSON.stringify(sortby)).toLowerCase());
 		},
 
 		/** Gets the default pagination */

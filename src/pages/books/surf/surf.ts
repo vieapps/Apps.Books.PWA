@@ -42,7 +42,10 @@ export class SurfBooksPage {
 				},
 				Author: {
 					Equals: undefined
-				}	
+				},
+				Status: {
+					NotEquals: "Inactive"
+				}
 			}
 		},
 		sortBy: "",
@@ -197,7 +200,7 @@ export class SurfBooksPage {
 	}
 
 	search(onPreCompleted?: () => void, onPostCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, this.info.pagination, r => {
+		var request = AppData.buildRequest(this.info.filterBy, { LastUpdated: "Descending" }, this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Category.Equals)) {
 				r.FilterBy.And.Category.Equals = undefined;
 			}

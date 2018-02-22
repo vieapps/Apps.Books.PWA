@@ -147,6 +147,29 @@ export namespace AppUtility {
 	}
 
 	/**
+	 * Cleans null and undefined properties from the object
+	 * @param {any} instance The instance of an object to process
+	 * @param {function} onPreCompleted The handler to run when cleaning process is completed
+	*/
+	export function clean(instance: any, onPreCompleted?: (obj: any) => void) {
+		let propperties = Object.getOwnPropertyNames(instance);
+		for (let index = 0; index < propperties.length; index++) {
+			var name = propperties[index];
+			if (instance[name] === null || instance[name] === undefined) {
+				delete instance[name];
+			}
+			else if (isObject(instance[name])) {
+				clean(instance[name]);
+				if (Object.getOwnPropertyNames(instance[name]).length < 1) {
+					delete instance[name];
+				}
+			}
+		}
+		onPreCompleted != undefined && onPreCompleted(instance);
+		return instance;
+	}
+
+	/**
 	  * Clones the object (means do stringify the source object and re-parse via JSON (need to re-update all special attributes, like Date, Collection, ... manually)
 	  * @param source The source object for cloning
 	  * @param beRemoved The array of attributes of the cloning object to be removed before returing
@@ -428,6 +451,11 @@ export namespace AppUtility {
 			let uri = parseUri();
 			return uri.protocol + uri.host + (uri.port != "" ? ":" + uri.port : "") + uri.path;
 		}
+	}
+
+	/** Gets the CSS classes for working with label */
+	export function getTextLabelCss() {
+		return "label " + (isAppleOS() ? "label-ios" : "label-md");
 	}
 
 	/** Gets the CSS classes for working with input control */

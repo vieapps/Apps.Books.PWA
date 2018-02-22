@@ -7,16 +7,13 @@ export namespace AppEvents {
 	var handlers: any = {};
 
 	var subject = new Rx.Subject<{ event: string, args: any }>();
-	var observable = Rx.Observable.from(subject);
-	observable.subscribe(
-		({ event, args }) => {
-			if (handlers[event]) {
-				for (let handler of handlers[event]) {
-					handler.func({ "event": event, "args": args });
-				}
+	Rx.Observable.from(subject).subscribe(({ event, args }) => {
+		if (handlers[event]) {
+			for (let handler of handlers[event]) {
+				handler.func({ "event": event, "args": args });
 			}
 		}
-	);
+	});
 
 	/**
 	  * Registers a handler for processing data when a specified event has been raised/broadcasted

@@ -16,39 +16,35 @@ export namespace AppRTU {
 	var objectScopeHandlers: any = {};
 
 	var serviceScopeSubject = new Rx.Subject<{ service: string, message: any }>();
-	Rx.Observable.from(serviceScopeSubject).subscribe(
-		({ service, message }) => {
-			if (serviceScopeHandlers[service]) {
-				for (let handler of serviceScopeHandlers[service]) {
-					handler.func(message);
-				}
+	Rx.Observable.from(serviceScopeSubject).subscribe(({ service, message }) => {
+		if (serviceScopeHandlers[service]) {
+			for (let handler of serviceScopeHandlers[service]) {
+				handler.func(message);
 			}
-			else {
-				AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (service scope)", "<" + service + ">", message);
-			}
-		},
-		(error: any) => {
-			console.error("[RTU]: Got an error", error);
 		}
-	);
+		else {
+			AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (service scope)", "<" + service + ">", message);
+		}
+	},
+	(error: any) => {
+		console.error("[RTU]: Got an error", error);
+	});
 
 	var objectScopeSubject = new Rx.Subject<{ service: string, object: string, message: any }>();
-	Rx.Observable.from(objectScopeSubject).subscribe(
-		({ service, object, message }) => {
-			let type = service + "#" + object;
-			if (serviceScopeHandlers[type]) {
-				for (let handler of serviceScopeHandlers[type]) {
-					handler.func(message);
-				}
+	Rx.Observable.from(objectScopeSubject).subscribe(({ service, object, message }) => {
+		let type = service + "#" + object;
+		if (serviceScopeHandlers[type]) {
+			for (let handler of serviceScopeHandlers[type]) {
+				handler.func(message);
 			}
-			else {
-				AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (object scope)", "<" + type + ">", message);
-			}
-		},
-		(error: any) => {
-			console.error("[RTU]: Got an error", error);
 		}
-	);
+		else {
+			AppUtility.isDebug() && console.warn("[RTU]: Got a message but no suitable handler is found (object scope)", "<" + type + ">", message);
+		}
+	},
+	(error: any) => {
+		console.error("[RTU]: Got an error", error);
+	});
 
 	/**
 	  * Registers a handler for processing RTU messages at scope of a service
@@ -282,6 +278,7 @@ export namespace AppRTU {
 		
 		if (info.Service == "Pong") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a heartbeat");
+			call("rtu", "session", "PING")
 		}
 		else if (info.Service == "Knock") {
 			AppUtility.isDebug() && console.log("[RTU]: Knock, Knock, Knock ... => Yes, I'm right here (" + (new Date()).toJSON() + ")");
@@ -289,7 +286,6 @@ export namespace AppRTU {
 		else if (info.Service == "OnlineStatus") {
 			AppUtility.isDebug() && console.log("[RTU]: Got a flag to update status & run scheduler");
 			call("users", "status", "GET");
-			call("rtu", "session", "PING")
 			if (serviceScopeHandlers["Scheduler"]) {
 				serviceScopeSubject.next({ "service": "Scheduler", "message": message });
 			}

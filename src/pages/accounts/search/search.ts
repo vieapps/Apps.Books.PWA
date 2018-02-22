@@ -112,7 +112,7 @@ export class SearchProfilesPage {
 
 	// search & build the listing of account profiles
 	doSearch(onCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
+		var request = AppData.buildRequest(this.info.filterBy, { Name: "Ascending" }, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
 			if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
 				r.FilterBy.And.Province.Equals = undefined;
 			}

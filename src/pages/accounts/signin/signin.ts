@@ -148,7 +148,7 @@ export class SignInPage {
 		this.navCtrl.pop();
 	}
 
-	showError(data: any) {
+	showError(data: any, handler?: () => void) {
 		var message = "", ctrl = null;
 		if (AppUtility.isGotWrongAccountOrPasswordException(data)) {
 			message = "Email hoặc mật khẩu không đúng!";
@@ -158,11 +158,8 @@ export class SignInPage {
 			if (AppUtility.isGotCaptchaException(data)) {
 				message = "Mã xác thực không đúng";
 			}
-			else if (AppUtility.isObject(data, true)) {
-				message = data.Error.Message;
-			}
 			else {
-				message = "Đã xảy ra lỗi!";
+				message = data.Message ? data.Message : "Đã xảy ra lỗi!";
 			}
 			ctrl = this.info.state.mode == "SignIn" ? this.passwordCtrl : this.captchaCtrl;
 		}
@@ -180,8 +177,13 @@ export class SignInPage {
 	      text: "Đóng",
 	      handler: () => {
 					this.info.state.processing = false;
-					this.info.account.password = "";
-	      	AppUtility.focus(ctrl, this.keyboard);
+					if (handler != undefined) {
+						handler();
+					}
+					else {
+						this.info.account.password = "";
+						AppUtility.focus(ctrl, this.keyboard);
+					}
 	      }
 	    }]
 	  }).present();
@@ -267,7 +269,10 @@ export class SignInPage {
 					this.exit();
 				},
 				(error: any) => {
-					this.showError(error);
+					this.showError(error, () => {
+						this.info.otp.value = "";
+						AppUtility.focus(this.otpCtrl, this.keyboard, 345);
+					});
 				}
 			);
 		}
