@@ -270,25 +270,6 @@ export namespace AppUtility {
 		}, defer || 0);
 	}
 
-	/** Gets the cover image of a book */
-	export function getCoverImage(cover?: string, noCover?: string) {
-		return isNotEmpty(cover)
-			? cover
-			: isNotEmpty(noCover)
-				? noCover
-				: AppData.Configuration.app.uris.files + "books/media-files/no/cover/image.png";
-	}
-
-	/** Gets the avatar image (using services of Gravatar.com) */
-	export function getGravatarImage(email?: string, noAvatar?: string) {
-		noAvatar = isNotEmpty(noAvatar)
-			? noAvatar
-			: AppData.Configuration.app.uris.files + "avatars/" + AppData.Configuration.app.host + "-no-avatar.png";
-		return isNotEmpty(email)
-			? "https://secure.gravatar.com/avatar/" + AppCrypto.md5(email.toLowerCase().trim()) + "?s=300&d=" + encodeURIComponent(noAvatar)
-			: noAvatar;
-	}
-
 	/** Gets the avatar image */
 	export function getAvatarImage(info?: any, noAvatar?: string) {
 		let avatar: string = isObject(info, true) && isNotEmpty(info.Avatar)
@@ -296,9 +277,19 @@ export namespace AppUtility {
 			: isObject(info, true) && isNotEmpty(info.Gravatar)
 				? info.Gravatar
 				: "";
-		return avatar == "" && isObject(info, true)
-			? getGravatarImage(isObject(info.Contact, true) ? info.Contact.Email : info.Email, noAvatar)
-			: avatar;
+		if (avatar == "" && isObject(info, true))
+		{
+			noAvatar = isNotEmpty(noAvatar)
+				? noAvatar
+				: AppData.Configuration.app.uris.files + "avatars/" + AppData.Configuration.app.host + "-no-avatar.png";
+			let email = isObject(info.Contact, true)
+				? info.Contact.Email
+				: info.Email;
+			return isNotEmpty(email)
+				? "https://secure.gravatar.com/avatar/" + AppCrypto.md5(email.toLowerCase().trim()) + "?s=300&d=" + encodeURIComponent(noAvatar)
+				: noAvatar;
+		}
+		return avatar;
 	}
 
 	/** Gets the query from JSON */
