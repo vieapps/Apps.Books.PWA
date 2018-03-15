@@ -543,7 +543,7 @@ export class ConfigurationService {
 		&& AppData.Configuration.session.id == message.Data.ID
 		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
 			// update session with new access token
-			if (message.Data.Mode == "Update") {
+			if (info.Event == "Update") {
 				this.updateSessionAsync(message.Data, () => {
 					AppUtility.isDebug() && console.warn("[Configuration]: Update session with the new token", AppUtility.isDebug() ? AppData.Configuration.session : "");
 					this.patchAccount();
@@ -552,7 +552,7 @@ export class ConfigurationService {
 			}
 
 			// revoke current session
-			else if (message.Data.Mode == "Revoke") {
+			else if (info.Event == "Revoke") {
 				this.deleteSessionAsync(() => {
 					AppEvents.broadcast("AccountIsUpdated");
 					this.initializeAsync(() => {
