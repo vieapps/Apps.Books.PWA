@@ -236,17 +236,17 @@ export class StatisticsService {
 		var info = AppRTU.parse(message.Type);
 
 		// status
-		if (info.Object == "Status") {
+		if (info.Event == "Status") {
 			this.updateStatusAsync(message.Data.Objects);
 		}
 		
 		// categories
-		else if (info.Object == "Categories") {
+		else if (info.Event == "Categories") {
 			this.updateCategoriesAsync(message.Data.Objects);
 		}
 
 		// authors
-		else if (info.Object == "Authors") {
+		else if (info.Event == "Authors") {
 			this.updateAuthorsAsync(message.Data.Char, message.Data.Objects);
 		}
 	}
