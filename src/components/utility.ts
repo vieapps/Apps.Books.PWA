@@ -1,5 +1,6 @@
 import { ElementRef, Pipe } from "@angular/core";
 import { DecimalPipe } from "@angular/common";
+import { Response } from "@angular/http";
 
 import { Keyboard } from "@ionic-native/keyboard";
 import { GoogleAnalytics } from "@ionic-native/google-analytics";
@@ -206,9 +207,14 @@ export namespace AppUtility {
 
 		// not Apple iOS
 		if (!isAppleOS()) {
-			if (typeof control.setFocus == "function") {
+			if (typeof control.setFocus == "function" || typeof control.focus == "function") {
 				setTimeout(() => {
-					control.setFocus();
+					if (typeof control.setFocus == "function") {
+						control.setFocus();
+					}
+					else {
+						control.focus();
+					}
 					isNotNull(keyboard) && isNativeApp() && keyboard.show();
 				}, defer || (isNativeApp() ? 456 : 345));
 			}
@@ -222,14 +228,14 @@ export namespace AppUtility {
 
 		// Apple iOS => use native element instead of Ionic element
 		else {
-			var ctrl = control instanceof ElementRef
+			let ctrl = control instanceof ElementRef
 				? (control as ElementRef).nativeElement
 				: control._elementRef && control._elementRef instanceof ElementRef
 					? (control._elementRef as ElementRef).nativeElement
 					: undefined;
 			ctrl != undefined && setTimeout(() => {
 				ctrl.focus();
-			}, defer || 123);
+			}, defer || 345);
 		}
 	}
 
@@ -261,12 +267,12 @@ export namespace AppUtility {
 
 	/**
 	 * Sets time-out to run a function
-	 * @param func The function to run
+	 * @param action The action to run
 	 * @param defer The defer times (in miliseconds)
 	 */
-	export function setTimeout(func: () => void, defer?: number) {
-		func != undefined && window.setTimeout(() => {
-			func();
+	export function setTimeout(action: () => void, defer?: number) {
+		action != undefined && action != null && window.setTimeout(() => {
+			action();
 		}, defer || 0);
 	}
 
@@ -454,6 +460,16 @@ export namespace AppUtility {
 		return "text-input " + (isAppleOS() ? "text-input-ios" : "text-input-md");
 	}
 
+	/** Get the button for working with action sheet */
+	export function getActionButton(text: string, icon?: string, handler?: () => boolean | void, role?: string) {
+		return {
+			text: text,
+			icon: isAppleOS() ? undefined : icon,
+			handler: handler,
+			role: role
+		};
+	}
+
 	/** Gets the array of objects with random scoring number (for ordering) */
 	export function getTopScores(objects: Array<any>, take?: number, excluded?: string, dontAddRandomScore?: boolean, nameOfRandomScore?: string) {
 		dontAddRandomScore = dontAddRandomScore != undefined
@@ -584,12 +600,14 @@ export namespace AppUtility {
 		if (window.location.href.indexOf("file://") < 0) {
 			// Facebook SDK
 			if (AppUtility.isNotEmpty(AppData.Configuration.facebook.id)) {
-				let fbVersion = AppUtility.isNotEmpty(AppData.Configuration.facebook.version) ? AppData.Configuration.facebook.version : "v2.8";
+				let version = AppUtility.isNotEmpty(AppData.Configuration.facebook.version)
+					? AppData.Configuration.facebook.version
+					: "v2.12";
 				if (!window.document.getElementById("facebook-jssdk")) {
 					let js = window.document.createElement("script");
 					js.id = "facebook-jssdk";
 					js.async = true;
-					js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + fbVersion;
+					js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=" + version;
 
 					let ref = window.document.getElementsByTagName("script")[0];
 					ref.parentNode.insertBefore(js, ref);
@@ -601,7 +619,7 @@ export namespace AppUtility {
 						status: true,
 						cookie: true,
 						xfbml: true,
-						version: fbVersion
+						version: version
 					});
 					this.auth.watchFacebookConnect();
 				};
@@ -621,8 +639,15 @@ export namespace AppUtility {
 
 	/** Show error to console and run next action */
 	export function showError(message: string, error: any, next?: (error?: any) => void) {
-		if (error && error.Type && error.Message) {
-			console.error(message + " => [" + error.Type + "]: " + error.Message);
+		try {
+			error = error != undefined && error instanceof Response && typeof error.json == "function"
+				? error.json()
+				: error;
+		}
+		catch (e) {}
+
+		if (isObject(error, true) && error.Type && error.Message) {
+			console.error(message + " => [" + error.Type + "]: " + error.Message + "\nCorrelation ID: " + error.CorrelationID);
 			next != undefined && next(error);
 		}
 		else {
@@ -692,9 +717,9 @@ export namespace AppUtility {
 	}
 
 	/** Converts object to integer */
-	export function toInt(string: string) {
-		return isNotEmpty(string)
-			? parseInt(string)
+	export function toInt(value: any) {
+		return isNotEmpty(value)
+			? parseInt(value)
 			: 0;
 	}
 

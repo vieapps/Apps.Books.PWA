@@ -84,12 +84,13 @@ export namespace AppModels {
 
 		static update(data: any) {
 			if (AppUtility.isObject(data, true)) {
-				var account = data instanceof Account
+				let account = data instanceof Account
 					? data as Account
 					: Account.deserialize(data);
-				if (AppData.Configuration.session.jwt != null && AppData.Configuration.session.jwt.uid == account.ID) {
+				if (AppData.Configuration.session.token != null && AppData.Configuration.session.token.uid == account.ID) {
 					account.IsOnline = true;
 				}
+				
 				AppData.Accounts.setValue(account.ID, account);
 			}
 		}

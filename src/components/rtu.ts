@@ -2,7 +2,6 @@ import { Response } from "@angular/http";
 import * as Rx from "rxjs";
 
 import { AppUtility } from "./utility";
-import { AppCrypto } from "./crypto";
 import { AppAPI } from "./api";
 import { AppData } from "../models/data";
 
@@ -120,34 +119,42 @@ export namespace AppRTU {
 		// initialize
 		status = "initializing";
 		uri = AppData.Configuration.app.uris.apis.replace("http://", "ws://").replace("https://", "wss://")
-			+ "rtu/" + AppCrypto.urlEncode(Math.random() + "").toLowerCase()
-			+ "?x-request=" + AppUtility.getBase64UrlParam(AppAPI.getAuthHeaders())
+			+ "rtu?x-request=" + AppUtility.getBase64UrlParam(AppAPI.getAuthHeaders())
 			+ (AppUtility.isTrue(isRestart) ? "&x-restart=" : "");
 
 		// receiver
 		processor = new WebSocket(uri);
 
-		processor.onopen = (event) => {
+		processor.onopen = event => {
 			status = "ready";
 			AppUtility.isDebug() && console.info("[RTU]: Updater is opened...");
 		};
 
-		processor.onclose = (event) => {
+		processor.onclose = event => {
 			status = "close";
-			AppUtility.isDebug() && console.info("[RTU]: Updater is closed...");
+			AppUtility.isDebug() && console.info("[RTU]: Updater is closed...", event.type, event.reason);
 			AppUtility.isNotEmpty(uri) && restart();
 		};
 
-		processor.onerror = (event) => {
+		processor.onerror = event => {
 			status = "error";
 			AppUtility.isDebug() && console.warn("[RTU]: Updater got an error", event);
 		};
 
-		processor.onmessage = (event) => {
+		processor.onmessage = event => {
 			let message = JSON.parse(event.data);
-			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error" && AppUtility.isGotSecurityException(message.Error)) {
-				console.info("[RTU]: Stop when updater got a security issue");
-				stop();
+			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error") {
+				if (AppUtility.isGotSecurityException(message.Error)) {
+					console.warn("[RTU]: Stop when updater got a security issue", message.Data);
+					stop();
+				}
+				else if (message.Data && "InvalidRequestException" == message.Data.Type) {
+					console.warn("[RTU]: Stop when updater got an invalid data for requesting", message.Data);
+					stop();
+				}
+				else {
+					console.warn("[RTU]: Updater got an error", message.Data);
+				}
 			}
 			else {
 				process(message);

@@ -22,7 +22,7 @@ import { HomePage } from "../../home/home";
 import { ReadBookPage } from "../../books/read/read";
 
 @Component({
-	selector: "page-profile",
+	selector: "profile-page",
 	templateUrl: "profile.html",
 })
 export class ProfilePage {
@@ -63,7 +63,10 @@ export class ProfilePage {
 			mode: "Profile",
 			processing: true,
 			valid: true,
-			css: ""
+			css: {
+				label: AppUtility.getTextLabelCss(),
+				input: AppUtility.getTextInputCss()
+			},
 		},
 		id: "",
 		profile: undefined,
@@ -73,7 +76,7 @@ export class ProfilePage {
 			uploaded: ""
 		},
 		rating: 0.0,
-		bookmarks: [],
+		bookmarks: new Array<{ id: string, title: string, position: string, time: Date }>(),
 		captcha: {
 			code: "",
 			uri: ""
@@ -103,10 +106,11 @@ export class ProfilePage {
 		invitation: {
 			name: undefined,
 			email: undefined,
-			url: undefined
+			url: undefined,
+			relatedInfo: {}
 		},
 		canSeeOthers: false,
-		isAppleOS: AppUtility.isAppleOS()
+		canInvite: false
 	};
 	permissions = {
 		info: {
@@ -130,7 +134,7 @@ export class ProfilePage {
 			privileges: {}
 		}
 	};
-	completerData: CompleterData = undefined;
+	addressCompleter: CompleterData = undefined;
 	cropper = {
 		settings: new CropperSettings(),
 		data: {
@@ -173,19 +177,19 @@ export class ProfilePage {
 	// page events
 	ionViewDidLoad() {
 		this.info.state.processing = false;
-		this.info.state.css = AppUtility.getTextInputCss();
-
 		AppEvents.on(
 			"AccountIsUpdated",
-			(info: any) => {
-				this.initialize();
+			info => {
+				if (info.args.Type && info.args.Type == "Profile") {
+					this.initialize();
+				}
 			},
 			"UpdateAccountInfoEventHandler"
 		);
 			
 		AppEvents.on(
 			"BookmarksAreUpdated",
-			(info: any) => {
+			info => {
 				this.buildBookmakrs();
 			},
 			"UpdateBookmarksEventHandler"
@@ -215,7 +219,6 @@ export class ProfilePage {
 				AppUtility.trackPageView(this.info.title, "user-account/" + this.info.id);
 			}
 		}
-		
 	}
 
 	ionViewWillUnload() {
@@ -224,7 +227,7 @@ export class ProfilePage {
 		AppEvents.broadcast("SetPreviousPageActive", { current: "ProfilePage" });
 	}
 
-	// run initialize
+	// helpers
 	initialize() {
 		if (this.info.state.mode == "Register") {
 			this.info.title = "Đăng ký tài khoản";
@@ -260,160 +263,65 @@ export class ProfilePage {
 				? this.info.profile.Name
 				: "Thông tin tài khoản";
 
-			var rating = (this.info.profile as AppModels.Account).RatingPoints.getValue("General");
+			let rating = (this.info.profile as AppModels.Account).RatingPoints.getValue("General");
 			this.info.rating = rating != undefined ? rating.Average : 0;
+	
+			if (this.canSetPrivileges()) {
+				this.authSvc.getPrivilegesAsync(this.info.profile.ID, data => {
+					this.preparePrivileges(data);
+				});
+			}
 
 			if (this.info.profile.ID == AppData.Configuration.session.account.id) {
 				this.buildBookmakrs();
 			}
-			else if (this.authSvc.isAdministrator()) {
-				this.authSvc.getPrivilegesAsync(this.info.profile.ID, (data: any) => {
-					this.preparePrivileges(data);
-				});
-			}
 		}
 
 		this.info.address = AppUtility.initializeAddress(this.info.profile);
-		this.completerData = this.completerSvc.local(this.info.address.addresses, "title,titleANSI", "title");
+		this.addressCompleter = this.completerSvc.local(this.info.address.addresses, "title,titleANSI", "title");
 	}
 
-	// event handlers
 	showActions() {
-		var actionSheet = this.actionSheetCtrl.create({
-			enableBackdropDismiss: true
+		let actionSheet = this.actionSheetCtrl.create({
+			enableBackdropDismiss: true,
+			buttons: this.info.profile.ID == AppData.Configuration.session.account.id
+				? [
+					AppUtility.getActionButton("Cập nhật", "create", () => { this.openUpdate(); }),
+					AppUtility.getActionButton("Đổi mật khẩu", "key", () => { this.openChangePassword(); }),
+					AppUtility.getActionButton("Đổi email đăng nhập", "mail", () => { this.openChangeEmail(); }),
+					AppUtility.getActionButton("Thiết đặt bảo mật", "unlock", () => { this.openUpdateOTP(); })
+				]
+				: []
 		});
-
-		if (this.info.profile.ID == AppData.Configuration.session.account.id) {
-			actionSheet.addButton({
-				text: "Cập nhật",
-				icon: this.info.isAppleOS ? undefined : "create",
-				handler: () => {
-					this.openUpdate();
-				}
-			});
-			actionSheet.addButton({
-				text: "Đổi mật khẩu",
-				icon: this.info.isAppleOS ? undefined : "key",
-				handler: () => {
-					this.openChangePassword();
-				}
-			});
-			actionSheet.addButton({
-				text: "Đổi email đăng nhập",
-				icon: this.info.isAppleOS ? undefined : "mail",
-				handler: () => {
-					this.openChangeEmail();
-				}
-			});
-			actionSheet.addButton({
-				text: "Thiết đặt bảo mật",
-				icon: this.info.isAppleOS ? undefined : "unlock",
-				handler: () => {
-					this.openUpdateOTP();					
-				}
-			});
-		}
-		else if (this.authSvc.isAdministrator() && this.info.id != "" && this.info.id != AppData.Configuration.session.account.id) {
-			actionSheet.addButton({
-				text: "Đặt quyền truy cập",
-				icon: this.info.isAppleOS ? undefined : "settings",
-				handler: () => {
-					this.openPrivileges();
-				}
-			});
-		}
 
 		if (this.info.id == "") {
-			actionSheet.addButton({
-				text: "Đăng xuất",
-				icon: this.info.isAppleOS ? undefined : "log-out",
-				handler: () => {
-					this.doSignOut();
-				}
-			});
+			actionSheet.addButton(AppUtility.getActionButton("Đăng xuất", "log-out", () => { this.doSignOut(); }));
 		}
 
-		actionSheet.addButton({
-			text: "Huỷ bỏ",
-			icon: this.info.isAppleOS ? undefined : "close",
-			role: "cancel"
-		});
+		else if (this.info.id != AppData.Configuration.session.account.id && this.canSetPrivileges()) {
+			actionSheet.addButton(AppUtility.getActionButton("Đặt quyền truy cập", "settings", () => { this.openPrivileges(); }));
+		}
 
+		actionSheet.addButton(AppUtility.getActionButton("Huỷ bỏ", "close", undefined, "cancel"));
 		actionSheet.present();
 	}
 
-	openInvitation() {
-		this.setBackButton(false);
-		this.info.state.mode = "Invite";
-		this.info.title = "Mời bạn bè";
-		this.info.invitation.url = AppUtility.getUri() + "#?refer=" + AppUtility.getBase64UrlParam({ uid: this.info.profile.ID, section: "WPA" }) + "&utm_campaign=WPA-Direct-Invitation&utm_medium=Direct-Invitation-Link";
-		AppUtility.focus(this.guestnameCtrl, this.keyboard);
+	canSetPrivileges() {
+		return AppData.Configuration.app.accounts.privileges == "ServiceAdministrator"
+			? this.authSvc.isServiceAdministrator()
+			: this.authSvc.isSystemAdministrator();
 	}
 
-	openUpdate() {
-		this.setBackButton(false);
-		this.info.state.mode = "Update";
-		this.info.title = "Cập nhật tài khoản";
-		this.cropper.data.image = this.info.avatar.current;
-		AppUtility.focus(this.nameCtrl, this.keyboard);
+	canInvite() {
+		return AppData.Configuration.app.accounts.everyoneCanInvite
+			? this.configSvc.isAuthenticated()
+			: this.authSvc.isServiceAdministrator();
 	}
 
-	openChangePassword() {
-		this.setBackButton(false);
-		this.info.state.mode = "ChangePassword";
-		this.info.title = "Đổi mật khẩu";
-		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
+	setBackButton(state: boolean) {
+		this.viewCtrl.showBackButton(state);
 	}
 
-	openChangeEmail() {
-		this.setBackButton(false);
-		this.info.state.mode = "ChangeEmail";
-		this.info.title = "Đổi email";
-		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
-	}
-
-	openUpdateOTP() {
-		this.setBackButton(false);
-		this.info.state.mode = "UpdateOTP";
-		this.info.title = "Thiết đặt bảo mật";
-		this.info.otp.required = AppData.Configuration.session.account.twoFactors.required;
-		this.info.otp.providers = AppData.Configuration.session.account.twoFactors.providers;
-		this.info.otp.provisioning = "";
-		this.info.otp.url = "";
-		this.info.otp.value = "";
-	}
-
-	getRole(objectName?: string) {
-		return this.authSvc.isInAppRole(objectName || "", "Administrator", this.permissions.current.privileges)
-			? "Administrator"
-			: this.authSvc.isInAppRole(objectName || "", "Moderator", this.permissions.current.privileges)
-				? "Moderator"
-				: "Viewer"
-	}
-
-	preparePrivileges(data: any) {
-		if (data.Status == "OK") {
-			this.permissions.current.privileges = this.configSvc.prepareAccount(data.Data).Privileges;
-			this.permissions.current.role = this.getRole();
-		}
-	}
-
-	openPrivileges() {
-		this.setBackButton(false);
-		this.info.state.mode = "SetPrivileges";
-		this.info.title = "Đặt quyền truy cập";
-
-		this.permissions.update.role = this.permissions.current.role;
-		new List<any>(this.permissions.info.objects)
-			.ForEach(o => {
-				let privilege = new List<AppModels.Privilege>(this.permissions.current.privileges).FirstOrDefault(p => p.ServiceName == "books" && p.ObjectName == o.value);
-				this.permissions.update.privileges[o.value] = privilege
-					? privilege.Role
-					: this.getRole(o.value);
-			});
-	}
-
-	// helpers
 	renewCaptcha(onCompleted?: () => void) {
 		this.authSvc.registerCaptchaAsync(
 			() => {
@@ -428,43 +336,6 @@ export class ProfilePage {
 		);
 	}
 
-	selectAddress(item: any) {
-		if (AppUtility.isObject(item, null) && AppUtility.isObject(item.originalObject, null)) {
-			this.info.address.current = item.originalObject;
-		}
-	}
-
-	setBackButton(state: boolean) {
-		this.viewCtrl.showBackButton(state);
-	}
-
-	cancel() {
-		if (this.info.state.mode == "Register") {
-			this.exit();
-		}
-		else {
-			this.cancelUpdate();
-		}
-	}
-
-	cancelUpdate() {
-		this.hideLoading();
-		this.contentCtrl.scrollToTop().then(() => {
-			this.info.state.processing = false;
-			this.setBackButton(true);
-			this.info.state.mode = "Profile";
-			this.info.title = "Thông tin tài khoản";
-		});
-	}
-
-	exit() {
-		this.navCtrl.pop();
-	}
-
-	openGoogleMaps() {
-		AppUtility.openGoogleMaps(this.info.profile.FullAddress);
-	}
-
 	isNotNull(value: string) {
 		return AppUtility.isNotNull(value);
 	}
@@ -477,7 +348,99 @@ export class ProfilePage {
 		return AppUtility.isValidEmail(email);
 	}
 
-	isValidInfo(form: NgForm) {
+	showLoading(msg: string) {
+		this.loading = this.loadingCtrl.create({ content: msg });
+		this.loading.present();
+	}
+
+	hideLoading() {
+		if (this.loading != undefined) {
+			this.loading.dismiss();
+			this.loading = undefined;
+		}
+	}
+
+	showError(data: any, setFocus?: () => void) {
+		this.hideLoading();
+		this.info.state.processing = false;
+		var message = "", ctrl = null;
+		if (AppUtility.isGotWrongAccountOrPasswordException(data)) {
+			message = "Mật khẩu hiện tại không đúng!";
+			ctrl = this.oldPasswordCtrl;
+		}
+		else if (AppUtility.isGotCaptchaException(data)) {
+			message = "Mã xác thực không đúng";
+			ctrl = this.info.state.mode == "Register" ? this.captchaCtrl : this.changeCaptchaCtrl;
+		}
+		else {
+			message = AppUtility.isObject(data) && AppUtility.isNotEmpty(data.Message)
+				? data.Message
+				: "Đã xảy ra lỗi!"
+		}
+
+		if (this.info.state.mode != "Update" && this.info.state.mode != "SetPrivileges") {
+			this.renewCaptcha();
+		}
+
+		this.showAlert(
+			"Lỗi!",
+			message,
+			setFocus != undefined
+				? setFocus
+				: () => {
+					AppUtility.focus(ctrl, this.keyboard);
+				}
+		);
+	}
+
+	showAlert(title: string, message: string, handler?: () => void) {
+		this.hideLoading();
+		this.alertCtrl.create({
+			title: title,
+			message: message,
+			enableBackdropDismiss: false,
+			buttons: [{
+				text: "Đóng",
+				handler: handler
+			}]
+		}).present();
+	}
+
+	onAddressSelected(item: any) {
+		this.info.address.current = AppUtility.isObject(item, null) && AppUtility.isObject(item.originalObject, null)
+			? item.originalObject
+			: undefined;
+	}
+
+	openGoogleMaps() {
+		AppUtility.openGoogleMaps(this.info.profile.FullAddress);
+	}
+
+	exit() {
+		this.navCtrl.pop();
+	}
+	
+	cancelUpdate() {
+		this.hideLoading();
+		this.contentCtrl.scrollToTop().then(() => {
+			this.info.state.processing = false;
+			this.setBackButton(true);
+			this.info.state.mode = "Profile";
+			this.info.title = "Thông tin tài khoản";
+		});
+	}
+	
+	cancel() {
+		if (this.info.state.mode == "Register") {
+			this.exit();
+		}
+		else {
+			this.cancelUpdate();
+		}
+	}
+
+	// validate data of the form
+	validate(form: NgForm) {
 		if (!form.valid) {
 			if (!form.controls.name.valid) {
 				AppUtility.focus(this.nameCtrl, this.keyboard);
@@ -541,71 +504,13 @@ export class ProfilePage {
 		}
 	}
 
-	showLoading(msg: string) {
-		this.loading = this.loadingCtrl.create({ content: msg });
-		this.loading.present();
-	}
-
-	hideLoading() {
-		if (this.loading != undefined) {
-			this.loading.dismiss();
-			this.loading = undefined;
-		}
-	}
-
-	showError(data: any, setFocus?: () => void) {
-		this.hideLoading();
-		this.info.state.processing = false;
-		var message = "", ctrl = null;
-		if (AppUtility.isGotWrongAccountOrPasswordException(data.Error)) {
-			message = "Mật khẩu hiện tại không đúng!";
-			ctrl = this.oldPasswordCtrl;
-		}
-		else if (AppUtility.isGotCaptchaException(data.Error)) {
-			message = "Mã xác thực không đúng";
-			ctrl = this.info.state.mode == "Register" ? this.captchaCtrl : this.changeCaptchaCtrl;
-		}
-		else {
-			message = AppUtility.isObject(data.Error) && AppUtility.isNotEmpty(data.Error.Message)
-				? data.Error.Message
-				: "Đã xảy ra lỗi!"
-		}
-
-		if (this.info.state.mode != "Update" && this.info.state.mode != "SetPrivileges") {
-			this.renewCaptcha();
-		}
-
-		this.showAlert(
-			"Lỗi!",
-			message,
-			setFocus != undefined
-				? setFocus
-				: () => {
-					AppUtility.focus(ctrl, this.keyboard);
-				}
-		);
-	}
-
-	showAlert(title: string, message: string, handler?: () => void) {
-		this.hideLoading();
-		this.alertCtrl.create({
-			title: title,
-			message: message,
-			enableBackdropDismiss: false,
-			buttons: [{
-				text: "Đóng",
-				handler: handler
-			}]
-		}).present();
-	}
-
 	// register
 	doRegister(form: NgForm) {
-		this.info.state.valid = this.isValidInfo(form);
+		this.info.state.valid = this.validate(form);
 		if (this.info.state.valid) {
 			this.info.state.processing = true;
 			this.authSvc.registerAccountAsync(this.info.profile, this.info.captcha.code,
-				() => {
+				data => {
 					this.showAlert(
 						"Đăng ký",
 						"Vui lòng kiểm tra email và làm theo hướng dẫn để kích hoạt tài khoản",
@@ -614,8 +519,8 @@ export class ProfilePage {
 						}
 					);
 				},
-				(error: any) => {
-					if (AppUtility.isObject(error.Error, true) && "InformationExistedException" == error.Error.Type) {
+				error => {
+					if (AppUtility.isObject(error, true) && "InformationExistedException" == error.Type) {
 						this.renewCaptcha();
 						this.hideLoading();
 						this.info.state.processing = false;
@@ -654,44 +559,18 @@ export class ProfilePage {
 		}
 	}
 
-	// send an invitation
-	sendInvitation() {
-		var setFocus = () => {
-			AppUtility.focus(
-				!AppUtility.isNotEmpty(this.info.invitation.name)
-					? this.guestnameCtrl
-					: this.guestemailCtrl,
-				this.keyboard
-			);
-		};
-
-		if (AppUtility.isNotEmpty(this.info.invitation.name) && AppUtility.isValidEmail(this.info.invitation.email)) {
-			this.showLoading("Gửi lời mời...");
-			this.info.state.processing = true;
-			this.authSvc.sendInvitationAsync(this.info.invitation.name, this.info.invitation.email,
-				() => {
-					this.showAlert(
-						"Mời bạn",
-						"Email lời mời đã được gửi thành công!",
-						() => {
-							AppUtility.trackPageView("Gửi lời mời", "invitations");
-							this.cancelUpdate();
-						}
-					);
-				},
-				(error: any) => {
-					this.showError(error, setFocus);
-				}
-			);
-		}
-		else {
-			setFocus();
-		}
+	// update
+	openUpdate() {
+		this.setBackButton(false);
+		this.info.state.mode = "Update";
+		this.info.title = "Cập nhật tài khoản";
+		this.cropper.data.image = this.info.avatar.current;
+		AppUtility.focus(this.nameCtrl, this.keyboard);
 	}
 
 	// update
 	doUpdate(form: NgForm) {
-		this.info.state.valid = this.isValidInfo(form);
+		this.info.state.valid = this.validate(form);
 		if (this.info.state.valid) {
 			this.showLoading("Cập nhật hồ sơ...");
 			this.info.state.processing = true;
@@ -705,14 +584,14 @@ export class ProfilePage {
 						: this.info.profile.Avatar
 					: "";
 				this.configSvc.saveProfileAsync(this.info.profile,
-					() => {
+					data => {
 						AppUtility.trackPageView("Cập nhật tài khoản", "update-account");
 						this.info.profile = AppUtility.clone(this.configSvc.getAccount().profile);						
 						this.info.avatar.current = AppUtility.getAvatarImage(this.info.profile);
 						this.info.avatar.uploaded = "";
 						this.cancelUpdate();
 					},
-					(error: any) => {
+					error => {
 						this.showError(error);
 					}
 				);
@@ -734,40 +613,47 @@ export class ProfilePage {
 			)
 			.map(response => response.json())
 			.subscribe(
-				(data: any) => {
+				data => {
 					this.info.avatar.uploaded = data.Uri;
 					this.cropper.data = {
 						image: data.Uri,
 						original: undefined
 					};
 					AppUtility.trackPageView("Đổi avatar", "change-avatar");
-					onCompleted && onCompleted();
+					onCompleted != undefined && onCompleted();
 				},
-				(error: any) => {
+				error => {
 					console.error("Error occurred while uploading avatar image", error);
-					onCompleted && onCompleted();
+					onCompleted != undefined && onCompleted();
 				}
 			);
 		}
 		else {
 			this.info.avatar.uploaded = "";
-			onCompleted && onCompleted();
+			onCompleted != undefined && onCompleted();
 		}
 	}
 	
-	changeAvatar(event: any) {
-		var image = new Image();
-    var file = event.target.files[0];
-    var reader = new FileReader();
+	onAvatarChanged(event: any) {
+		let image = new Image();
+    let reader = new FileReader();
     reader.onloadend = (loadEvent: any) => {
 			image.src = loadEvent.target.result;
 			this.cropperCtrl.setImage(image);
     };
-		reader.readAsDataURL(file);
+		reader.readAsDataURL(event.target.files[0]);
+	}
+
+	// change password
+	openChangePassword() {
+		this.setBackButton(false);
+		this.info.state.mode = "ChangePassword";
+		this.info.title = "Đổi mật khẩu";
+		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
 	}
 
 	doChangePassword() {
-		var setFocus = () => {
+		let setFocus = () => {
 			AppUtility.focus(!AppUtility.isNotEmpty(this.info.change.OldPassword)
 				? this.oldPasswordCtrl
 				: !AppUtility.isNotEmpty(this.info.change.Password)
@@ -784,7 +670,7 @@ export class ProfilePage {
 			this.showLoading("Đổi mật khẩu đăng nhập...");
 			this.info.state.processing = true;
 			this.authSvc.updatePasswordAsync(this.info.change.OldPassword, this.info.change.Password,
-				() => {
+				data => {
 					this.showAlert(
 						"Đổi mật khẩu",
 						"Mật khẩu đăng nhập mới đã được cập nhật thành công!",
@@ -797,7 +683,7 @@ export class ProfilePage {
 						}
 					);
 				},
-				(error: any) => {
+				error => {
 					this.showError(error, setFocus);
 				}
 			);
@@ -807,8 +693,16 @@ export class ProfilePage {
 		}
 	}
 
+	// change email
+	openChangeEmail() {
+		this.setBackButton(false);
+		this.info.state.mode = "ChangeEmail";
+		this.info.title = "Đổi email";
+		AppUtility.focus(this.oldPasswordCtrl, this.keyboard);
+	}
+
 	doChangeEmail() {
-		var setFocus = () => {
+		let setFocus = () => {
 			AppUtility.focus(!AppUtility.isNotEmpty(this.info.change.OldPassword)
 				? this.oldPasswordCtrl
 				: !AppUtility.isNotEmpty(this.info.change.Email)
@@ -825,7 +719,7 @@ export class ProfilePage {
 			this.showLoading("Đổi email đăng nhập...");
 			this.info.state.processing = true;
 			this.authSvc.updateEmailAsync(this.info.change.OldPassword, this.info.change.Email,
-				() => {
+				data => {
 					this.showAlert(
 						"Đổi email",
 						"Email đăng nhập mới đã được cập nhật thành công!",
@@ -838,7 +732,7 @@ export class ProfilePage {
 						}
 					);
 				},
-				(error: any) => {
+				error => {
 					this.showError(error, setFocus);
 				}
 			);
@@ -848,45 +742,28 @@ export class ProfilePage {
 		}
 	}
 
-	doSetPrivileges() {
-		this.showLoading("Đặt quyền truy cập...");
-		this.info.state.processing = true;
-		this.authSvc.setPrivilegesAsync(this.info.profile.ID, {
-			Privileges: this.permissions.update.role == "Viewer"
-				? new List<any>(this.permissions.info.objects)
-					.Select(o => AppModels.Privilege.deserialize({
-						ServiceName: "books",
-						ObjectName: o.value,
-						Role: this.permissions.update.privileges[o.value]
-					}))
-					.ToArray()
-				: [AppModels.Privilege.deserialize({
-						ServiceName: "books",
-						Role: this.permissions.update.role
-					})]
-			},
-			(data: any) => {
-				AppUtility.trackPageView("Đặt quyền truy cập", "privileges");
-				this.preparePrivileges(data);
-				this.cancelUpdate();
-			},
-			(error: any) => {
-				this.showError(error);
-			}
-		);
+	// update OTP
+	openUpdateOTP() {
+		this.setBackButton(false);
+		this.info.state.mode = "UpdateOTP";
+		this.info.title = "Thiết đặt bảo mật";
+		this.info.otp.required = AppData.Configuration.session.account.twoFactors.required;
+		this.info.otp.providers = AppData.Configuration.session.account.twoFactors.providers;
+		this.info.otp.provisioning = "";
+		this.info.otp.url = "";
+		this.info.otp.value = "";
 	}
 
-	// otp
 	prepareOTP() {
 		this.info.state.processing = true;
 		this.authSvc.prepareOTPAsync(
-			(data: any) => {
+			data => {
 				this.info.otp.provisioning = data.Provisioning;
 				this.info.otp.url = data.Uri;
 				this.info.state.processing = false;
 				AppUtility.focus(this.otpCtrl, this.keyboard, 234);
 			},
-			(error: any) => {
+			error => {
 				this.info.state.processing = false;
 				this.showError(error);
 			}
@@ -901,18 +778,18 @@ export class ProfilePage {
 					Provisioning: this.info.otp.provisioning,
 					OTP: this.info.otp.value
 				},
-				(data: any) => {
+				data => {
 					this.info.state.processing = false;
 					this.openUpdateOTP();
 					AppUtility.trackPageView("Cập nhật thiết đặt bảo mật", "update-otp");
 				},
-				(error: any) => {
+				error => {
 					this.info.state.processing = false;
 					this.showAlert(
 						"Lỗi",
-						error.Error && error.Error.Type == "OTPLoginFailedException" ? "Mã xác thực OTP không đúng" : "Đã xảy ra lỗi",
+						error && error.Type == "OTPLoginFailedException" ? "Mã xác thực OTP không đúng" : "Đã xảy ra lỗi",
 						() => {
-							AppUtility.focus(this.otpCtrl, this.keyboard, 234);					
+							AppUtility.focus(this.otpCtrl, this.keyboard, 234);
 						}
 					);
 				}
@@ -937,12 +814,12 @@ export class ProfilePage {
 				handler: () => {
 					this.info.state.processing = true;
 					this.authSvc.deleteOTPAsync(otp.Info,
-						(data: any) => {
+						data => {
 							this.info.state.processing = false;
 							this.openUpdateOTP();
 							AppUtility.trackPageView("Xoá thiết đặt bảo mật", "delete-otp");
 						},
-						(error: any) => {
+						error => {
 							this.info.state.processing = false;
 							this.showAlert(
 								"Lỗi",
@@ -953,6 +830,112 @@ export class ProfilePage {
 				}
 			}]
 		}).present();
+	}
+
+	// privileges
+	getRole(objectName?: string) {
+		return this.authSvc.isInAppRole(objectName, "Administrator", this.permissions.current.privileges)
+			? "Administrator"
+			: this.authSvc.isInAppRole(objectName, "Moderator", this.permissions.current.privileges)
+				? "Moderator"
+				: "Viewer"
+	}
+
+	preparePrivileges(data: any) {
+		this.permissions.current.privileges = this.configSvc.prepareAccount(data).Privileges;
+		this.permissions.current.role = this.getRole();
+	}
+
+	openPrivileges() {
+		this.setBackButton(false);
+		this.info.state.mode = "SetPrivileges";
+		this.info.title = "Đặt quyền truy cập";
+
+		this.permissions.update.role = this.permissions.current.role;
+		new List(this.permissions.info.objects).ForEach(o => {
+			let privilege = new List(this.permissions.current.privileges).FirstOrDefault(p => p.ServiceName == AppData.Configuration.app.service && p.ObjectName == o.value);
+			this.permissions.update.privileges[o.value] = privilege
+				? privilege.Role
+				: this.getRole(o.value);
+		});
+	}
+
+	getPrivileges() {
+		let privileges = new Array<AppModels.Privilege>();
+		if (this.permissions.update.role) {
+			if (this.permissions.update.role == "Viewer") {
+				privileges = new List<any>(this.permissions.info.objects).Select(o => AppModels.Privilege.deserialize({
+					ServiceName: AppData.Configuration.app.service,
+					ObjectName: o.value,
+					Role: this.permissions.update.privileges[o.value]
+				})).ToArray()
+			}
+			else {
+				privileges.push(AppModels.Privilege.deserialize({
+					ServiceName: AppData.Configuration.app.service,
+					Role: this.permissions.update.role
+				}));
+			}
+		}
+		return privileges;
+	}
+
+	doSetPrivileges() {
+		this.showLoading("Đặt quyền truy cập...");
+		this.info.state.processing = true;
+		this.authSvc.setPrivilegesAsync(this.info.profile.ID, 
+			this.getPrivileges(),
+			data => {
+				AppUtility.trackPageView("Đặt quyền truy cập", "privileges");
+				this.preparePrivileges(data);
+				this.cancelUpdate();
+			},
+			error => {
+				this.showError(error);
+			}
+		);
+	}
+	
+	// invitation
+	openInvitation() {
+		this.setBackButton(false);
+		this.info.state.mode = "Invite";
+		this.info.title = "Mời tham gia";
+		this.info.invitation.url = AppUtility.getUri() + "#?refer=" + AppUtility.getBase64UrlParam({ uid: this.info.profile.ID, section: "WPA" }) + "&utm_campaign=WPA-Direct-Invitation&utm_medium=Direct-Invitation-Link";
+		AppUtility.focus(this.guestnameCtrl, this.keyboard);
+	}
+
+	sendInvitation() {
+		let setFocus = () => {
+			AppUtility.focus(!AppUtility.isNotEmpty(this.info.invitation.name) ? this.guestnameCtrl : this.guestemailCtrl, this.keyboard);
+		};
+
+		if (AppUtility.isNotEmpty(this.info.invitation.name) && AppUtility.isValidEmail(this.info.invitation.email)) {
+			this.showLoading("Gửi lời mời...");
+			this.info.state.processing = true;
+			this.authSvc.sendInvitationAsync(
+				this.info.invitation.name,
+				this.info.invitation.email,
+				this.canSetPrivileges() ? this.getPrivileges() : undefined,
+				this.info.invitation.relatedInfo,
+				data => {
+					this.showAlert(
+						"Gửi lời mời",
+						"Email lời mời đã được gửi thành công!",
+						() => {
+							AppUtility.trackPageView("Gửi lời mời", "invitations");
+							this.cancelUpdate();
+						}
+					);
+				},
+				error => {
+					this.showError(error, setFocus);
+				}
+			);
+		}
+		else {
+			setFocus();
+		}
 	}
 
 	// sign-out
@@ -970,15 +953,11 @@ export class ProfilePage {
 					text: "Đăng xuất",
 					handler: () => {
 						this.authSvc.signOutAsync(
-							() => {
+							data => {
 								AppUtility.trackPageView("Đăng xuất", "sign-out");
-								AppEvents.broadcast("OpenPage", {
-									name: "HomePage",
-									component: HomePage,
-									doPush: false
-								});
+								AppEvents.broadcast("OpenPage", { name: "HomePage", component: HomePage, doPush: false });
 							},
-							(error: any) => {
+							error => {
 								this.showError(error);
 							}
 						);

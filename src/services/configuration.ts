@@ -28,7 +28,7 @@ export class ConfigurationService {
 		public appVersion: AppVersion
 	){
 		AppAPI.setHttp(this.http);
-		AppRTU.registerAsServiceScopeProcessor("Users", (message: any) => this.processRTU(message));
+		AppRTU.registerAsServiceScopeProcessor("Users", message => this.processRTU(message));
 	}
 
 	/** Prepare the working environments of the app */
@@ -48,7 +48,6 @@ export class ConfigurationService {
 			if (AppUtility.indexOf(AppData.Configuration.app.host, ".") > 0) {
 				let host = AppUtility.toArray(AppData.Configuration.app.host, ".");
 				AppData.Configuration.app.host = host[host.length - 2] + "." + host[host.length - 1];
-				AppData.Configuration.app.name = AppData.Configuration.app.host;
 			}
 
 			AppData.Configuration.app.platform = this.device.platform;
@@ -74,10 +73,10 @@ export class ConfigurationService {
 
 			// app version
 			this.appVersion.getVersionCode()
-				.then((version: any) => {
+				.then(version => {
 					AppData.Configuration.app.version = version;
 				})
-				.catch((e) => {})
+				.catch(error => {});
 
 			// refer
 			if (AppUtility.isWebApp()) {
@@ -90,7 +89,7 @@ export class ConfigurationService {
 							section: AppUtility.isNotEmpty(refer.section) ? refer.section : ""
 						};
 					}
-					catch (e) {}
+					catch (error) {}
 				}
 			}
 		}
@@ -104,7 +103,7 @@ export class ConfigurationService {
 		AppData.Configuration.app.mode == "" && this.prepare();
 
 		// load saved session
-		if (AppData.Configuration.session.jwt == null || AppData.Configuration.session.keys == null) {
+		if (AppData.Configuration.session.token == null || AppData.Configuration.session.keys == null) {
 			await this.loadSessionAsync();
 		}
 		
@@ -132,26 +131,23 @@ export class ConfigurationService {
 				onNext != undefined && onNext(data);
 			});
 		}
-		catch (e) {
-			AppUtility.showError("[Configuration]: Error occurred while initializing the session", e.json(), onError);
+		catch (error) {
+			AppUtility.showError("[Configuration]: Error occurred while initializing the session", error, onError);
 		}
 	}
 
 	/** Registers the initialized session (anonymous) with REST API */
 	async registerSessionAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "users/session"
-				+ "?register=" + AppData.Configuration.session.id
-
-			let response = await AppAPI.GetAsync(path);
+			let response = await AppAPI.GetAsync("users/session?register=" + AppData.Configuration.session.id);
 			AppData.Configuration.session.account = this.getAccount(true);
 			await this.saveSessionAsync(() => {
 				AppEvents.broadcast("SessionIsRegistered", AppData.Configuration.session);
 			});
 			onNext != undefined && onNext(response.json());
 		}
-		catch (e) {
-			AppUtility.showError("[Configuration]: Error occurred while registering the session", e.json(), onError);
+		catch (error) {
+			AppUtility.showError("[Configuration]: Error occurred while registering the session", error, onError);
 		}
 	}
 
@@ -180,8 +176,8 @@ export class ConfigurationService {
 			AppCrypto.initKeys(AppData.Configuration.session.keys);
 		}
 
-		if (AppUtility.isNotEmpty(session.JWT)) {
-			AppData.Configuration.session.jwt = AppCrypto.jwtDecode(session.JWT, AppUtility.isObject(AppData.Configuration.session.keys, true) ? AppData.Configuration.session.keys.jwt : AppData.Configuration.app.name);
+		if (AppUtility.isNotEmpty(session.Token)) {
+			AppData.Configuration.session.token = AppCrypto.jwtDecode(session.Token, AppUtility.isObject(AppData.Configuration.session.keys, true) ? AppData.Configuration.session.keys.jwt : AppData.Configuration.app.name);
 		}
 
 		await this.saveSessionAsync(onCompleted);
@@ -199,8 +195,8 @@ export class ConfigurationService {
 				AppEvents.broadcast("SessionIsLoaded", AppData.Configuration.session);
 			}
 		}
-		catch (e) {
-			console.error("[Configuration]: Error occurred while loading the saved/offline session", e);
+		catch (error) {
+			AppUtility.showError("[Configuration]: Error occurred while loading the saved/offline session", error);
 		}
 
 		onCompleted != undefined && onCompleted();
@@ -209,19 +205,18 @@ export class ConfigurationService {
 	/** Saves the session into storage */
 	async saveSessionAsync(onCompleted?: () => void) {
 		try {
-			await this.storage.set("VIEApps-Session", JSON.stringify(AppUtility.clone(AppData.Configuration.session, ["captcha"])));
+			await this.storage.set("VIEApps-Session", JSON.stringify(AppUtility.clone(AppData.Configuration.session, ["jwt", "captcha"])));
 		}
-		catch (e) {
-			console.error("[Configuration]: Error occurred while saving/storing the session", e);
+		catch (error) {
+			AppUtility.showError("[Configuration]: Error occurred while saving/storing the session", error);
 		}
-
 		onCompleted != undefined && onCompleted();
 	}
 
 	/** Deletes the session from storage */
 	async deleteSessionAsync(onCompleted?: () => void) {
 		AppData.Configuration.session.id = null;
-		AppData.Configuration.session.jwt = null;
+		AppData.Configuration.session.token = null;
 		AppData.Configuration.session.keys = null;
 		AppData.Configuration.session.account = this.getAccount(true);
 		await this.storage.set("VIEApps-Session", JSON.stringify(AppUtility.clone(AppData.Configuration.session, ["captcha"])));
@@ -233,8 +228,8 @@ export class ConfigurationService {
 		AppUtility.setTimeout(() => {
 			AppRTU.send(
 				{
-					ServiceName: "users",
-					ObjectName: "session",
+					ServiceName: "Users",
+					ObjectName: "Session",
 					Verb: "PATCH",
 					Extra: {
 						"x-session": AppData.Configuration.session.id
@@ -295,27 +290,21 @@ export class ConfigurationService {
 		if (AppUtility.isObject(data.TwoFactorsAuthentication, true)) {
 			account.TwoFactorsAuthentication.Required = AppUtility.isTrue(data.TwoFactorsAuthentication.Required);
 			if (AppUtility.isArray(data.TwoFactorsAuthentication.Providers)) {
-				account.TwoFactorsAuthentication.Providers = new List<any>(data.TwoFactorsAuthentication.Providers)
-					.Select(p => {
-						return {
-							Label: p.Label,
-							Type: p.Type,
-							Time: new Date(p.Time),
-							Info: p.Info
-						};
-					})
-					.ToArray();
+				account.TwoFactorsAuthentication.Providers = new List<any>(data.TwoFactorsAuthentication.Providers).Select(p => {
+					return {
+						Label: p.Label,
+						Type: p.Type,
+						Time: new Date(p.Time),
+						Info: p.Info
+					};
+				}).ToArray();
 			}
 		}
 
 		return account;
 	}
 
-	/**
-	 * Updates information of the account
-	 * @param data 
-	 * @param onCompleted 
-	 */
+	/** Updates information of the account */
 	updateAccount(data: any, onCompleted?: () => void) {
 		let info = this.prepareAccount(data);
 		AppData.Configuration.session.account.roles = info.Roles;
@@ -327,17 +316,81 @@ export class ConfigurationService {
 		};
 		onCompleted != undefined && onCompleted();
 	}
+
+	/** Send request to patch information of the account */
+	patchAccount(onNext?: () => void, defer?: number) {
+		AppUtility.setTimeout(() => {
+			AppRTU.send(
+				{
+					ServiceName: "Users",
+					ObjectName: "Account",
+					Verb: "GET",
+					Query: {
+						"x-status": ""
+					},
+					Extra: {
+						"x-status": ""
+					}
+				},
+				() => {
+					onNext != undefined && onNext();
+				},
+				observable => {
+					observable.map(response => response.json()).subscribe(
+						data => {
+							this.updateAccount(data);
+							onNext != undefined && onNext();
+						},
+						error => {
+							AppUtility.showError("[Configuration]: Error occurred while patching an account", error);
+						}
+					);
+				}
+			);
+		}, defer || 345);
+	}
+
+	/** Performs a request to REST API to search account profiles */
+	searchAccounts(request: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
+		let pagination = AppData.Paginations.get(request, "Accounts");
+		if (pagination != null && pagination.PageNumber >= pagination.TotalPages) {
+			onNext != undefined && onNext();
+			return;
+		}
+
+		request.Pagination.PageNumber++;
+		let path = "users/profile/search"
+			+ "?x-request=" + AppUtility.getBase64UrlParam(request)
+			+ "&related-service=" + AppData.Configuration.app.service
+			+ "&language=" + AppData.Configuration.session.account.profile.Language;
+
+		let searcher = AppAPI.Get(path);
+		if (!onNext) {
+			return searcher;
+		}
+
+		searcher.map(response => response.json()).subscribe(
+			data => {
+				AppData.Paginations.set(data, "Accounts");
+				new List<any>(data.Objects).ForEach(a => AppModels.Account.update(a));
+				onNext(data);
+			},
+			error => {
+				AppUtility.showError("[Configuration]: Error occurred while searching accounts", error, onError);
+			}
+		);
+	}
 	
 	/** Get profile information */
 	getProfile(id?: string, onCompleted?: (data?: any) => void) {
-		var request = {
-			ServiceName: "users",
-			ObjectName: "profile",
+		let request = {
+			ServiceName: "Users",
+			ObjectName: "Profile",
 			Verb: "GET",
 			Query: {
-				"related-service": "books",
+				"related-service": AppData.Configuration.app.service,
 				"language": "vi-VN",
-				"host": (AppUtility.isWebApp() ? AppUtility.getHost() : AppData.Configuration.app.name)
+				"host": AppUtility.getHost()
 			}
 		};
 		if (AppUtility.isNotEmpty(id)) {
@@ -348,12 +401,12 @@ export class ConfigurationService {
 			() => {
 				onCompleted != undefined && onCompleted();
 			},
-			(observable) => {
+			observable => {
 				observable.map(response => response.json()).subscribe(
-					(data: any) => {
+					data => {
 						this.updateProfileAsync(data, onCompleted);
 					},
-					(error: any) => {
+					error => {
 						AppUtility.showError("[Configuration]: Error occurred while fetching a profile", error);
 					}
 				);
@@ -363,8 +416,7 @@ export class ConfigurationService {
 
 	/** Get profile information of an account */
 	async getProfileAsync(dontUseRTU?: boolean, id?: string, onCompleted?: (data?: any) => void) {
-		let useRTU = AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isReady();
-		if (useRTU) {
+		if (AppUtility.isFalse(dontUseRTU) && id == undefined && AppRTU.isReady()) {
 			this.getProfile(id, onCompleted);
 			AppUtility.setTimeout(() => {
 				AppData.Configuration.session.account != null
@@ -375,13 +427,13 @@ export class ConfigurationService {
 		else {
 			try {
 				let path = "users/profile" + (AppUtility.isNotEmpty(id) ? "/" + id : "")
-					+ "?related-service=books"
-					+ "&language=" + AppData.Configuration.session.account.profile.Language;
+					+ "?related-service=" + AppData.Configuration.app.service
+					+ "&language=vi-VN";
 				let response = await AppAPI.GetAsync(path);
 				this.updateProfileAsync(response.json(), onCompleted);
 			}
-			catch (e) {
-				AppUtility.showError("[Configuration]: Error occurred while fetching account profile", e.json(), onCompleted);
+			catch (error) {
+				AppUtility.showError("[Configuration]: Error occurred while fetching account profile", error, onCompleted);
 			}
 		}
 	}
@@ -392,7 +444,7 @@ export class ConfigurationService {
 		AppModels.Account.update(data);
 
 		// update profile of current user
-		if (AppData.Configuration.session.jwt != null && AppData.Configuration.session.jwt.uid == data.ID) {
+		if (AppData.Configuration.session.token != null && AppData.Configuration.session.token.uid == data.ID) {
 			AppData.Configuration.session.account.id = data.ID;
 			AppData.Configuration.session.account.profile = AppData.Accounts.getValue(data.ID);
 			await this.storeProfileAsync(() => {
@@ -411,7 +463,7 @@ export class ConfigurationService {
 	/** Store the information of current account profile into storage */
 	async storeProfileAsync(onCompleted?: (data?: any) => void) {
 		await this.saveSessionAsync();
-		AppEvents.broadcast("AccountIsUpdated");
+		AppEvents.broadcast("AccountIsUpdated", { Type: "Profile" });
 		onCompleted != undefined && onCompleted(AppData.Configuration.session);
 	}
 
@@ -419,20 +471,20 @@ export class ConfigurationService {
 	async saveProfileAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
 			let path = "users/profile"
-				+ "?related-service=books"
+				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&language=" + AppData.Configuration.session.account.profile.Language;
 			let response = await AppAPI.PutAsync(path, info);
 			await this.updateProfileAsync(response.json(), onNext);
 		}
-		catch (e) {
-			AppUtility.showError("[Configuration]: Error occurred while updating account profile", e.json(), onError);
+		catch (error) {
+			AppUtility.showError("[Configuration]: Error occurred while updating account profile", error, onError);
 		}
 	}
 
 	/** Watch the connection of Facebook */
 	watchFacebookConnect() {
 		FB.Event.subscribe("auth.authResponseChange",
-			(response: any) => {
+			response => {
 				if (response.status === "connected") {
 					AppData.Configuration.facebook.token = response.authResponse.accessToken;
 					AppData.Configuration.facebook.id = response.authResponse.userID;
@@ -452,7 +504,7 @@ export class ConfigurationService {
 	/** Get the information of Facebook profile */
 	getFacebookProfile() {
 		FB.api("/" + AppData.Configuration.facebook.version + "/me?fields=id,name,picture&access_token=" + AppData.Configuration.facebook.token,
-			(response: any) => {
+			response => {
 				AppData.Configuration.session.account.facebook = {
 					id: response.id,
 					name: response.name,
@@ -470,10 +522,10 @@ export class ConfigurationService {
 
 	/** Get the avatar picture (large picture) of Facebook profile */
 	getFacebookAvatar() {
-		if (AppData.Configuration.session.account.facebook != null && AppData.Configuration.session.account.facebook.id != null && AppData.Configuration.session.jwt != null && AppData.Configuration.session.jwt.oauths != null
-			&& AppData.Configuration.session.jwt.oauths["facebook"] && AppData.Configuration.session.jwt.oauths["facebook"] == AppData.Configuration.session.account.facebook.id) {
+		if (AppData.Configuration.session.account.facebook != null && AppData.Configuration.session.account.facebook.id != null && AppData.Configuration.session.token != null && AppData.Configuration.session.token.oauths != null
+			&& AppData.Configuration.session.token.oauths["facebook"] && AppData.Configuration.session.token.oauths["facebook"] == AppData.Configuration.session.account.facebook.id) {
 			FB.api("/" + AppData.Configuration.facebook.version + "/" + AppData.Configuration.session.account.facebook.id + "/picture?type=large&redirect=false&access_token=" + AppData.Configuration.facebook.token,
-				(response: any) => {
+				response => {
 					AppData.Configuration.session.account.facebook.pictureUrl = response.data.url;
 					this.storeProfileAsync(() => {
 						console.info("[Configuration]: Account is updated with information of Facebook profile (large profile picture)", !AppUtility.isDebug() ? "" : response);
@@ -483,57 +535,24 @@ export class ConfigurationService {
 		}
 	}
 
-	/** Send request to patch information of the account */
-	patchAccount(onNext?: () => void, defer?: number) {
-		AppUtility.setTimeout(() => {
-			AppRTU.send(
-				{
-					ServiceName: "users",
-					ObjectName: "account",
-					Verb: "GET",
-					Query: {
-						"x-status": ""
-					},
-					Extra: {
-						"x-status": ""
-					}
-				},
-				() => {
-					onNext != undefined && onNext();
-				},
-				(observable) => {
-					observable.map(response => response.json()).subscribe(
-						(data: any) => {
-							this.updateAccount(data.Data);
-							onNext != undefined && onNext();
-						},
-						(error: any) => {
-							console.error("[Configuration]: Error occurred while patching an account", error);
-						}
-					);
-				}
-			);
-		}, defer || 345);
-	}
-
 	/** Gets the state that determines the app is ready to go */
 	isReady() {
-		return AppUtility.isObject(AppData.Configuration.session.keys, true) && AppUtility.isObject(AppData.Configuration.session.jwt, true);
+		return AppUtility.isObject(AppData.Configuration.session.keys, true) && AppUtility.isObject(AppData.Configuration.session.token, true);
 	}
 
 	/** Gets the state that determines the current account is authenticated or not */
 	isAuthenticated() {
-		return AppUtility.isObject(AppData.Configuration.session.jwt, true) && AppUtility.isNotEmpty(AppData.Configuration.session.jwt.uid);
+		return AppUtility.isObject(AppData.Configuration.session.token, true) && AppUtility.isNotEmpty(AppData.Configuration.session.token.uid);
 	}
 
 	// process RTU message
 	processRTU(message: any) {
 		// parse
-		var info = AppRTU.parse(message.Type);
+		let info = AppRTU.parse(message.Type);
 
 		// update account
 		if (info.Object == "Account") {
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
+			if (AppData.Configuration.session.account && AppData.Configuration.session.account.id == message.Data.ID) {
 				this.updateAccount(message.Data);
 			}
 		}
@@ -541,7 +560,7 @@ export class ConfigurationService {
 		// update session
 		else if (info.Object == "Session"
 		&& AppData.Configuration.session.id == message.Data.ID
-		&& AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.UserID) {
+		&& AppData.Configuration.session.account && AppData.Configuration.session.account.id == message.Data.UserID) {
 			// update session with new access token
 			if (info.Event == "Update") {
 				this.updateSessionAsync(message.Data, () => {
@@ -554,7 +573,7 @@ export class ConfigurationService {
 			// revoke current session
 			else if (info.Event == "Revoke") {
 				this.deleteSessionAsync(() => {
-					AppEvents.broadcast("AccountIsUpdated");
+					AppEvents.broadcast("AccountIsUpdated", { Type: "Revoke" });
 					this.initializeAsync(() => {
 						this.registerSessionAsync(() => {
 							console.info("[Configuration]: Revoke session successful", AppUtility.isDebug() ? AppData.Configuration.session : "");
@@ -568,7 +587,7 @@ export class ConfigurationService {
 
 		// update profile
 		else if (info.Object == "Profile") {
-			if (AppData.Configuration.session.account != null && AppData.Configuration.session.account.id == message.Data.ID) {
+			if (AppData.Configuration.session.account && AppData.Configuration.session.account.id == message.Data.ID) {
 				this.updateProfileAsync(message.Data);
 			}
 			else {

@@ -7,13 +7,13 @@ import { AppUtility } from "../../../components/utility";
 import { AppData } from "../../../models/data";
 import { AppModels } from "../../../models/objects";
 
+import { ConfigurationService } from "../../../services/configuration";
 import { AuthenticationService } from "../../../services/authentication";
-import { AccountsService } from "../../../services/accounts";
 
 import { ProfilePage } from "../profile/profile";
 
 @Component({
-	selector: "page-search-accounts",
+	selector: "search-accounts-page",
 	templateUrl: "search.html"
 })
 export class SearchProfilesPage {
@@ -23,13 +23,20 @@ export class SearchProfilesPage {
 		public actionSheetCtrl: ActionSheetController,
 		public alertCtrl: AlertController,
 		public keyboard: Keyboard,
-		public authSvc: AuthenticationService,
-		public accountsSvc: AccountsService
+		public configSvc: ConfigurationService,
+		public authSvc: AuthenticationService
 	){
 	}
 
 	// attributes
 	info = {
+		title: "Tài khoản người dùng",
+		state: {
+			processing: false,
+			searching: false,
+			filtering: false,
+			searchingPlaceHolder: "Tìm kiếm"
+		},
 		filterBy: {
 			Query: "",
 			And: {
@@ -39,145 +46,199 @@ export class SearchProfilesPage {
 			}
 		},
 		sortBy: "",
+		sorts: new Array<{ label: string, attribute: string, mode: string	}>(),
 		pagination: AppData.Paginations.default(),
-		state: {
-			searching: false,
-			filtering: false,
-			cancel: "Đóng",
-			holder: "Search"
-		},
-		title: "Tài khoản người dùng",
 		totalRecords: 0,
-		pageNumber: 0,
-		isAppleOS: AppUtility.isAppleOS()
+		pageNumber: 0
 	};
-	sorts: Array<any> = [];
-	accounts: Array<AppModels.Account> = undefined;
+	items: Array<AppModels.Account> = undefined;
 	ratings = {};
 
 	// controls
 	@ViewChild(Searchbar) searchBarCtrl: Searchbar;
 	infiniteScrollCtrl: InfiniteScroll = undefined;
 
-	// page events
+	// events
 	ionViewDidLoad() {
-		this.sorts = [
-			{
-				label: "Tên (A - Z)",
-				value: "Name"
-			},
-			{
-				label: "Mới truy cập",
-				value: "LastAccess"
-			},
-			{
-				label: "Mới đăng ký",
-				value: "Joined"
-			}
-		];
-		this.info.sortBy = this.sorts[0].value;
-
-		this.info.filterBy.Query = this.navParams.get("Query");
-		this.info.filterBy.And.Province.Equals = this.navParams.get("Province");
-		this.info.filterBy.And.Province.Equals = this.info.filterBy.And.Province.Equals || "";
+		this.pageOnLoad();
 	}
 
 	ionViewCanEnter() {
-		return this.authSvc.isAdministrator();
+		return this.authSvc.isSystemAdministrator();
 	}
 
 	ionViewDidEnter() {
-		if (!this.accounts) {
-			var request = AppData.buildRequest(this.info.filterBy, undefined, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
-				if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
-					r.FilterBy.And.Province.Equals = undefined;
-				}
-			});
-			this.info.pagination = AppData.Paginations.get(request, "A");
+		this.pageOnEnter();
+	}
 
-			if (this.info.pagination == undefined) {
-				this.doSearch();
+	pageOnLoad() {
+		this.info.filterBy.Query = this.navParams.get("Query");
+		this.info.filterBy.And.Province.Equals = this.navParams.get("Province") || "";
+		this.info.sorts = [
+			{
+				label: "Tên (A - Z)",
+				attribute: "Name",
+				mode: "Ascending"
+			},
+			{
+				label: "Mới truy cập",
+				attribute: "LastAccess",
+				mode: "Descending"
+			},
+			{
+				label: "Mới đăng ký",
+				attribute: "Joined",
+				mode: "Descending"
 			}
-			else {
+		];
+		this.info.sortBy = this.info.sorts[0].attribute;
+	}
+
+	pageOnEnter() {
+		// update state
+		AppUtility.resetUri({ "search-accounts": undefined });
+		AppUtility.trackPageView(this.info.title, "search-accounts");
+
+		// search & show
+		if (!this.items) {
+			this.info.pagination = this.buildPagination();
+			if (this.info.pagination) {
 				if (this.info.pageNumber < 1) {
 					this.info.pageNumber = 1;
 					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
 				}
-				this.doBuild();
+				this.show();
+			}
+			else {
+				this.search();
 			}
 		}
-		AppUtility.resetUri({ "search-profiles": undefined });
-		AppUtility.trackPageView(this.info.title, "search-accounts");
 	}
 
-	// search & build the listing of account profiles
-	doSearch(onCompleted?: () => void) {
-		var request = AppData.buildRequest(this.info.filterBy, { Name: "Ascending" }, AppUtility.isNotEmpty(this.info.filterBy.Query) ? undefined : this.info.pagination, r => {
-			if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
-				r.FilterBy.And.Province.Equals = undefined;
-			}
+	showActions() {
+		let actions = this.actionSheetCtrl.create({
+			enableBackdropDismiss: true,
+			buttons: [
+				AppUtility.getActionButton("Tìm kiếm", "search", () => {
+					this.showSearch(true);
+				}),
+				AppUtility.getActionButton("Lọc/Tìm nhanh", "funnel", () => {
+					this.showSearch(false);
+				}),
+				AppUtility.getActionButton("Thay đổi cách sắp xếp", "list-box", () => {
+					this.showSorts();
+				})
+			]
 		});
-		this.accountsSvc.search(request,
-			(data?: any) => {
-				this.info.pagination = this.info.state.searching && data != undefined
-					? AppData.Paginations.default(data.Data)
-					: AppData.Paginations.get(request, "A");
+
+		if (this.info.pagination && this.info.pageNumber < this.info.pagination.PageNumber) {
+			actions.addButton(
+				AppUtility.getActionButton("Hiển thị toàn bộ " + AppData.Paginations.computeTotal(this.info.pagination.PageNumber, this.info.pagination) + " kết quả", "eye", () => {
+					this.info.pageNumber = this.info.pagination.PageNumber;
+					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
+					this.show();
+				})
+			);
+		}
+
+		actions.addButton(AppUtility.getActionButton("Huỷ bỏ", "close", undefined, "cancel"));
+		actions.present();
+	}
+
+	showAlert(title: string, message: string, handler?: () => void) {
+		this.alertCtrl.create({
+			title: title,
+			message: message,
+			enableBackdropDismiss: false,
+			buttons: [{
+				text: "Đóng",
+				handler: () => {
+					handler != undefined && handler();
+				}
+			}]
+		}).present();
+	}
+
+	showSearch(isSearching: boolean) {
+		if (isSearching) {
+			this.items = [];
+			this.info.pagination = null;
+			this.info.state.searching = true;
+		}
+		else {
+			this.info.state.filtering = true;
+		}
+		this.info.state.searchingPlaceHolder = isSearching
+			? "Tìm kiếm tài khoản người dùng (không dấu cũng OK)"
+			: "Tìm nhanh tài khoản người dùng (không dấu cũng OK)";
+		AppUtility.focus(this.searchBarCtrl, this.keyboard);
+	}
+
+	// search
+	search(onCompleted?: () => void) {
+		let request = this.buildRequest();
+		this.configSvc.searchAccounts(request,
+			data => {
+				this.info.pagination = this.info.state.searching
+					? AppData.Paginations.default(data)
+					: this.buildPagination(request);
 
 				if (!this.info.state.searching && !this.info.state.filtering) {
 					this.info.pageNumber = this.info.pagination.PageNumber;
 					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
 				}
 
-				this.doBuild(this.info.state.searching && data != undefined ? data.Objects : undefined);
+				this.show(this.info.state.searching ? data.Objects : undefined);
 				onCompleted != undefined && onCompleted();
 			}
 		);
 	}
 
-	doBuild(searchResults?: Array<AppModels.Account>) {
-		// initialize the list
-		var accounts = new List(
-			searchResults != undefined
-				? searchResults
-				: AppData.Accounts.values()
-			);
+	show(results?: Array<AppModels.Account>) {
+		// initialize
+		let items = new List(results || AppData.Accounts.values());
+		if (results) {
+			items = items.Select(obj => AppModels.Account.deserialize(obj));
+		}
 
-		// apply filter-by
+		// filter
 		if (this.info.state.filtering && AppUtility.isNotEmpty(this.info.filterBy.Query)) {
 			let query = AppUtility.toANSI(this.info.filterBy.Query).trim().toLowerCase();
-			accounts = accounts.Where(a => AppUtility.indexOf(a.Title, query) > -1);
+			items = items.Where(a => AppUtility.indexOf(a.Title, query) > -1);
 		}
 
-		// transform
-		if (searchResults) {
-			accounts = accounts.Select(a => AppModels.Account.deserialize(a));
-		}
-
-		// apply order-by
-		switch (this.info.sortBy) {
+		// sort
+		let sortBy = new List<any>(this.info.sorts).FirstOrDefault(s => s.attribute == this.info.sortBy) || this.info.sorts[0].attribute;
+		switch (sortBy.attribute) {
 			case "LastAccess":
-				accounts = accounts.OrderByDescending(a => a.LastAccess).ThenBy(a => a.Name);
+				items = sortBy.mode == "Descending"
+					? items.OrderByDescending(obj => obj.LastAccess).ThenBy(obj => obj.Name)
+					: items.OrderBy(obj => obj.LastAccess).ThenBy(obj => obj.Name);
 				break;
 
 			case "Joined":
-				accounts = accounts.OrderByDescending(a => a.Joined).ThenBy(a => a.Name);
+				items = sortBy.mode == "Descending"
+					? items.OrderByDescending(obj => obj.Joined).ThenBy(obj => obj.Name)
+					: items.OrderBy(obj => obj.Joined).ThenBy(obj => obj.Name);
 				break;
 
 			default:
-				accounts = accounts.OrderBy(a => a.Name).ThenByDescending(a => a.LastAccess);
+				items = sortBy.mode == "Descending"
+					? items.OrderByDescending(obj => obj.Name).ThenByDescending(obj => obj.LastAccess)
+					: items.OrderBy(obj => obj.Name).ThenByDescending(obj => obj.LastAccess);
 				break;
 		}
 
-		// paging
+		// pagination
 		if (!this.info.state.searching && !this.info.state.filtering && this.info.pageNumber > 0) {
-			accounts = accounts.Take(this.info.pageNumber * (this.info.pagination != undefined ? this.info.pagination.PageSize : 20));
+			//items = items.Take(this.info.pageNumber * (this.info.pagination ? this.info.pagination.PageSize : 20));
 		}
 
-		// convert the list of results to array
-		this.accounts = accounts.ToArray();
-
+		// convert to array
+		this.items = items.ToArray();
+		
 		// prepare ratings
-		new List(this.accounts).ForEach((a) => {
+		new List(this.items).ForEach(a => {
 			if (!this.ratings[a.ID]) {
 				let rating = a.RatingPoints.getValue("General");
 				this.ratings[a.ID] = rating != undefined ? rating.Average : 0;
@@ -185,27 +246,40 @@ export class SearchProfilesPage {
 		});
 	}
 
-	trackBy(index: number, account: AppModels.Account) {
-		return account.ID;
+	open(item: AppModels.Base) {
+		this.navCtrl.push(ProfilePage, { ID: item.ID });
 	}
 
-	// event handlers
-	onInfiniteScroll(infiniteScroll: any) {
+	track(index: number, item: AppModels.Base) {
+		return item.ID;
+	}
+
+	onScroll(infiniteScroll: any) {
 		// capture
 		if (this.infiniteScrollCtrl == undefined) {
 			this.infiniteScrollCtrl = infiniteScroll;
 		}
 
+		// stop if on processing
+		if (this.info.state.processing) {
+			return;
+		}
+
+		// set state
+		this.info.state.processing = true;
+
 		// searching
 		if (this.info.state.searching && AppUtility.isNotEmpty(this.info.filterBy.Query)) {
 			if (this.info.pagination.PageNumber < this.info.pagination.TotalPages) {
-				this.doSearch(() => {
+				this.search(() => {
 					this.infiniteScrollCtrl.complete();
+					this.info.state.processing = false;
 				});
 			}
 			else {
 				this.infiniteScrollCtrl.complete();
 				this.infiniteScrollCtrl.enable(false);
+				this.info.state.processing = false;
 			}
 		}
 
@@ -213,6 +287,7 @@ export class SearchProfilesPage {
 		else if (this.info.state.filtering) {
 			this.infiniteScrollCtrl.complete();
 			this.infiniteScrollCtrl.enable(false);
+			this.info.state.processing = false;
 		}
 
 		// surfing
@@ -220,116 +295,50 @@ export class SearchProfilesPage {
 			if (this.info.pageNumber < this.info.pagination.PageNumber) {
 				this.info.pageNumber++;
 				this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
-				this.doBuild();
+				this.show();
 				this.infiniteScrollCtrl.complete();
+				this.info.state.processing = false;
 			}
 			else if (this.info.pagination.PageNumber < this.info.pagination.TotalPages) {
-				this.doSearch(() => {
+				this.search(() => {
 					this.infiniteScrollCtrl.complete();
+					this.info.state.processing = false;
 				});
 			}
 			else {
 				this.infiniteScrollCtrl.complete();
 				this.infiniteScrollCtrl.enable(false);
+				this.info.state.processing = false;
 			}
 		}
 	}
 
-	onSearch() {
+	onSearch(event: any) {
 		if (this.info.state.searching) {
-			this.accounts = [];
-			if (AppUtility.isNotEmpty(this.info.filterBy.Query)) {
-				this.doSearch();
-			}
+			this.items = [];
+			AppUtility.isNotEmpty(this.info.filterBy.Query) && this.search();
 		}
 		else {
-			this.doBuild();
+			this.show();
 		}
 	}
 
 	onCancel() {
+		this.info.state.processing = false;
 		this.info.state.searching = false;
 		this.info.state.filtering = false;
 		this.info.filterBy.Query = "";
+		this.info.pagination = this.buildPagination();
+		this.show();
 
-		this.info.pagination = AppData.Paginations.get(AppData.buildRequest(this.info.filterBy, null, this.info.pagination), "A");
-		this.doBuild();
-
-		if (this.infiniteScrollCtrl != undefined) {
+		if (this.infiniteScrollCtrl) {
 			this.infiniteScrollCtrl.enable(true);
 		}
 	}
 
-	// helpers
-	getAvatar(account: AppModels.Account) {
-		return AppUtility.getAvatarImage(account);
-	}
-
-	openProfile(account: AppModels.Account) {
-		this.navCtrl.push(ProfilePage, { ID: account.ID });
-	}
-
-	showSearch() {
-		this.accounts = [];
-		this.info.pagination = null;
-		this.info.state.searching = true;
-		this.info.state.holder = "Tìm kiếm (không dấu cũng OK)";
-		AppUtility.focus(this.searchBarCtrl, this.keyboard);
-	}
-
-	showActions() {
-		var actionSheet = this.actionSheetCtrl.create({
-			enableBackdropDismiss: true,
-			buttons: [
-				{
-					text: "Tìm kiếm",
-					icon: this.info.isAppleOS ? undefined : "search",
-					handler: () => {
-						this.showSearch();
-					}
-				},
-				{
-					text: "Lọc/Tìm nhanh",
-					icon: this.info.isAppleOS ? undefined : "funnel",
-					handler: () => {
-						this.info.state.filtering = true;
-						this.info.state.holder = "Tìm nhanh (không dấu cũng OK)";
-						AppUtility.focus(this.searchBarCtrl, this.keyboard);
-					}
-				},
-				{
-					text: "Thay đổi cách sắp xếp",
-					icon: this.info.isAppleOS ? undefined : "list-box",
-					handler: () => {
-						this.showSorts();
-					}
-				}
-			]
-		});
-
-		if (this.info.pagination != null && this.info.pageNumber < this.info.pagination.PageNumber) {
-			actionSheet.addButton({
-				text: "Hiển thị toàn bộ " + AppData.Paginations.computeTotal(this.info.pagination.PageNumber, this.info.pagination) + " kết quả",
-				icon: this.info.isAppleOS ? undefined : "eye",
-				handler: () => {
-					this.info.pageNumber = this.info.pagination.PageNumber;
-					this.info.totalRecords = AppData.Paginations.computeTotal(this.info.pageNumber, this.info.pagination);
-					this.doBuild();
-				}
-			});
-		}
-
-		actionSheet.addButton({
-			text: "Huỷ bỏ",
-			icon: this.info.isAppleOS ? undefined : "close",
-			role: "cancel"
-		});
-		
-		actionSheet.present();
-	}
-
+	// sort
 	showSorts() {
-		var alert = this.alertCtrl.create({
+		let ctrl = this.alertCtrl.create({
 			title: "Sắp xếp theo",
 			enableBackdropDismiss: true,
 			buttons: [
@@ -340,25 +349,61 @@ export class SearchProfilesPage {
 				{
 					text: "Đặt",
 					handler: (sortBy: string) => {
-						if (this.info.sortBy != sortBy) {
-							this.info.sortBy = sortBy;
-							this.doBuild();
-						}
+						this.sort(sortBy);
 					}
 				}
 			]
 		});
 
-		new List<any>(this.sorts).ForEach(o => {
-			alert.addInput({
+		new List<any>(this.info.sorts).ForEach(s => {
+			ctrl.addInput({
 				type: "radio",
-				label: o.label,
-				value: o.value,
-				checked: this.info.sortBy == o.value
+				label: s.label,
+				value: s.attribute,
+				checked: this.info.sortBy == s.attribute
 			});
 		});
 
-		alert.present();
+		ctrl.present();
+	}
+
+	sort(sortBy: string) {
+		if (this.info.sortBy != sortBy) {
+			this.info.sortBy = sortBy;
+			this.show();
+		}
+	}
+
+	// helpers
+	buildRequest(sortBy?: any) {
+		return AppData.buildRequest(
+			this.info.filterBy,
+			this.buildSortBy(sortBy),
+			AppUtility.isNotEmpty(this.info.filterBy.Query)
+				? undefined
+				: this.info.pagination,
+			r => {
+				if (!AppUtility.isNotEmpty(r.FilterBy.And.Province.Equals)) {
+					r.FilterBy.And.Province.Equals = undefined;
+				}
+			}
+		);
+	}
+
+	buildSortBy(sortBy?: any) {
+		if (!sortBy) {
+			sortBy = {};
+			sortBy[this.info.sorts[0].attribute] = this.info.sorts[0].mode;
+		}
+		return sortBy;
+	}
+
+	buildPagination(request?: any) {
+		return AppData.Paginations.get(request || this.buildRequest(), "Accounts");
+	}
+
+	getAvatar(account: AppModels.Account) {
+		return AppUtility.getAvatarImage(account);
 	}
 
 }

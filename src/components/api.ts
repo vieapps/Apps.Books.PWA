@@ -147,10 +147,10 @@ export namespace AppAPI {
 		var headers = {};
 
 		if (addToken
-		&& AppUtility.isObject(AppData.Configuration.session.jwt, true)
+		&& AppUtility.isObject(AppData.Configuration.session.token, true)
 		&& AppUtility.isObject(AppData.Configuration.session.keys, true)
 		&& AppUtility.isNotEmpty(AppData.Configuration.session.keys.jwt)) {
-			headers["x-app-token"] = AppCrypto.jwtEncode(AppData.Configuration.session.jwt, AppData.Configuration.session.keys.jwt);
+			headers["x-app-token"] = AppCrypto.jwtEncode(AppData.Configuration.session.token, AppData.Configuration.session.keys.jwt);
 		}
 
 		if (addAppInfo) {

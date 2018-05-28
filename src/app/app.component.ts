@@ -150,27 +150,27 @@ export class App {
 	// set-up events
 	setupEvents() {
 		// events of page/view navigation
-		AppEvents.on("OpenHomePage", () => {
+		AppEvents.on("OpenHomePage", info => {
 			this.navigateToHomePage();
 		});
 
-		AppEvents.on("OpenPreviousPage", () => {
+		AppEvents.on("OpenPreviousPage", info => {
 			this.navigateToPreviousPage();
 		});
 
-		AppEvents.on("OpenPage", (info: any) => {
+		AppEvents.on("OpenPage", info => {
 			if (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true)) {
 				this.navigate(info.args.name as string, info.args.component, info.args.params, info.args.doPush, info.args.popIfContains, info.args.noNestedStack);
 			}
 		});
 
-		AppEvents.on("UpdateActiveNav", (info: any) => {
+		AppEvents.on("UpdateActiveNav", info => {
 			if (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true)) {
 				this.updateActiveNav(info.args.name as string, info.args.component, info.args.params);
 			}
 		});
 
-		AppEvents.on("SetPreviousPageActive", (info: any) => {
+		AppEvents.on("SetPreviousPageActive", info => {
 			var previous = (AppUtility.isObject(info, true) != null && AppUtility.isObject(info.args, true))
 				? info.args.current
 				: undefined;
@@ -180,28 +180,28 @@ export class App {
 		});
 
 		// events to update avatar/title of side menu
-		AppEvents.on("SessionIsRegistered", () => {
+		AppEvents.on("SessionIsRegistered", info => {
 			this.updateSidebar();
 			this.buildPages();
 		});
 
-		AppEvents.on("AccountIsUpdated", () => {
+		AppEvents.on("AccountIsUpdated", info => {
 			this.updateSidebar();
 			this.buildPages();
 		});
 
 		// events to show categories
-		AppEvents.on("CategoriesAreUpdated", (info: any) => {
+		AppEvents.on("CategoriesAreUpdated", info => {
 			this.showCategories();
 		});
 
-		AppEvents.on("CloseBook", () => {
+		AppEvents.on("CloseBook", info => {
 			this.info.book.id = "";
 			this.chapters = [];
 		});
 
 		// events to show chapters of a book
-		AppEvents.on("OpenBook", (info: any) => {
+		AppEvents.on("OpenBook", info => {
 			if (AppUtility.isObject(info, true) && AppUtility.isObject(info.args, true)) {
 				this.info.book.id = info.args.ID;
 				this.info.book.chapter = info.args.Chapter;
@@ -210,7 +210,7 @@ export class App {
 				}
 			}
 		});
-		AppEvents.on("BookIsUpdated", (info: any) => {
+		AppEvents.on("BookIsUpdated", info => {
 			if (AppUtility.isObject(info, true) && AppUtility.isObject(info.args, true)
 			&& this.info.book.id != "" && this.info.book.id == info.args.ID
 			&& info.args.TOCs && info.args.TOCs.length > 0) {
@@ -492,7 +492,7 @@ export class App {
 		}
 		else {
 			this.pages.push({ name: "SignInPage", component: SignInPage, title: "Đăng nhập", icon: "log-in", doPush: true, popIfContains: "ProfilePage", noNestedStack: true });
-			if (AppData.Configuration.app.registrable) {
+			if (AppData.Configuration.app.accounts.registrable) {
 				this.pages.push({ name: "ProfilePage", component: ProfilePage, title: "Đăng ký tài khoản", icon: "person-add", params: { Register: true }, doPush: true, popIfContains: "SignInPage", noNestedStack: true });
 			}
 		}
@@ -530,7 +530,7 @@ export class App {
 	}
 
 	openCategory(category: any) {
-		var title = category.title;
+		let title = category.title;
 		this.info.category.index = category.index;
 		this.navigate("SurfBooksPage", SurfBooksPage, { Category: title });
 	}
@@ -543,7 +543,7 @@ export class App {
 	}
 
 	displayChapters(book?: AppModels.Book) {
-		book = book != undefined ? book : AppData.Books.getValue(this.info.book.id);
+		book = book || AppData.Books.getValue(this.info.book.id);
 		if (book.TotalChapters > 1) {
 			this.chapters = new List(book.TOCs)
 				.Select((toc, index) => {

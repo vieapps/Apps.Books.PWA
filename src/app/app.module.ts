@@ -24,7 +24,6 @@ import { VinumberPipe } from "../components/utility";
 
 import { ConfigurationService } from "../services/configuration";
 import { AuthenticationService } from "../services/authentication";
-import { AccountsService } from "../services/accounts";
 import { BooksService } from "../services/books";
 import { StatisticsService } from "../services/statistics";
 import { ResourcesService } from "../services/resources";
@@ -85,7 +84,6 @@ import { ReadingOptionsPage } from "../pages/books/options/options";
 		AuthenticationService,
 		ResourcesService,
 		StatisticsService,
-		AccountsService,
 		BooksService,
 		StatusBar,
 		SplashScreen,
@@ -101,4 +99,4 @@ import { ReadingOptionsPage } from "../pages/books/options/options";
 		{ provide: ErrorHandler, useClass: IonicErrorHandler }
 	]
 })
-export class AppModule { }
+export class AppModule {}

@@ -16,29 +16,34 @@ export namespace AppData {
 				// files: "https://afs.prj.vn/",
 				// apis: "http://local-apis.vieapps.net/",
 				// files: "http://local-afs.vieapps.net/",
-				activations: "http://viebooks.net/"
+				activations: "https://viebooks.net/"
 			},
-			version: "0.5",
+			name: "VIE Books",
+			version: "0.7",
 			debug: true,
 			offline: false,
 			mode: "",
 			platform: "",
-			name: "viebooks.net",
 			host: "",
+			service: "books",
 			tracking: {
 				google: "UA-3060572-8",
-				googleDomains: ["viebooks.net", "books.vieapps.net", "books.prj.vn"],
+				googleDomains: ["viebooks.net", "books.apps.prj.vn"],
 				facebook: ""
 			},
 			refer: {
 				id: null,
 				section: null
 			},
-			registrable: true
+			accounts: {
+				registrable: false,
+				everyoneCanInvite: true,
+				privileges: "ServiceAdministrator"
+			}
 		},
 		session: {
 			id: null as string,
-			jwt: null,
+			token: null,
 			account: null as Account,
 			keys: null,
 			device: "",
@@ -106,16 +111,16 @@ export namespace AppData {
 				: undefined;
 		},
 
-		getQuery: (info?: any) => {
-			var filterby = Paginations.getFilterBy(info);
-			return AppUtility.isObject(filterby, true) && AppUtility.isObject(filterby.FilterBy, true) && AppUtility.isNotEmpty(filterby.FilterBy.Query)
-				? filterby.FilterBy.Query as string
-				: undefined;
-		},
-
 		getSortBy: (info?: any) => {
 			return AppUtility.isObject(info, true) && AppUtility.isObject(info.SortBy, true)
 				? info.SortBy
+				: undefined;
+		},
+
+		getQuery: (info?: any) => {
+			let filterby = Paginations.getFilterBy(info);
+			return AppUtility.isObject(filterby, true) && AppUtility.isObject(filterby.FilterBy, true) && AppUtility.isNotEmpty(filterby.FilterBy.Query)
+				? filterby.FilterBy.Query as string
 				: undefined;
 		},
 
@@ -124,7 +129,7 @@ export namespace AppData {
 				return undefined;
 			}
 
-			prefix = AppUtility.isNotEmpty(prefix) ? prefix : "O";
+			prefix = AppUtility.isNotEmpty(prefix) ? prefix : "";
 			let filterby = AppUtility.clean(Paginations.getFilterBy(info) || {});
 			let sortby = AppUtility.clean(Paginations.getSortBy(info) || {});
 			return prefix + ":" + AppCrypto.md5((JSON.stringify(filterby) + JSON.stringify(sortby)).toLowerCase());
@@ -132,18 +137,20 @@ export namespace AppData {
 
 		/** Gets the default pagination */
 		default: (info?: any): { TotalRecords: number, TotalPages: number, PageSize: number, PageNumber: number } => {
-			var pagination = info != undefined
+			let pagination = info != undefined
 				? info.Pagination
 				: undefined;
 
 			return AppUtility.isObject(pagination, true)
-				? {
+				?
+				{
 					TotalRecords: pagination.TotalRecords ? pagination.TotalRecords : -1,
 					TotalPages: pagination.TotalPages ? pagination.TotalPages : 0,
 					PageSize: pagination.PageSize ? pagination.PageSize : 20,
 					PageNumber: pagination.PageNumber ? pagination.PageNumber : 0
 				}
-				: {
+				:
+				{
 					TotalRecords: -1,
 					TotalPages: 0,
 					PageSize: 20,
@@ -153,7 +160,7 @@ export namespace AppData {
 
 		/** Computes the total of records */
 		computeTotal: (pageNumber: number, pagination?: any) => {
-			var totalRecords = pageNumber * (AppUtility.isObject(pagination, true) ? pagination.PageSize : 20);
+			let totalRecords = pageNumber * (AppUtility.isObject(pagination, true) ? pagination.PageSize : 20);
 			if (AppUtility.isObject(pagination, true) && totalRecords > pagination.TotalRecords) {
 				totalRecords = pagination.TotalRecords;
 			}
@@ -161,23 +168,25 @@ export namespace AppData {
 		},
 
 		/** Gets a pagination */
-		get: (info?: any, prefix?: string) => {
-			var key = Paginations.getKey(info, prefix);
-			return key ? Paginations.info[key] : undefined;
+		get: (info?: any, prefix?: string): { TotalRecords: number, TotalPages: number, PageSize: number, PageNumber: number } => {
+			let key = Paginations.getKey(info, prefix);
+			return AppUtility.isNotEmpty(key)
+				? Paginations.info[key]
+				: undefined;
 		},
 
 		/** Sets a pagination */
 		set: (info?: any, prefix?: string) => {
-			var key = Paginations.getKey(info, prefix);
-			if (key) {
+			let key = Paginations.getKey(info, prefix);
+			if (AppUtility.isNotEmpty(key)) {
 				Paginations.info[key] = Paginations.default(info);
 			}
 		},
 
 		/** Removes a pagination */
 		remove: (info?: any, prefix?: string) => {
-			var key = Paginations.getKey(info, prefix);
-			if (key) {
+			let key = Paginations.getKey(info, prefix);
+			if (AppUtility.isNotEmpty(key)) {
 				delete Paginations.info[key];
 			}
 		}
