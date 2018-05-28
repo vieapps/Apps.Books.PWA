@@ -138,22 +138,22 @@ export namespace AppRTU {
 
 		processor.onerror = event => {
 			status = "error";
-			AppUtility.isDebug() && console.warn("[RTU]: Updater got an error", event);
+			AppUtility.isDebug() && console.warn("[RTU]: Updater got an error...", event);
 		};
 
 		processor.onmessage = event => {
 			let message = JSON.parse(event.data);
 			if (AppUtility.isNotEmpty(message.Type) && message.Type == "Error") {
-				if (AppUtility.isGotSecurityException(message.Error)) {
-					console.warn("[RTU]: Stop when updater got a security issue", message.Data);
+				if (AppUtility.isGotSecurityException(message.Data)) {
+					console.warn("[RTU]: Stop when updater got a security issue: " + message.Data.Message + " (" + message.Data.Code + ")", AppUtility.isDebug() ? message.Data : "");
 					stop();
 				}
-				else if (message.Data && "InvalidRequestException" == message.Data.Type) {
-					console.warn("[RTU]: Stop when updater got an invalid data for requesting", message.Data);
+				else if (message.Data && message.Data.Type == "InvalidRequestException") {
+					console.warn("[RTU]: Stop when updater got an invalid requesting data: " + message.Data.Message + " (" + message.Data.Code + ")", AppUtility.isDebug() ? message.Data : "");
 					stop();
 				}
 				else {
-					console.warn("[RTU]: Updater got an error", message.Data);
+					console.warn("[RTU]: Updater got an error: " + message.Data.Message + " (" + message.Data.Code + ")", AppUtility.isDebug() ? message.Data : "");
 				}
 			}
 			else {

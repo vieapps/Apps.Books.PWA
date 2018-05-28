@@ -12,8 +12,6 @@ export namespace AppData {
 			uris: {
 				apis: "https://apis.vieapps.net/",
 				files: "https://afs.vieapps.net/",
-				// apis: "https://apis.prj.vn/",
-				// files: "https://afs.prj.vn/",
 				// apis: "http://local-apis.vieapps.net/",
 				// files: "http://local-afs.vieapps.net/",
 				activations: "https://viebooks.net/"
