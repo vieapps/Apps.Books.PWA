@@ -17,7 +17,7 @@ export namespace AppData {
 				activations: "https://viebooks.net/"
 			},
 			name: "VIE Books",
-			version: "0.7",
+			version: "0.7.1",
 			debug: true,
 			offline: false,
 			mode: "",
@@ -34,7 +34,7 @@ export namespace AppData {
 				section: null
 			},
 			accounts: {
-				registrable: false,
+				registrable: true,
 				everyoneCanInvite: true,
 				privileges: "ServiceAdministrator"
 			}
