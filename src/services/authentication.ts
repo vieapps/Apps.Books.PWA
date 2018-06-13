@@ -141,7 +141,7 @@ export class AuthenticationService {
 
 	async setPrivilegesAsync(id: string, privileges: Array<AppModels.Privilege>, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "Users/Account/" + id
+			let path = "users/account/" + id
 				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&languague=vi-VN"
 			let body = {
@@ -280,7 +280,7 @@ export class AuthenticationService {
 
 	async prepareOTPAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "Users/OTP"
+			let path = "users/otp"
 				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + AppUtility.getHost();
@@ -295,7 +295,7 @@ export class AuthenticationService {
 
 	async updateOTPAsync(info: any, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "Users/OTP"
+			let path = "users/otp"
 				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
 				+ "&host=" + AppUtility.getHost();
@@ -312,7 +312,7 @@ export class AuthenticationService {
 
 	async deleteOTPAsync(info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "Users/OTP"
+			let path = "users/otp"
 				+ "?info=" + info
 				+ "&related-service=" + AppData.Configuration.app.service
 				+ "&language=" + AppData.Configuration.session.account.profile.Language
@@ -329,7 +329,7 @@ export class AuthenticationService {
 
 	async validateOTPAsync(id: string, otp: string, info: string, onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let path = "Users/Session"
+			let path = "users/session"
 				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&language=vi-VN"
 				+ "&host=" + AppUtility.getHost();
@@ -351,7 +351,7 @@ export class AuthenticationService {
 	/** Registers a captcha with REST API */
 	async registerCaptchaAsync(onNext?: (data?: any) => void, onError?: (error?: any) => void) {
 		try {
-			let response = await AppAPI.GetAsync("Users/Captcha?register=" + AppData.Configuration.session.id);
+			let response = await AppAPI.GetAsync("users/captcha?register=" + AppData.Configuration.session.id);
 			let data = response.json();
 			AppData.Configuration.session.captcha = {
 				code: data.Code,

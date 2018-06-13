@@ -122,10 +122,17 @@ export class ConfigurationService {
 			let response = await AppAPI.GetAsync("users/session");
 			let data = response.json();
 			await this.updateSessionAsync(data, () => {
-				let isAuthenticated = this.isAuthenticated() && AppUtility.isObject(AppData.Configuration.session.account, true);
-				AppData.Configuration.session.account = isAuthenticated
-					? AppData.Configuration.session.account
-					: this.getAccount(true);
+				let isAuthenticated = this.isAuthenticated();
+				if (isAuthenticated) {
+					AppData.Configuration.session.account = AppUtility.isObject(AppData.Configuration.session.account, true)
+						? AppData.Configuration.session.account
+						: this.getAccount(true);
+					if (!AppData.Configuration.session.account.id) {
+						AppData.Configuration.session.account.id = AppData.Configuration.session.token.uid;
+					}
+				}
+				else
+					AppData.Configuration.session.account = this.getAccount(true);
 				AppEvents.broadcast(isAuthenticated ? "SessionIsRegistered" : "SessionIsInitialized", AppData.Configuration.session);
 				console.info("[Configuration]: The session is initialized");
 				onNext != undefined && onNext(data);
@@ -228,9 +235,10 @@ export class ConfigurationService {
 		AppUtility.setTimeout(() => {
 			AppRTU.send(
 				{
-					ServiceName: "Users",
-					ObjectName: "Session",
+					ServiceName: "users",
+					ObjectName: "session",
 					Verb: "PATCH",
+					Header: AppAPI.getAuthHeaders(),
 					Extra: {
 						"x-session": AppData.Configuration.session.id
 					}
@@ -322,15 +330,10 @@ export class ConfigurationService {
 		AppUtility.setTimeout(() => {
 			AppRTU.send(
 				{
-					ServiceName: "Users",
-					ObjectName: "Account",
+					ServiceName: "users",
+					ObjectName: "account",
 					Verb: "GET",
-					Query: {
-						"x-status": ""
-					},
-					Extra: {
-						"x-status": ""
-					}
+					Query: { "x-status": "" }
 				},
 				() => {
 					onNext != undefined && onNext();
@@ -384,8 +387,8 @@ export class ConfigurationService {
 	/** Get profile information */
 	getProfile(id?: string, onCompleted?: (data?: any) => void) {
 		let request = {
-			ServiceName: "Users",
-			ObjectName: "Profile",
+			ServiceName: "users",
+			ObjectName: "profile",
 			Verb: "GET",
 			Query: {
 				"related-service": AppData.Configuration.app.service,
@@ -583,6 +586,21 @@ export class ConfigurationService {
 					})
 				});
 			}
+
+			// online status
+			else if (info.Event == "Status") {
+				let account = AppData.Accounts.getValue(message.Data.UserID);
+				if (account != undefined) {
+					account.IsOnline = message.Data.IsOnline;
+					account.LastAccess = new Date();
+				}
+				if (AppData.Configuration.session.account != null
+					&& AppData.Configuration.session.id == message.Data.SessionID
+					&& AppData.Configuration.session.account.id == message.Data.UserID
+					&& AppData.Configuration.session.account.profile != null) {
+					AppData.Configuration.session.account.profile.LastAccess = new Date();
+				}
+			}
 		}
 
 		// update profile
@@ -592,20 +610,6 @@ export class ConfigurationService {
 			}
 			else {
 				AppModels.Account.update(message.Data);
-			}
-		}
-
-		// update status
-		else if (info.Object == "Status") {
-			let account = AppData.Accounts.getValue(message.Data.UserID);
-			if (account != undefined) {
-				account.IsOnline = message.Data.IsOnline;
-				account.LastAccess = new Date();
-			}
-			if (AppData.Configuration.session.account != null
-				&& AppData.Configuration.session.account.id == message.Data.UserID
-				&& AppData.Configuration.session.account.profile != null) {
-				AppData.Configuration.session.account.profile.LastAccess = new Date();
 			}
 		}
 	}
