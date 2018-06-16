@@ -222,7 +222,7 @@ export namespace AppRTU {
 			if (AppUtility.isObject(request.Query, true)) {
 				path += "?"
 				for (let name in request.Query) {
-					path += name + "=" + encodeURIComponent(request.Query[name]);
+					path += name + "=" + encodeURIComponent(request.Query[name]) + "&";
 				}
 			}
 			

@@ -431,7 +431,8 @@ export class ConfigurationService {
 			try {
 				let path = "users/profile" + (AppUtility.isNotEmpty(id) ? "/" + id : "")
 					+ "?related-service=" + AppData.Configuration.app.service
-					+ "&language=vi-VN";
+					+ "&language=vi-VN"
+					+ "&host=" + AppUtility.getHost();
 				let response = await AppAPI.GetAsync(path);
 				this.updateProfileAsync(response.json(), onCompleted);
 			}

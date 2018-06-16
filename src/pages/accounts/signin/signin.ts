@@ -196,7 +196,7 @@ export class SignInPage {
 			this.showLoading("Đăng nhập...");
 			this.info.state.processing = true;
 			this.authSvc.signInAsync(this.info.account.email, this.info.account.password, 
-				(data: any) => {
+				data => {
 					this.hideLoading();
 					this.info.state.processing = false;
 					if (data.Require2FA) {
@@ -207,7 +207,7 @@ export class SignInPage {
 						this.exit();
 					}
 				},
-				(error: any) => {
+				error => {
 					this.showError(error);
 				}
 			);

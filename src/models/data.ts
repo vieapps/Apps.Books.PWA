@@ -10,16 +10,16 @@ export namespace AppData {
 	export var Configuration = {
 		app: {
 			uris: {
-				apis: "https://apis.vieapps.net/",
-				files: "https://fs.vieapps.net/",
-				// apis: "https://apis.vieapps.com/",
-				// files: "https://fs.vieapps.com/",
-				// activations: "https://books.vieapps.com/"
-				activations: "https://viebooks.net/"
+				// apis: "https://apis.vieapps.net/",
+				// files: "https://fs.vieapps.net/",
+				apis: "https://apis.vieapps.com/",
+				files: "https://fs.vieapps.com/",
+				activations: "https://books.vieapps.com/"
+				// activations: "https://viebooks.net/"
 			},
 			name: "VIE Books",
-			version: "0.8",
-			debug: false,
+			version: "0.9.1",
+			debug: true,
 			offline: false,
 			mode: "",
 			platform: "",

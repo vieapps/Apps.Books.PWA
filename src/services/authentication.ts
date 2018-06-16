@@ -5,6 +5,7 @@ import { AppUtility } from "../components/utility";
 import { AppCrypto } from "../components/crypto";
 import { AppAPI } from "../components/api";
 import { AppEvents } from "../components/events";
+import { AppRTU } from "../components/rtu";
 import { AppData } from "../models/data";
 import { AppModels } from "../models/objects";
 
@@ -96,6 +97,7 @@ export class AuthenticationService {
 			let response = await AppAPI.PostAsync("users/session", body);
 			let data = response.json();
 			if (!data.Require2FA) {
+				AppRTU.start();
 				await this.updateSessionAsync(data, onNext);
 			}
 			else {
@@ -103,6 +105,15 @@ export class AuthenticationService {
 			}
 		}
 		catch (error) {
+			if (AppUtility.isObject(error, true) && error.Type && error.Type == "InvalidSessionException" && error.Message && AppUtility.indexOf(error.Message, "not issued by the system") > 0) {
+				this.configSvc.deleteSessionAsync(() => {
+					this.configSvc.initializeSessionAsync(() => {
+						this.configSvc.registerSessionAsync(() => {
+							console.info("[Authentication]: The session is re-registered (anonymous)");
+						})
+					});
+				});
+			}
 			AppUtility.showError("[Authentication]: Error occurred while signing-in", error, onError);
 		}
 	}
@@ -341,6 +352,7 @@ export class AuthenticationService {
 			};
 
 			let response = await AppAPI.PutAsync(path, body);
+			AppRTU.start();
 			await this.updateSessionAsync(response.json(), onNext);
 		}
 		catch (error) {
