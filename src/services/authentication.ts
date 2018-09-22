@@ -156,7 +156,7 @@ export class AuthenticationService {
 				+ "?related-service=" + AppData.Configuration.app.service
 				+ "&languague=vi-VN"
 			let body = {
-				Privileges: AppCrypto.rsaEncrypt(JSON.stringify(privileges))
+				Privileges: AppCrypto.aesEncrypt(JSON.stringify(privileges))
 			};
 			let response = await AppAPI.PutAsync(path, body);
 			onNext != undefined && onNext(response.json());
@@ -182,11 +182,11 @@ export class AuthenticationService {
 			};
 			
 			if (privileges) {
-				body["Privileges"] = AppCrypto.rsaEncrypt(JSON.stringify(privileges));
+				body["Privileges"] = AppCrypto.aesEncrypt(JSON.stringify(privileges));
 			}
 			
 			if (relatedInfo) {
-				body["RelatedInfo"] = AppCrypto.rsaEncrypt(JSON.stringify(relatedInfo));
+				body["RelatedInfo"] = AppCrypto.aesEncrypt(JSON.stringify(relatedInfo));
 			}
 
 			let response = await AppAPI.PostAsync(path, body);
