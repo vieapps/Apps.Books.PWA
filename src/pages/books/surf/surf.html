@@ -20,14 +20,14 @@
 	<ion-toolbar>
 		<ion-buttons left *ngIf="info.pagination && info.pagination.TotalRecords > 0">
 			<button ion-button icon-left>
-			<ion-icon name="book"></ion-icon>
-			<span>
-				{{info.totalRecords | vinumber}} / {{info.pagination.TotalRecords | vinumber}}
-			</span>
-			<span [hidden]="info.pagination.TotalPages < 2" style="margin-left:16px">
-				({{info.pageNumber | vinumber}}/{{info.pagination.TotalPages | vinumber}})
-			</span>
-		</button>
+				<ion-icon name="book"></ion-icon>
+				<span>
+					{{info.totalRecords | vinumber}} / {{info.pagination.TotalRecords | vinumber}}
+				</span>
+				<span [hidden]="info.pagination.TotalPages < 2" style="margin-left:16px">
+					({{info.pageNumber | vinumber}}/{{info.pagination.TotalPages | vinumber}})
+				</span>
+			</button>
 		</ion-buttons>
 		<ion-buttons right>
 			<button ion-button icon-only (click)="showActions()">

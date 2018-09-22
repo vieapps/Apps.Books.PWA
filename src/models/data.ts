@@ -10,15 +10,12 @@ export namespace AppData {
 	export var Configuration = {
 		app: {
 			uris: {
-				// apis: "https://apis.vieapps.net/",
-				// files: "https://fs.vieapps.net/",
-				apis: "https://apis.vieapps.com/",
-				files: "https://fs.vieapps.com/",
-				activations: "https://books.vieapps.com/"
-				// activations: "https://viebooks.net/"
+				apis: "https://apis.vieapps.net/",
+				files: "https://fs.vieapps.net/",
+				activations: "https://books.vieapps.net/"
 			},
 			name: "VIE Books",
-			version: "0.9.1",
+			version: "1.0.0-alpha",
 			debug: true,
 			offline: false,
 			mode: "",
@@ -27,7 +24,7 @@ export namespace AppData {
 			service: "books",
 			tracking: {
 				google: "UA-3060572-8",
-				googleDomains: ["viebooks.net", "books.vieapps.net", "books.vieapps.com", "books.apps.prj.vn"],
+				googleDomains: ["viebooks.net", "books.vieapps.net", "books.vieapps.com"],
 				facebook: ""
 			},
 			refer: {
